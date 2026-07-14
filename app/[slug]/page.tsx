@@ -22,7 +22,7 @@ export async function generateMetadata({
   const c = getBySlug(slug);
   if (!c) return {};
   return {
-    title: `${c.name} | LiveModern`,
+    title: c.name,
     description: c.metaDescription || `${c.name} — new construction in ${c.city ?? "South Florida"}.`,
     openGraph: {
       title: `${c.name} | LiveModern`,
@@ -45,7 +45,9 @@ export default async function CommunityPage({
   const gallery = c.gallery.filter((g) => g !== c.hero).slice(0, 5);
   const breakImage = gallery[0];
   const grid = gallery.slice(1, 6);
-  const [standfirst, ...rest] = c.body;
+  // Standfirst: the editorial deck. Use the curated meta description when we have
+  // one — never a naive sentence split (". " breaks on "Mr. C", "St. Regis", etc).
+  const standfirst = (c.metaDescription || c.body[0] || "").trim();
   const isBuilding = c.type === "building";
 
   const jsonLd = {
@@ -148,18 +150,13 @@ export default async function CommunityPage({
         <section className="feature">
           <div className="spread">
             <div>
-              {standfirst ? (
-                <p className="standfirst">
-                  {standfirst.split(". ").slice(0, 1).join(". ")}
-                  {standfirst.endsWith(".") ? "" : "."}
-                </p>
-              ) : null}
+              {standfirst ? <p className="standfirst">{standfirst}</p> : null}
               <p className="byline">
                 Words by Modern Living Group
                 {c.city ? ` · ${c.city}` : ""}
               </p>
               <div className="body">
-                {(rest.length ? rest : c.body).map((p, i) => (
+                {c.body.map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}
               </div>
