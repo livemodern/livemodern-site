@@ -2,7 +2,9 @@ import Link from "next/link";
 import Logo from "./Logo";
 import { getBuildings } from "@/lib/communities";
 
-export default function Masthead({ active }: { active?: string }) {
+type MastheadUser = { firstName?: string | null } | null;
+
+export default function Masthead({ active, user = null }: { active?: string; user?: MastheadUser }) {
   const count = getBuildings().length;
   return (
     <div className="masthead">
@@ -26,9 +28,15 @@ export default function Masthead({ active }: { active?: string }) {
             <a href="#inquire">Contact</a>
           </nav>
           <div className="mast-right">
-            <a className="tel" href="tel:5612288420">
-              561 228 8420
-            </a>
+            {user ? (
+              <Link className="acct" href="/account">
+                {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
+              </Link>
+            ) : (
+              <Link className="acct" href="/login">
+                Login
+              </Link>
+            )}
             <span className="burger" aria-hidden="true">
               <span />
               <span />
