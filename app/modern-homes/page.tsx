@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
@@ -35,12 +35,11 @@ export default function ModernHomes() {
           <div className="rail">
             {collections.map((c) => (
               <Link className="tile" key={c.slug} href={`/${c.slug}`}>
-                <Image
+                <Img
                   src={c.hero}
                   alt={c.name}
                   fill
                   sizes="(max-width:640px) 100vw, (max-width:1040px) 50vw, 33vw"
-                  style={{ objectFit: "cover" }}
                 />
                 <div className="tile-in">
                   <p className="caps">{c.county ?? "South Florida"}</p>

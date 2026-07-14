@@ -1,11 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Community } from "@/lib/communities";
+import { cf } from "@/lib/communities";
 
 export default function IndexRow({ c }: { c: Community }) {
   return (
     <Link className="row" href={`/${c.slug}`}>
-      <Image className="row-thumb" src={c.hero} alt="" width={92} height={92} sizes="92px" />
+      <img className="row-thumb" src={cf(c.hero, 184)} alt="" width={92} height={92} loading="lazy" />
       <div>
         <div className="row-n serif">{c.name}</div>
         <div className="row-m">

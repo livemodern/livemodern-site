@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
@@ -47,14 +47,7 @@ export default function Home() {
       <section>
         <div className="cover-img">
           {cover ? (
-            <Image
-              src={cover.hero}
-              alt={cover.name}
-              fill
-              priority
-              sizes="100vw"
-              style={{ objectFit: "cover" }}
-            />
+            <Img src={cover.hero} alt={cover.name} fill priority sizes="100vw" />
           ) : null}
           <div className="cover-txt">
             <div className="wrap">
@@ -137,12 +130,11 @@ export default function Home() {
                     className={`tile${t.wide ? " tile--wide" : ""}`}
                     href={`/${t.slug}`}
                   >
-                    <Image
+                    <Img
                       src={c.hero}
                       alt={t.title}
                       fill
                       sizes="(max-width:640px) 100vw, (max-width:1040px) 50vw, 33vw"
-                      style={{ objectFit: "cover" }}
                     />
                     <div className="tile-in">
                       <p className="caps">{t.kicker}</p>

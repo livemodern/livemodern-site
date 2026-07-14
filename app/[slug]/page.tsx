@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
@@ -95,7 +95,7 @@ export default async function CommunityPage({
       </div>
 
       <section className="cover-img">
-        <Image src={c.hero} alt={c.name} fill priority sizes="100vw" style={{ objectFit: "cover" }} />
+        <Img src={c.hero} alt={c.name} fill priority sizes="100vw" />
         <div className="cover-txt">
           <div className="wrap">
             <p className="eyebrow">
@@ -205,14 +205,7 @@ export default async function CommunityPage({
       {breakImage ? (
         <>
           <figure className="bleed">
-            <Image
-              src={breakImage}
-              alt={c.name}
-              width={1600}
-              height={900}
-              sizes="100vw"
-              style={{ width: "100%", height: "auto" }}
-            />
+            <Img src={breakImage} alt={c.name} sizes="100vw" widths={[640, 960, 1200, 1600, 1920]} />
           </figure>
           <div className="wrap">
             <p className="caption">
@@ -237,13 +230,11 @@ export default async function CommunityPage({
             <div className="gal">
               {grid.map((g, i) => (
                 <figure key={i}>
-                  <Image
+                  <Img
                     src={g}
                     alt={`${c.name} — image ${i + 1}`}
-                    width={800}
-                    height={800}
                     sizes="(max-width:900px) 50vw, 25vw"
-                    style={{ width: "100%", height: "auto" }}
+                    widths={[390, 640, 800]}
                   />
                 </figure>
               ))}
@@ -275,12 +266,11 @@ export default async function CommunityPage({
             </div>
             <div className="avail-img">
               {gallery[1] || c.hero ? (
-                <Image
+                <Img
                   src={gallery[1] ?? c.hero}
                   alt=""
                   fill
                   sizes="(max-width:860px) 100vw, 45vw"
-                  style={{ objectFit: "cover" }}
                 />
               ) : null}
             </div>
@@ -308,13 +298,11 @@ export default async function CommunityPage({
             <div className="more">
               {related.map((r) => (
                 <Link className="mcard" key={r.slug} href={`/${r.slug}`}>
-                  <Image
+                  <Img
                     src={r.hero}
                     alt={r.name}
-                    width={600}
-                    height={450}
                     sizes="(max-width:760px) 100vw, 33vw"
-                    style={{ width: "100%", height: "auto" }}
+                    widths={[390, 640]}
                   />
                   <p className="caps">
                     {r.city} &middot; New Construction

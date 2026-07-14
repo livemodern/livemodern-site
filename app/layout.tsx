@@ -19,7 +19,7 @@ const body = Poppins({
 const indexable = process.env.SITE_INDEXABLE === "true";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sellmodernhomes.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.livemodern.com"),
   title: {
     default: "LiveModern — South Florida New Construction & Modern Homes",
     template: "%s | LiveModern",

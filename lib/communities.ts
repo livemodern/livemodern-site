@@ -65,10 +65,20 @@ export function countyCounts(): Record<string, number> {
 }
 
 /**
- * NOTE ON IMAGES
- * Cloudflare Image Transformations are NOT enabled on the sellmodernhomes.com
- * zone — `/cdn-cgi/image/...` returns 404 there (it works on mlrecloud.com).
- * So we serve through the Next/Vercel optimizer via <Image>, configured in
- * next.config.mjs `images.remotePatterns`. If Transformations get switched on
- * for this zone later, swap to a cf() helper and drop the optimizer.
+ * Cloudflare Image Transformations, matching the platform pattern in
+ * mlg-site/src/lib/img.ts. images.livemodern.com is an R2 custom domain on the
+ * livemodern.com zone with Transformations enabled, so /cdn-cgi/image/ resizes
+ * on Cloudflare's edge — no Vercel Image Optimization, no per-transform Vercel
+ * billing. Same mechanism every other MLG site uses.
  */
+const CF = "https://images.livemodern.com/cdn-cgi/image";
+
+/** Transformed image URL at a given width. Returns "" for a falsy input. */
+export function cf(url: string, w: number, q = 78): string {
+  return url ? `${CF}/width=${w},quality=${q},format=auto/${url}` : "";
+}
+
+/** srcset string across the given widths, for responsive <img>. */
+export function cfSrcSet(url: string, widths: number[], q = 78): string {
+  return url ? widths.map((w) => `${cf(url, w, q)} ${w}w`).join(", ") : "";
+}
