@@ -10,7 +10,7 @@ export const revalidate = 3600;
 
 /** Curated lead of the index — the towers we want first-seen. */
 const FEATURED = [
-  "mr-c-residences-coconut-grove",
+  "mr-c-residences",
   "olara-west-palm-beach",
   "aria-reserve-miami",
   "alba-palm-beach",
@@ -36,7 +36,7 @@ const MARKET_COPY: Record<string, string> = {
 
 export default function Home() {
   const buildings = getBuildings();
-  const cover = getBySlug("mr-c-residences-coconut-grove");
+  const cover = getBySlug("mr-c-residences") ?? getBuildings().find((b) => b.hero);
   const featured = FEATURED.map(getBySlug).filter(Boolean) as Community[];
   const counts = countyCounts();
 
