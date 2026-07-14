@@ -328,7 +328,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .agent{border:1px solid var(--rule);padding:26px}
 @media(min-width:1000px){.agent{position:sticky;top:24px}}
 .a-head{display:flex;gap:14px;align-items:center}
-.a-photo{width:60px;height:60px;border-radius:50%;object-fit:cover;flex:none;background:var(--band)}
+.a-photo{width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:center 40%;flex:none;background:var(--band)}
 .agent .kicker{font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
 .agent .who{font-size:20px;margin:6px 0 2px}
 .agent .firm{font-size:11.5px;color:var(--muted);line-height:1.4}
