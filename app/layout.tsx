@@ -6,28 +6,30 @@ const display = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
+  style: ["normal", "italic"],
 });
 
 const body = Poppins({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["300", "400", "500"],
   variable: "--font-body",
   display: "swap",
 });
 
+const indexable = process.env.SITE_INDEXABLE === "true";
+
 export const metadata: Metadata = {
-  title: "LiveModern — South Florida Luxury Real Estate",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sellmodernhomes.com"),
+  title: {
+    default: "LiveModern — South Florida New Construction & Modern Homes",
+    template: "%s | LiveModern",
+  },
   description:
-    "Modern living across South Florida — West Palm Beach, Miami, and Fort Lauderdale. A new platform in progress.",
-  // Staging on sellmodernhome.com — keep out of the index until cutover to livemodern.com
-  robots: { index: false, follow: false },
+    "The definitive index of South Florida's new towers and modern homes — Palm Beach to Miami, one register.",
+  robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body>{children}</body>
