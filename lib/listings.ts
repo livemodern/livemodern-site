@@ -254,3 +254,51 @@ export async function getBuildingInventory(communitySlug: string): Promise<Build
     return empty;
   }
 }
+
+
+// ── Floorplans (community_floorplans, keyed by community_id) ─────────────────
+
+export type Floorplan = {
+  name: string | null;
+  details: string | null; // "2 Beds, 3 Baths, 2085 Sqft"
+  image_url: string;
+  sort: number | null;
+};
+
+const LIVEMODERN_SITE_ID = "61134a2d-c231-47fc-897d-31f318e2f44d";
+
+/**
+ * Floorplans for a building, resolved by slug. Two hops: slug -> community id
+ * (site_communities, scoped to the LiveModern tenant), then the floorplans.
+ * Returns [] when the service key is unset or the building has none, so the
+ * page simply omits the section. Mirrors mlg-site's community_floorplans model.
+ */
+export async function getFloorplans(slug: string): Promise<Floorplan[]> {
+  if (!SB_KEY || !slug) return [];
+  try {
+    const cRes = await fetch(
+      `${SB_URL}/rest/v1/site_communities?site_id=eq.${LIVEMODERN_SITE_ID}&slug=eq.${encodeURIComponent(slug)}&select=id&limit=1`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }, next: { revalidate: 3600 } },
+    );
+    if (!cRes.ok) return [];
+    const c = (await cRes.json()) as { id: string }[];
+    if (!c[0]) return [];
+    const fRes = await fetch(
+      `${SB_URL}/rest/v1/community_floorplans?community_id=eq.${c[0].id}&select=name,details,image_url,sort&order=sort.asc&limit=200`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }, next: { revalidate: 3600 } },
+    );
+    if (!fRes.ok) return [];
+    return (await fRes.json()) as Floorplan[];
+  } catch {
+    return [];
+  }
+}
+
+/** Pull beds/baths/sqft out of a details string for compact display. */
+export function planSpecs(details: string | null): { beds?: string; baths?: string; sqft?: string } {
+  if (!details) return {};
+  const beds = details.match(/(\d+(?:\.\d+)?)\s*Bed/i)?.[1];
+  const baths = details.match(/(\d+(?:\.\d+)?)\s*Bath/i)?.[1];
+  const sqft = details.match(/([\d,]+)\s*Sq/i)?.[1];
+  return { beds, baths, sqft };
+}

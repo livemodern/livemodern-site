@@ -5,9 +5,11 @@ import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
+import Floorplans from "@/components/Floorplans";
 import { getAll, getBySlug, getRelated } from "@/lib/communities";
 import {
   getBuildingInventory,
+  getFloorplans,
   mls,
   mlsSrcSet,
   money,
@@ -88,6 +90,7 @@ export default async function CommunityPage({
   const priceFrom = inventory.forSale.length
     ? Math.min(...inventory.forSale.map((u) => u.list_price ?? Infinity).filter((n) => Number.isFinite(n)))
     : null;
+  const floorplans = c.type === "building" ? await getFloorplans(c.slug) : [];
   const related = getRelated(c, 3);
   const gallery = c.gallery.filter((g) => g !== c.hero).slice(0, 5);
   const breakImage = gallery[0];
@@ -187,6 +190,7 @@ export default async function CommunityPage({
           <a href="#story">The Story</a>
           {gallery.length ? <a href="#gallery">Gallery</a> : null}
           <a href="#availability">Availability</a>
+          {floorplans.length ? <a href="#floorplans">Floor Plans</a> : null}
           <a href="#recent-sales">Recent Sales</a>
           <a href="#inquire">Inquire</a>
         </div>
@@ -362,6 +366,21 @@ export default async function CommunityPage({
                 <UnitCard key={u.mls_id} u={u} sold />
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {floorplans.length ? (
+          <section className="sec" id="floorplans" style={{ paddingTop: 0 }}>
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Floor Plans</p>
+                <h2 className="serif">Residences &amp; layouts.</h2>
+              </div>
+              <p className="sec-note">
+                {floorplans.length} plan{floorplans.length === 1 ? "" : "s"}
+              </p>
+            </div>
+            <Floorplans plans={floorplans} buildingName={c.name} />
           </section>
         ) : null}
       </div>
