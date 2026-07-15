@@ -150,20 +150,43 @@ export function pricePerSqft(l: Listing): string {
   if (!l.list_price || !l.sqft) return "—";
   return `$${Math.round(l.list_price / l.sqft).toLocaleString()}`;
 }
+/**
+ * Trestle bakes the unit onto the end of street_address
+ * ("3550 S Ocean Boulevard 3d") AND exposes it in unit_number ("3d"), so naive
+ * concatenation double-prints it ("...Boulevard 3d #3d"). Strip a trailing unit
+ * token from the street line, then re-append it cleanly as " #unit".
+ */
+function streetWithUnit(streetRaw: string, unitRaw: string | null | undefined): string {
+  let street = streetRaw.trim();
+  const unit = (unitRaw ?? "").trim();
+  if (unit) {
+    // Remove the unit if it's the final whitespace-delimited token (case-insensitive).
+    const re = new RegExp("\\s+" + unit.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&") + "$", "i");
+    street = street.replace(re, "").trim();
+    // "#" reads right for numeric units (#1814, #3d) but odd for word units
+    // ("#Penthouse"). Prefix only when the unit contains a digit.
+    const label = /\\d/.test(unit) ? `#${unit}` : unit;
+    return `${street} ${label}`.trim();
+  }
+  return street;
+}
+
 export function fullAddress(l: Listing): string {
-  const unit = l.unit_number ? ` #${l.unit_number}` : "";
-  return `${l.street_address ?? ""}${unit}`.trim();
+  // street_address includes the ", City, ST ZIP" tail; keep it for the full form
+  // but de-dupe the unit. Split off the locality tail, fix the unit, re-attach.
+  const [street, ...tail] = (l.street_address ?? "").split(",");
+  const fixed = streetWithUnit(street, l.unit_number);
+  return [fixed, ...tail.map((t) => t.trim())].filter(Boolean).join(", ");
 }
 
 /**
  * Just the street line — strips the ", City, ST ZIP" tail that Trestle bakes
- * into street_address. "911 N Ocean Boulevard, Palm Beach, FL 33480" ->
- * "911 N Ocean Boulevard". Used in breadcrumbs where city/state/zip is noise.
+ * into street_address, and de-dupes the unit. "3550 S Ocean Boulevard 3d" +
+ * unit "3d" -> "3550 S Ocean Boulevard #3d". Used in breadcrumbs.
  */
 export function streetOnly(l: Listing): string {
-  const raw = (l.street_address ?? "").split(",")[0].trim();
-  const unit = l.unit_number ? ` #${l.unit_number}` : "";
-  return `${raw}${unit}`.trim();
+  const street = (l.street_address ?? "").split(",")[0];
+  return streetWithUnit(street, l.unit_number);
 }
 export function mlsDisplay(l: Listing): string {
   return l.listing_id ? l.listing_id : `RX-${l.mls_id}`;
