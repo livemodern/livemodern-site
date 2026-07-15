@@ -154,6 +154,17 @@ export function fullAddress(l: Listing): string {
   const unit = l.unit_number ? ` #${l.unit_number}` : "";
   return `${l.street_address ?? ""}${unit}`.trim();
 }
+
+/**
+ * Just the street line — strips the ", City, ST ZIP" tail that Trestle bakes
+ * into street_address. "911 N Ocean Boulevard, Palm Beach, FL 33480" ->
+ * "911 N Ocean Boulevard". Used in breadcrumbs where city/state/zip is noise.
+ */
+export function streetOnly(l: Listing): string {
+  const raw = (l.street_address ?? "").split(",")[0].trim();
+  const unit = l.unit_number ? ` #${l.unit_number}` : "";
+  return `${raw}${unit}`.trim();
+}
 export function mlsDisplay(l: Listing): string {
   return l.listing_id ? l.listing_id : `RX-${l.mls_id}`;
 }

@@ -123,20 +123,16 @@ export default async function CommunityPage({
 
       <div className="wrap">
         <p className="crumb">
-          <Link href="/new-construction">Index</Link>
           {c.county ? (
-            <>
-              <span className="sl">/</span>
-              <Link href="/new-construction">{c.county}</Link>
-            </>
+            <Link href="/new-construction">{c.county}</Link>
           ) : null}
-          {c.city ? (
+          {c.city && c.city !== c.county ? (
             <>
-              <span className="sl">/</span>
+              {c.county ? <span className="sl">/</span> : null}
               <span>{c.city}</span>
             </>
           ) : null}
-          <span className="sl">/</span>
+          {c.county || (c.city && c.city !== c.county) ? <span className="sl">/</span> : null}
           {c.name}
         </p>
       </div>

@@ -13,6 +13,7 @@ import {
   money,
   pricePerSqft,
   fullAddress,
+  streetOnly,
   mlsDisplay,
   amenityList,
   mls,
@@ -120,21 +121,15 @@ export default async function ListingPage({
 
       <div className="wrap">
         <p className="crumb">
-          <Link href="/new-construction">Index</Link>
-          {l.city ? (
-            <>
-              <span className="sl">/</span>
-              <span>{l.city}</span>
-            </>
-          ) : null}
+          {l.city ? <span>{l.city}</span> : null}
           {community ? (
             <>
-              <span className="sl">/</span>
+              {l.city ? <span className="sl">/</span> : null}
               <Link href={`/${community.slug}`}>{community.name}</Link>
             </>
           ) : null}
-          <span className="sl">/</span>
-          {fullAddress(l)}
+          {l.city || community ? <span className="sl">/</span> : null}
+          {streetOnly(l)}
         </p>
       </div>
 
