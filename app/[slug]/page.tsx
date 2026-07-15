@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
+import ReadMore from "@/components/ReadMore";
 import Floorplans from "@/components/Floorplans";
 import { getAll, getBySlug, getRelated } from "@/lib/communities";
 import {
@@ -214,11 +215,7 @@ export default async function CommunityPage({
                 Words by Modern Living Group
                 {c.city ? ` · ${c.city}` : ""}
               </p>
-              <div className="body">
-                {c.body.map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </div>
+              <ReadMore className="body" paragraphs={c.body} keep={3} />
             </div>
 
             <aside className="sheet">

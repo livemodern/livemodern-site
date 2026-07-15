@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
+import ReadMore from "@/components/ReadMore";
 import { getBySlug } from "@/lib/communities";
 import {
   getListing,
@@ -197,7 +198,7 @@ export default async function ListingPage({
             {l.description ? (
               <section className="remarks">
                 <h2 className="sec-h serif">About this {presale ? "residence" : kind}</h2>
-                <p>{l.description}</p>
+                <ReadMore text={l.description} collapsedHeight={230} />
               </section>
             ) : null}
 

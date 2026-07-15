@@ -456,3 +456,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .bsearch-menu li button.on{background:var(--band)}
 .bs-name{font-size:14px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bs-city{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);flex:none}
+
+/* ── READ MORE (long listing remarks + building story) ── */
+.readmore-body{position:relative;overflow:hidden;transition:max-height .1s}
+.readmore-body.clamped::after{content:"";position:absolute;left:0;right:0;bottom:0;height:88px;
+  background:linear-gradient(to bottom,transparent,var(--paper))}
+.readmore-btn{margin-top:16px;background:none;border:0;padding:0;cursor:pointer;
+  font-family:var(--font-body),system-ui,sans-serif;font-size:10.5px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-2);border-bottom:1px solid var(--accent);padding-bottom:3px;
+  transition:color .2s}
+.readmore-btn:hover{color:var(--accent)}
