@@ -38,7 +38,6 @@ export default function Masthead({ active, user = null }: { active?: string; use
         <div className="masthead-top">
           <span>Palm Beach · Fort Lauderdale · Miami</span>
           <span className="issue">{count} towers in the index · Updated weekly</span>
-          <span>561 228 8420</span>
         </div>
         <div className="masthead-main">
           <Link href="/" className="logo" onClick={() => setOpen(false)}>
@@ -56,16 +55,21 @@ export default function Masthead({ active, user = null }: { active?: string; use
           </nav>
 
           <div className="mast-right">
-            {/* Desktop-only inline account link */}
-            {user ? (
-              <Link className="acct desk-only" href="/account">
-                {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
-              </Link>
-            ) : (
-              <Link className="acct desk-only" href="/login">
-                Login
-              </Link>
-            )}
+            {/* Desktop-only: phone stacked over the account link */}
+            <div className="mast-stack desk-only">
+              <a className="mast-tel" href="tel:5612288420">
+                561 228 8420
+              </a>
+              {user ? (
+                <Link className="acct" href="/account">
+                  {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
+                </Link>
+              ) : (
+                <Link className="acct" href="/login">
+                  Login
+                </Link>
+              )}
+            </div>
             <button
               className={`burger${open ? " open" : ""}`}
               aria-label="Menu"
