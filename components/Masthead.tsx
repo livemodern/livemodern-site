@@ -55,21 +55,9 @@ export default function Masthead({ active, user = null }: { active?: string; use
           </nav>
 
           <div className="mast-right">
-            {/* Desktop-only: phone stacked over the account link */}
-            <div className="mast-stack desk-only">
-              <a className="mast-tel" href="tel:5612288420">
-                561 228 8420
-              </a>
-              {user ? (
-                <Link className="acct" href="/account">
-                  {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
-                </Link>
-              ) : (
-                <Link className="acct" href="/login">
-                  Login
-                </Link>
-              )}
-            </div>
+            <a className="mast-tel desk-only" href="tel:5612288420">
+              561 228 8420
+            </a>
             <button
               className={`burger${open ? " open" : ""}`}
               aria-label="Menu"
@@ -82,6 +70,17 @@ export default function Masthead({ active, user = null }: { active?: string; use
             </button>
           </div>
         </div>
+
+        {/* Desktop: Login sits BELOW the masthead rule, right-aligned in the crumb row */}
+        {user ? (
+          <Link className="mast-login acct desk-only" href="/account">
+            {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
+          </Link>
+        ) : (
+          <Link className="mast-login acct desk-only" href="/login">
+            Login
+          </Link>
+        )}
       </div>
 
       {/* Slide-in drawer (mobile) */}
