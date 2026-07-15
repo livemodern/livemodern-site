@@ -25,7 +25,11 @@ export default function ReadMore({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [overflows, setOverflows] = useState(false);
+  // Text mode: assume long strings overflow so the FIRST paint is already
+  // clamped (no post-load height shrink that would shift a restored scroll
+  // position on refresh). useLayoutEffect corrects it precisely after mount.
+  const initialOverflow = !Array.isArray(paragraphs) && (text?.length ?? 0) > 320;
+  const [overflows, setOverflows] = useState(initialOverflow);
   const ref = useRef<HTMLDivElement>(null);
 
   const paraMode = Array.isArray(paragraphs);
