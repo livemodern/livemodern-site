@@ -76,28 +76,23 @@ export default function Home() {
           ) : null}
           <div className="cover-txt">
             <div className="wrap">
-              <p className="eyebrow">The new-construction index · Palm Beach to Miami</p>
               <h1 className="serif">
                 See it before
                 <br />
                 it&rsquo;s <em>built</em>.
               </h1>
               <p className="dek">
-                South Florida&rsquo;s pre-construction towers &mdash; toured privately with the
-                developer, wherever you are. One curated register of what&rsquo;s rising.
+                South Florida&rsquo;s pre-construction towers, toured privately with the developer &mdash;
+                wherever you are.
               </p>
               <div className="cover-cta">
                 <a className="btn btn-solid" href="#inquire">
                   Tour live with the developer
                 </a>
-                <Link className="btn btn-ghost" href="/new-construction">
-                  Browse the index
+                <Link className="cover-link" href="/new-construction">
+                  Browse the index &rarr;
                 </Link>
               </div>
-              <p className="cover-note">
-                Can&rsquo;t fly in? Most of our buyers see these residences over a private video
-                presentation first. In season, we&rsquo;ll walk the showroom together.
-              </p>
             </div>
           </div>
         </div>
