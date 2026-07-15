@@ -6,6 +6,7 @@ import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
 import ReadMore from "@/components/ReadMore";
+import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import { getAll, getBySlug, getRelated } from "@/lib/communities";
 import {
@@ -195,16 +196,16 @@ export default async function CommunityPage({
         </div>
       </div>
 
-      <nav className="subnav">
-        <div className="subnav-in">
-          <a href="#story">The Story</a>
-          {gallery.length ? <a href="#gallery">Gallery</a> : null}
-          <a href="#availability">Availability</a>
-          {floorplans.length ? <a href="#floorplans">Floor Plans</a> : null}
-          <a href="#recent-sales">Recent Sales</a>
-          <a href="#inquire">Inquire</a>
-        </div>
-      </nav>
+      <SubNav
+        items={[
+          { href: "#story", label: "The Story" },
+          ...(gallery.length ? [{ href: "#gallery", label: "Gallery" }] : []),
+          { href: "#availability", label: "Availability" },
+          ...(floorplans.length ? [{ href: "#floorplans", label: "Floor Plans" }] : []),
+          ...(inventory.recentSales.length ? [{ href: "#recent-sales", label: "Recent Sales" }] : []),
+          { href: "#inquire", label: "Inquire" },
+        ]}
+      />
 
       <div className="wrap" id="story">
         <section className="feature">
