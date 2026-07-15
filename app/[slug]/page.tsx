@@ -10,6 +10,7 @@ import { getAll, getBySlug, getRelated } from "@/lib/communities";
 import {
   getBuildingInventory,
   getFloorplans,
+  isPending,
   mls,
   mlsSrcSet,
   money,
@@ -46,7 +47,14 @@ export async function generateMetadata({
 function UnitCard({ u, rent, sold }: { u: Listing; rent?: boolean; sold?: boolean }) {
   const photo = (u.image_urls ?? [])[0];
   const price = sold ? (u.close_price ?? u.list_price) : u.list_price;
-  const tag = sold ? "Sold" : rent ? `${money(u.list_price)}/mo` : u.status === "ActiveUnderContract" ? "Under Contract" : "For Sale";
+  const pending = u.status === "ActiveUnderContract" || u.status === "Pending";
+  const tag = sold
+    ? "Sold"
+    : rent
+      ? `${money(u.list_price)}/mo`
+      : pending
+        ? "Under Contract"
+        : "For Sale";
   return (
     <a className="unit" href={`/listing/${u.mls_id}`}>
       <div className="unit-im">
@@ -85,10 +93,11 @@ export default async function CommunityPage({
   const c = getBySlug(slug);
   if (!c) notFound();
 
-  const inventory = c.type === "building" ? await getBuildingInventory(c.slug) : { forSale: [], forRent: [], recentSales: [], activeCount: 0 };
+  const inventory = c.type === "building" ? await getBuildingInventory(c.slug) : { forSale: [], forRent: [], recentSales: [], activeCount: 0, pendingCount: 0 };
   const hasInventory = inventory.activeCount > 0 || inventory.recentSales.length > 0;
-  const priceFrom = inventory.forSale.length
-    ? Math.min(...inventory.forSale.map((u) => u.list_price ?? Infinity).filter((n) => Number.isFinite(n)))
+  const availableSale = inventory.forSale.filter((u) => !isPending(u));
+  const priceFrom = availableSale.length
+    ? Math.min(...availableSale.map((u) => u.list_price ?? Infinity).filter((n) => Number.isFinite(n)))
     : null;
   const floorplans = c.type === "building" ? await getFloorplans(c.slug) : [];
   const related = getRelated(c, 3);
@@ -301,9 +310,16 @@ export default async function CommunityPage({
               <h2 className="serif">
                 {inventory.activeCount > 0
                   ? `${inventory.activeCount} residence${inventory.activeCount === 1 ? "" : "s"} available.`
-                  : "Residences for sale."}
+                  : inventory.pendingCount > 0
+                    ? "Currently under contract."
+                    : "Residences for sale."}
               </h2>
             </div>
+            {inventory.pendingCount > 0 ? (
+              <p className="sec-note">
+                {inventory.pendingCount} under contract
+              </p>
+            ) : null}
           </div>
 
           {inventory.forSale.length > 0 ? (

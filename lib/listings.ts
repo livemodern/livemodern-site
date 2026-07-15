@@ -206,13 +206,18 @@ export function amenityList(raw: string | null): string[] {
 // ── Building inventory (for community pages that map to real MLS rows) ───────
 
 export type BuildingInventory = {
-  forSale: Listing[];
+  forSale: Listing[]; // truly available (Active/ComingSoon/New) + pending, in that order
   forRent: Listing[];
   recentSales: Listing[];
-  activeCount: number;
+  activeCount: number; // AVAILABLE only — excludes Pending / Under Contract
+  pendingCount: number;
 };
 
-const ACTIVE_SALE = ["Active", "ActiveUnderContract", "ComingSoon", "Pending"];
+// What counts as genuinely AVAILABLE. Pending + ActiveUnderContract are under
+// contract — shown in the grid (sorted last, tagged) but NOT counted as
+// available and NOT labeled "For Sale". Matches mlg-site/src/lib/community.ts.
+const AVAILABLE = new Set(["Active", "ComingSoon"]);
+const PENDING = new Set(["Pending", "ActiveUnderContract"]);
 
 /** Rentals come back as ResidentialLease from Trestle; also small $ list_price. */
 function isRental(l: Listing): boolean {
@@ -222,19 +227,35 @@ function isRental(l: Listing): boolean {
   return (l.list_price ?? 0) > 0 && (l.list_price ?? 0) < 50000;
 }
 
+/** Is this listing under contract (not available)? Drives the card tag + count. */
+export function isPending(l: Listing): boolean {
+  return PENDING.has(l.status ?? "");
+}
+
 /**
  * Live inventory for a building, keyed on properties.community_slug. Returns
  * empty arrays when the building has no MLS rows (pre-construction / off-market),
  * so the page shows the "not on the MLS" state. Uses the service key when set,
  * else returns empty (baked build has no live listing data for arbitrary slugs).
+ *
+ * `activeCount` counts ONLY available units (Active/ComingSoon) — a pre-con
+ * building with 42 developer-contract Pendings + 9 Actives reads "9 available",
+ * not "52". Pending/AUC still render (sorted last, tagged "Under Contract").
  */
 export async function getBuildingInventory(communitySlug: string): Promise<BuildingInventory> {
-  const empty: BuildingInventory = { forSale: [], forRent: [], recentSales: [], activeCount: 0 };
+  const empty: BuildingInventory = {
+    forSale: [],
+    forRent: [],
+    recentSales: [],
+    activeCount: 0,
+    pendingCount: 0,
+  };
   if (!SB_KEY || !communitySlug) return empty;
   try {
     const url =
       `${SB_URL}/rest/v1/properties?community_slug=eq.${encodeURIComponent(communitySlug)}` +
-      `&status=in.(Active,ActiveUnderContract,ComingSoon,Pending,Closed)` +
+      `&status=in.(Active,ComingSoon,Pending,ActiveUnderContract,Closed)` +
+      `&dup_suppressed=eq.false` +
       `&select=${COLS},close_price,close_date&order=list_price.desc&limit=300`;
     const res = await fetch(url, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
@@ -242,14 +263,28 @@ export async function getBuildingInventory(communitySlug: string): Promise<Build
     });
     if (!res.ok) return empty;
     const rows = (await res.json()) as (Listing & { close_price?: number; close_date?: string })[];
-    const active = rows.filter((r) => ACTIVE_SALE.includes(r.status ?? ""));
-    const forRent = active.filter(isRental);
-    const forSale = active.filter((r) => !isRental(r));
+
+    const live = rows.filter((r) => AVAILABLE.has(r.status ?? "") || PENDING.has(r.status ?? ""));
+    const forRent = live.filter(isRental);
+    const sale = live.filter((r) => !isRental(r));
+
+    // Order: available first (high→low, already sorted by the query), pending last.
+    const available = sale.filter((r) => !isPending(r));
+    const pending = sale.filter(isPending);
+    const forSale = [...available, ...pending];
+
     const recentSales = rows
       .filter((r) => r.status === "Closed" && r.close_price)
       .sort((a, b) => (b.close_price ?? 0) - (a.close_price ?? 0))
       .slice(0, 6);
-    return { forSale, forRent, recentSales, activeCount: forSale.length + forRent.length };
+
+    return {
+      forSale,
+      forRent,
+      recentSales,
+      activeCount: available.length + forRent.length, // available only
+      pendingCount: pending.length,
+    };
   } catch {
     return empty;
   }
