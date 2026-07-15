@@ -103,13 +103,13 @@ export default function Masthead({ active, user = null }: { active?: string; use
           <Link href="/modern-homes" onClick={() => setOpen(false)}>
             Modern Homes
           </Link>
-          <Link href="/new-construction?county=Palm+Beach" onClick={() => setOpen(false)}>
+          <Link href="/palm-beach-condos-for-sale" onClick={() => setOpen(false)}>
             Palm Beach
           </Link>
-          <Link href="/new-construction?county=Broward" onClick={() => setOpen(false)}>
+          <Link href="/fort-lauderdale-condos-for-sale" onClick={() => setOpen(false)}>
             Fort Lauderdale
           </Link>
-          <Link href="/new-construction?county=Miami-Dade" onClick={() => setOpen(false)}>
+          <Link href="/miami-luxury-condos" onClick={() => setOpen(false)}>
             Miami
           </Link>
           <a href="#inquire" onClick={() => setOpen(false)}>

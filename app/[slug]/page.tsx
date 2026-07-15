@@ -8,7 +8,8 @@ import LeadBand from "@/components/LeadBand";
 import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
-import { getAll, getBySlug, getRelated } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS } from "@/lib/communities";
+import CityIndex from "@/components/CityIndex";
 import {
   getBuildingInventory,
   getFloorplans,
@@ -103,6 +104,21 @@ export default async function CommunityPage({
     : null;
   const floorplans = c.type === "building" ? await getFloorplans(c.slug) : [];
   const related = getRelated(c, 3);
+  const hub = hubBySlug(c.slug);
+  const hubBuildings = hub
+    ? getBuildings()
+        .filter((b) => b.county === hub.county)
+        .map((b) => ({ slug: b.slug, name: b.name, city: b.city, hero: b.hero, lifestyles: b.lifestyles }))
+    : [];
+  const hubCollections = hub
+    ? getAll().filter(
+        (x) =>
+          x.type === "collection" &&
+          x.slug !== c.slug &&
+          !CITY_HUBS.some((h) => h.slug === x.slug) &&
+          (x.county === hub.county || (x.name.toLowerCase().includes(hub.label.toLowerCase()))),
+      )
+    : [];
   const gallery = c.gallery.filter((g) => g !== c.hero).slice(0, 5);
   const breakImage = gallery[0];
   const grid = gallery.slice(1, 6);
@@ -138,12 +154,20 @@ export default async function CommunityPage({
       <div className="wrap">
         <p className="crumb">
           {c.county ? (
-            <Link href="/new-construction">{c.county}</Link>
+            hubForCounty(c.county) ? (
+              <Link href={`/${hubForCounty(c.county)!.slug}`}>{c.county}</Link>
+            ) : (
+              <Link href="/new-construction">{c.county}</Link>
+            )
           ) : null}
           {c.city && c.city !== c.county ? (
             <>
               {c.county ? <span className="sl">/</span> : null}
-              <span>{c.city}</span>
+              {hubForCounty(c.county) ? (
+                <Link href={`/${hubForCounty(c.county)!.slug}#area-${areaAnchor(c.city)}`}>{c.city}</Link>
+              ) : (
+                <span>{c.city}</span>
+              )}
             </>
           ) : null}
           {c.county || (c.city && c.city !== c.county) ? <span className="sl">/</span> : null}
@@ -159,7 +183,7 @@ export default async function CommunityPage({
               {c.city ? `${c.city} · ` : ""}
               {isBuilding ? "New Construction" : "Collection"}
             </p>
-            <h1 className="serif">{c.name}</h1>
+            <h1 className="serif">{hub ? hub.label : c.name.replace(/ \/\/ LiveModern$/, "")}</h1>
           </div>
         </div>
       </section>
@@ -197,14 +221,22 @@ export default async function CommunityPage({
       </div>
 
       <SubNav
-        items={[
-          { href: "#story", label: "The Story" },
-          ...(gallery.length ? [{ href: "#gallery", label: "Gallery" }] : []),
-          { href: "#availability", label: "Availability" },
-          ...(floorplans.length ? [{ href: "#floorplans", label: "Floor Plans" }] : []),
-          ...(inventory.recentSales.length ? [{ href: "#recent-sales", label: "Recent Sales" }] : []),
-          { href: "#inquire", label: "Inquire" },
-        ]}
+        items={
+          hub
+            ? [
+                { href: "#story", label: "The Story" },
+                { href: "#the-index", label: "The Index" },
+                { href: "#inquire", label: "Inquire" },
+              ]
+            : [
+                { href: "#story", label: "The Story" },
+                ...(gallery.length ? [{ href: "#gallery", label: "Gallery" }] : []),
+                { href: "#availability", label: "Availability" },
+                ...(floorplans.length ? [{ href: "#floorplans", label: "Floor Plans" }] : []),
+                ...(inventory.recentSales.length ? [{ href: "#recent-sales", label: "Recent Sales" }] : []),
+                { href: "#inquire", label: "Inquire" },
+              ]
+        }
       />
 
       <div className="wrap" id="story">
@@ -275,7 +307,46 @@ export default async function CommunityPage({
         </>
       ) : null}
 
-      {grid.length ? (
+      {hub ? (
+        <div className="wrap">
+          <section className="sec" id="the-index">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">The {hub.label} Index</p>
+                <h2 className="serif">
+                  {hubBuildings.length} buildings, by area.
+                </h2>
+              </div>
+            </div>
+            <CityIndex buildings={hubBuildings} />
+          </section>
+
+          {hubCollections.length ? (
+            <section className="sec" style={{ paddingTop: 0 }}>
+              <div className="sec-head">
+                <div>
+                  <p className="eyebrow">Curated</p>
+                  <h2 className="serif">Browse by lifestyle.</h2>
+                </div>
+              </div>
+              <div className="cidx-grid">
+                {hubCollections.map((x) => (
+                  <Link key={x.slug} href={`/${x.slug}`} className="cidx-card">
+                    <span className="cidx-im">
+                      <img src={`https://images.livemodern.com/cdn-cgi/image/width=480,quality=80,format=auto/${x.hero}`} alt={x.name} loading="lazy" />
+                    </span>
+                    <span className="cidx-bd">
+                      <span className="cidx-name serif">{x.name.replace(/ \/\/ LiveModern$/, "")}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!hub && grid.length ? (
         <div className="wrap">
           <section className="sec" id="gallery">
             <div className="sec-head">
@@ -300,6 +371,7 @@ export default async function CommunityPage({
         </div>
       ) : null}
 
+      {hub ? null : (
       <div className="wrap">
         <section className="sec" id="availability" style={{ paddingTop: 0 }}>
           <div className="sec-head">
@@ -398,6 +470,7 @@ export default async function CommunityPage({
           </section>
         ) : null}
       </div>
+      )}
 
       <LeadBand
         eyebrow={c.name}

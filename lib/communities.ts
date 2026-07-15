@@ -11,7 +11,28 @@ export type Community = {
   seoTitle: string;
   body: string[];
   gallery: string[];
+  lifestyles?: string[];
 };
+
+/** The three city hub pages (old-site "View All" URLs, preserved slugs). */
+export const CITY_HUBS: { slug: string; county: string; label: string }[] = [
+  { slug: "palm-beach-condos-for-sale", county: "Palm Beach", label: "Palm Beach" },
+  { slug: "fort-lauderdale-condos-for-sale", county: "Broward", label: "Fort Lauderdale" },
+  { slug: "miami-luxury-condos", county: "Miami-Dade", label: "Miami" },
+];
+
+export function hubForCounty(county: string | null): { slug: string; label: string } | undefined {
+  return CITY_HUBS.find((h) => h.county === county);
+}
+
+export function hubBySlug(slug: string): { slug: string; county: string; label: string } | undefined {
+  return CITY_HUBS.find((h) => h.slug === slug);
+}
+
+/** URL-safe anchor for an area heading, e.g. "Sunny Isles Beach" -> "sunny-isles-beach". */
+export function areaAnchor(city: string): string {
+  return city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
 
 /**
  * Content source.
