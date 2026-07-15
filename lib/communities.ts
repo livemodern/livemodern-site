@@ -104,3 +104,18 @@ export function cf(url: string, w: number, q = 78): string {
 export function cfSrcSet(url: string, widths: number[], q = 78): string {
   return url ? widths.map((w) => `${cf(url, w, q)} ${w}w`).join(", ") : "";
 }
+
+
+/** Count buildings per lifestyle tag (excludes the universal "New Construction"). */
+export function lifestyleCounts(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of getBuildings())
+    for (const t of c.lifestyles ?? [])
+      if (t !== "New Construction") out[t] = (out[t] ?? 0) + 1;
+  return out;
+}
+
+/** Buildings carrying a given lifestyle tag, best-hero first. */
+export function buildingsByLifestyle(tag: string): Community[] {
+  return getBuildings().filter((c) => (c.lifestyles ?? []).includes(tag));
+}

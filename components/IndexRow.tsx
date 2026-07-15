@@ -13,7 +13,7 @@ export default function IndexRow({ c }: { c: Community }) {
           {c.city && c.county ? <span className="sep">/</span> : null}
           {c.county ? <span>{c.county}</span> : null}
           <span className="sep">/</span>
-          <span className="pill pill--live">New Construction</span>
+          <span className="pill pill--live">Now Rising</span>
         </div>
       </div>
       <div className="row-p">

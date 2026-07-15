@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
-import IndexRow from "@/components/IndexRow";
+import IndexFilter from "@/components/IndexFilter";
 import { getBuildings, COUNTIES } from "@/lib/communities";
+import { Suspense } from "react";
 
 export const revalidate = 3600;
 
@@ -15,12 +16,6 @@ export const metadata: Metadata = {
 
 export default function NewConstruction() {
   const buildings = getBuildings();
-  const byCounty = COUNTIES.map((county) => ({
-    county,
-    rows: buildings
-      .filter((b) => b.county === county)
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  }));
 
   return (
     <>
@@ -38,23 +33,9 @@ export default function NewConstruction() {
           </p>
         </section>
 
-        {byCounty.map(({ county, rows }) => (
-          <section className="sec" key={county} style={{ paddingBottom: 0 }}>
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">
-                  {county} &middot; {rows.length} towers
-                </p>
-                <h2 className="serif">{county}</h2>
-              </div>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              {rows.map((c) => (
-                <IndexRow key={c.slug} c={c} />
-              ))}
-            </div>
-          </section>
-        ))}
+        <Suspense fallback={null}>
+          <IndexFilter buildings={buildings} counties={[...COUNTIES]} />
+        </Suspense>
 
         <div style={{ height: 80 }} />
       </div>
