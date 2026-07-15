@@ -13,12 +13,16 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  background:var(--paper);color:var(--ink);
+  background:var(--paper);color:var(--ink);overflow-x:hidden;
   font-family:var(--font-body),system-ui,-apple-system,sans-serif;
   font-weight:300;line-height:1.65;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
 }
 img{display:block;max-width:100%}
+/* iOS Safari zooms into any input/select/textarea with font-size < 16px on
+   focus, which throws off the viewport width and doesn't reset cleanly. Force
+   16px on all form controls to prevent the zoom. */
+input,select,textarea{font-size:16px}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -159,7 +163,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .form{display:grid;gap:14px}
 .form input,.form select,.form textarea{width:100%;padding:14px 0;background:none;border:0;
   border-bottom:1px solid rgba(255,255,255,.24);color:#fff;
-  font-family:inherit;font-size:14px;font-weight:300}
+  font-family:inherit;font-size:16px;font-weight:300}
 .form input::placeholder,.form textarea::placeholder{color:rgba(255,255,255,.42)}
 .form input:focus,.form select:focus,.form textarea:focus{outline:none;border-bottom-color:var(--accent)}
 .form select{color:rgba(255,255,255,.6)}
@@ -341,7 +345,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .agent .ghost:hover{border-color:var(--ink)}
 .a-form{display:grid;gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
 .a-form input,.a-form textarea{width:100%;padding:12px 0;border:0;border-bottom:1px solid var(--line);
-  font:inherit;font-size:14px;font-weight:300;background:none}
+  font:inherit;font-size:16px;font-weight:300;background:none}
 .a-form input:focus,.a-form textarea:focus{outline:none;border-bottom-color:var(--accent)}
 .a-form .btn{width:100%}
 .a-fine{font-size:10.5px;color:var(--muted);letter-spacing:.02em}
@@ -426,6 +430,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   z-index:8001;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.1,1);
   display:flex;flex-direction:column;padding:22px 26px 28px;box-shadow:-20px 0 60px rgba(0,0,0,.12);overflow-y:auto}
 .drawer.open{transform:translateX(0)}
+.drawer *{max-width:100%}
 @media(min-width:1040px){.drawer,.drawer-scrim{display:none}}
 .drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
 .drawer-eyebrow{font-size:9.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
@@ -442,12 +447,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* building search (used in drawer; reusable) */
 .bsearch{position:relative}
 .bsearch input{width:100%;padding:13px 0;border:0;border-bottom:1px solid var(--rule);background:none;
-  font:inherit;font-size:15px;font-weight:300}
+  font:inherit;font-size:16px;font-weight:300}
 .bsearch input:focus{outline:none;border-bottom-color:var(--accent)}
 .bsearch input::placeholder{color:var(--muted);letter-spacing:.01em}
 .bsearch-menu{list-style:none;margin:0;padding:6px 0 0;position:relative}
-.bsearch-menu li button{display:flex;justify-content:space-between;align-items:baseline;gap:12px;width:100%;
+.bsearch-menu li button{display:flex;justify-content:space-between;align-items:baseline;gap:12px;width:100%;max-width:100%;
   text-align:left;background:none;border:0;padding:11px 4px;font:inherit;cursor:pointer;border-bottom:1px solid var(--line)}
 .bsearch-menu li button.on{background:var(--band)}
-.bs-name{font-size:14px;color:var(--ink)}
+.bs-name{font-size:14px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bs-city{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);flex:none}

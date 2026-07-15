@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Poppins } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,13 @@ const body = Poppins({
 });
 
 const indexable = process.env.SITE_INDEXABLE === "true";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Do NOT set maximumScale/userScalable=no — that harms accessibility and
+  // isn't needed. The real fix for the iOS focus-zoom is 16px+ inputs (below).
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.livemodern.com"),
