@@ -9,7 +9,7 @@ import { getBuildings } from "@/lib/communities";
 type MastheadUser = { firstName?: string | null } | null;
 type NavItem = { slug: string; name: string; city: string | null; county: string | null };
 
-export default function Masthead({ active, user = null }: { active?: string; user?: MastheadUser }) {
+export default function Masthead({ active, user = null, loginBand }: { active?: string; user?: MastheadUser; loginBand?: boolean }) {
   const [open, setOpen] = useState(false);
   const buildings: NavItem[] = getBuildings().map((b) => ({
     slug: b.slug,
@@ -70,16 +70,16 @@ export default function Masthead({ active, user = null }: { active?: string; use
             </button>
           </div>
 
-          {/* Desktop: Login sits BELOW the masthead rule, right-aligned with the content column */}
-          {user ? (
+          {/* Desktop: Login sits BELOW the masthead rule — only on pages with a crumb band */}
+          {loginBand && user ? (
             <Link className="mast-login acct desk-only" href="/account">
               {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
             </Link>
-          ) : (
+          ) : loginBand ? (
             <Link className="mast-login acct desk-only" href="/login">
               Login
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
 

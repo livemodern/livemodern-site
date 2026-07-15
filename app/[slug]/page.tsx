@@ -156,7 +156,7 @@ export default async function CommunityPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Masthead active={isBuilding ? "nc" : "homes"} />
+      <Masthead active={isBuilding ? "nc" : "homes"} loginBand />
 
       <div className="wrap">
         <p className="crumb">

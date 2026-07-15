@@ -118,7 +118,7 @@ export default async function ListingPage({
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Masthead active={presale ? "nc" : undefined} />
+      <Masthead active={presale ? "nc" : undefined} loginBand />
 
       <div className="wrap">
         <p className="crumb">
