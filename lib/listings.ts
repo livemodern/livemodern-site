@@ -81,6 +81,8 @@ export type Listing = {
   building_amenities: string | null;
   community_slug: string | null;
   status: string | null;
+  close_price?: number | null;
+  close_date?: string | null;
 };
 
 const SAMPLE = sample as Listing[];
@@ -164,4 +166,57 @@ export function amenityList(raw: string | null): string[] {
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => s.replace(/([a-z])([A-Z])/g, "$1 $2"));
+}
+
+
+// ── Building inventory (for community pages that map to real MLS rows) ───────
+
+export type BuildingInventory = {
+  forSale: Listing[];
+  forRent: Listing[];
+  recentSales: Listing[];
+  activeCount: number;
+};
+
+const ACTIVE_SALE = ["Active", "ActiveUnderContract", "ComingSoon", "Pending"];
+
+/** Rentals come back as ResidentialLease from Trestle; also small $ list_price. */
+function isRental(l: Listing): boolean {
+  const t = (l.property_type ?? "").toLowerCase();
+  if (t.includes("lease") || t.includes("rental")) return true;
+  // Heuristic backstop: a "sale" under $50k in these buildings is a monthly rent.
+  return (l.list_price ?? 0) > 0 && (l.list_price ?? 0) < 50000;
+}
+
+/**
+ * Live inventory for a building, keyed on properties.community_slug. Returns
+ * empty arrays when the building has no MLS rows (pre-construction / off-market),
+ * so the page shows the "not on the MLS" state. Uses the service key when set,
+ * else returns empty (baked build has no live listing data for arbitrary slugs).
+ */
+export async function getBuildingInventory(communitySlug: string): Promise<BuildingInventory> {
+  const empty: BuildingInventory = { forSale: [], forRent: [], recentSales: [], activeCount: 0 };
+  if (!SB_KEY || !communitySlug) return empty;
+  try {
+    const url =
+      `${SB_URL}/rest/v1/properties?community_slug=eq.${encodeURIComponent(communitySlug)}` +
+      `&status=in.(Active,ActiveUnderContract,ComingSoon,Pending,Closed)` +
+      `&select=${COLS},close_price,close_date&order=list_price.desc&limit=300`;
+    const res = await fetch(url, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+      next: { revalidate: 900 },
+    });
+    if (!res.ok) return empty;
+    const rows = (await res.json()) as (Listing & { close_price?: number; close_date?: string })[];
+    const active = rows.filter((r) => ACTIVE_SALE.includes(r.status ?? ""));
+    const forRent = active.filter(isRental);
+    const forSale = active.filter((r) => !isRental(r));
+    const recentSales = rows
+      .filter((r) => r.status === "Closed" && r.close_price)
+      .sort((a, b) => (b.close_price ?? 0) - (a.close_price ?? 0))
+      .slice(0, 6);
+    return { forSale, forRent, recentSales, activeCount: forSale.length + forRent.length };
+  } catch {
+    return empty;
+  }
 }

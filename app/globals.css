@@ -351,3 +351,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .bmls{width:56px;height:auto;flex:none;object-fit:contain}
 .compliance p{font-size:10.5px;color:var(--muted);line-height:1.7;max-width:110ch}
 .compliance .courtesy{color:var(--ink-2)}
+
+/* ── BUILDING PAGE: live MLS unit cards ── */
+.unit-grid{display:grid;grid-template-columns:1fr;gap:2px;margin-top:8px}
+@media(min-width:640px){.unit-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:1000px){.unit-grid{grid-template-columns:repeat(3,1fr)}}
+.unit{border:1px solid var(--line);transition:border-color .3s;display:block}
+.unit:hover{border-color:var(--ink)}
+.unit-im{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--band)}
+.unit-im img{width:100%;height:100%;object-fit:cover;transition:transform 1s cubic-bezier(.2,.7,.2,1)}
+.unit:hover .unit-im img{transform:scale(1.04)}
+.unit-tag{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.94);
+  padding:5px 11px;font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
+.unit-bd{padding:18px}
+.unit-p{font-size:23px;line-height:1}
+.unit-a{margin-top:6px;font-size:13px;color:var(--ink-2)}
+.unit-s{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:14px;
+  font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}

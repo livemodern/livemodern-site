@@ -6,6 +6,15 @@ import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
 import { getAll, getBySlug, getRelated } from "@/lib/communities";
+import {
+  getBuildingInventory,
+  mls,
+  mlsSrcSet,
+  money,
+  pricePerSqft,
+  fullAddress,
+  type Listing,
+} from "@/lib/listings";
 
 export const revalidate = 3600;
 
@@ -32,6 +41,39 @@ export async function generateMetadata({
   };
 }
 
+function UnitCard({ u, rent, sold }: { u: Listing; rent?: boolean; sold?: boolean }) {
+  const photo = (u.image_urls ?? [])[0];
+  const price = sold ? (u.close_price ?? u.list_price) : u.list_price;
+  const tag = sold ? "Sold" : rent ? `${money(u.list_price)}/mo` : u.status === "ActiveUnderContract" ? "Under Contract" : "For Sale";
+  return (
+    <a className="unit" href={`/listing/${u.mls_id}`}>
+      <div className="unit-im">
+        {photo ? (
+          <img
+            src={mls(photo, 600)}
+            srcSet={mlsSrcSet(photo, [390, 600])}
+            sizes="(max-width:640px) 100vw, 33vw"
+            alt={`${u.building_name ?? ""} ${u.unit_number ?? ""}`}
+            loading="lazy"
+          />
+        ) : null}
+        <span className="unit-tag">{tag}</span>
+      </div>
+      <div className="unit-bd">
+        <div className="unit-p serif">{sold ? money(price) : rent ? `${money(u.list_price)}/mo` : money(u.list_price)}</div>
+        <div className="unit-a">
+          {u.unit_number ? `Residence ${u.unit_number}` : fullAddress(u)}
+        </div>
+        <div className="unit-s">
+          <span>{u.beds ?? "—"} Bed</span>
+          <span>{u.baths ?? "—"} Bath</span>
+          <span>{u.sqft ? u.sqft.toLocaleString() : "—"} SF</span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
 export default async function CommunityPage({
   params,
 }: {
@@ -41,6 +83,11 @@ export default async function CommunityPage({
   const c = getBySlug(slug);
   if (!c) notFound();
 
+  const inventory = c.type === "building" ? await getBuildingInventory(c.slug) : { forSale: [], forRent: [], recentSales: [], activeCount: 0 };
+  const hasInventory = inventory.activeCount > 0 || inventory.recentSales.length > 0;
+  const priceFrom = inventory.forSale.length
+    ? Math.min(...inventory.forSale.map((u) => u.list_price ?? Infinity).filter((n) => Number.isFinite(n)))
+    : null;
   const related = getRelated(c, 3);
   const gallery = c.gallery.filter((g) => g !== c.hero).slice(0, 5);
   const breakImage = gallery[0];
@@ -128,11 +175,13 @@ export default async function CommunityPage({
           </div>
           <div className="stat">
             <p className="caps">Status</p>
-            <div className="v serif">{isBuilding ? "Now Selling" : "Curated"}</div>
+            <div className="v serif">
+              {inventory.activeCount > 0 ? `${inventory.activeCount} Available` : isBuilding ? "Now Selling" : "Curated"}
+            </div>
           </div>
           <div className="stat">
-            <p className="caps">Priced from</p>
-            <div className="v serif">On request</div>
+            <p className="caps">{priceFrom ? "Priced from" : "Pricing"}</p>
+            <div className="v serif">{priceFrom ? money(priceFrom) : "On request"}</div>
           </div>
         </div>
       </div>
@@ -142,6 +191,7 @@ export default async function CommunityPage({
           <a href="#story">The Story</a>
           {gallery.length ? <a href="#gallery">Gallery</a> : null}
           <a href="#availability">Availability</a>
+          <a href="#recent-sales">Recent Sales</a>
           <a href="#inquire">Inquire</a>
         </div>
       </nav>
@@ -248,34 +298,76 @@ export default async function CommunityPage({
           <div className="sec-head">
             <div>
               <p className="eyebrow">Availability</p>
-              <h2 className="serif">Residences for sale.</h2>
+              <h2 className="serif">
+                {inventory.activeCount > 0
+                  ? `${inventory.activeCount} residence${inventory.activeCount === 1 ? "" : "s"} available.`
+                  : "Residences for sale."}
+              </h2>
             </div>
           </div>
-          <div className="avail">
-            <div className="avail-txt">
-              <p className="caps">No public listings</p>
-              <h3 className="serif">Inventory here isn&rsquo;t on the MLS.</h3>
-              <p>
-                Residences at {c.name} are sold through the developer&rsquo;s sales gallery, not the
-                open market. We hold the current pricing sheet, the available lines, and the deposit
-                schedule.
-              </p>
-              <a className="btn btn-dark" href="#inquire">
-                Request availability
-              </a>
+
+          {inventory.forSale.length > 0 ? (
+            <div className="unit-grid">
+              {inventory.forSale.map((u) => (
+                <UnitCard key={u.mls_id} u={u} />
+              ))}
             </div>
-            <div className="avail-img">
-              {gallery[1] || c.hero ? (
-                <Img
-                  src={gallery[1] ?? c.hero}
-                  alt=""
-                  fill
-                  sizes="(max-width:860px) 100vw, 45vw"
-                />
-              ) : null}
+          ) : null}
+
+          {inventory.forRent.length > 0 ? (
+            <>
+              <div className="sec-head" style={{ marginTop: 48 }}>
+                <div>
+                  <p className="eyebrow">For Lease</p>
+                  <h2 className="serif">Also available to rent.</h2>
+                </div>
+              </div>
+              <div className="unit-grid">
+                {inventory.forRent.map((u) => (
+                  <UnitCard key={u.mls_id} u={u} rent />
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {!hasInventory ? (
+            <div className="avail">
+              <div className="avail-txt">
+                <p className="caps">No public listings</p>
+                <h3 className="serif">Inventory here isn&rsquo;t on the MLS.</h3>
+                <p>
+                  Residences at {c.name} are sold through the developer&rsquo;s sales gallery, not the
+                  open market. We hold the current pricing sheet, the available lines, and the deposit
+                  schedule.
+                </p>
+                <a className="btn btn-dark" href="#inquire">
+                  Request availability
+                </a>
+              </div>
+              <div className="avail-img">
+                {gallery[1] || c.hero ? (
+                  <Img src={gallery[1] ?? c.hero} alt="" fill sizes="(max-width:860px) 100vw, 45vw" />
+                ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
         </section>
+
+        {inventory.recentSales.length > 0 ? (
+          <section className="sec" id="recent-sales" style={{ paddingTop: 0 }}>
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Recent Sales</p>
+                <h2 className="serif">What&rsquo;s traded here.</h2>
+              </div>
+            </div>
+            <div className="unit-grid">
+              {inventory.recentSales.map((u) => (
+                <UnitCard key={u.mls_id} u={u} sold />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <LeadBand
