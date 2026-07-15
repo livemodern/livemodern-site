@@ -11,6 +11,7 @@ export type Community = {
   seoTitle: string;
   body: string[];
   gallery: string[];
+  galleryW?: number[];
   lifestyles?: string[];
 };
 

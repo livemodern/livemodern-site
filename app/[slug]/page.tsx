@@ -119,9 +119,19 @@ export default async function CommunityPage({
           (x.county === hub.county || (x.name.toLowerCase().includes(hub.label.toLowerCase()))),
       )
     : [];
-  const gallery = c.gallery.filter((g) => g !== c.hero).slice(0, 5);
-  const breakImage = gallery[0];
-  const grid = gallery.slice(1, 6);
+  // Pair each gallery image with its baked native width so we never stretch a
+  // small image to full-bleed (the blur bug). Break image = FIRST gallery image
+  // >=1400px wide (curation order preserved); if none, the bleed is skipped.
+  const galleryPairs = c.gallery
+    .map((g, i) => ({ g, w: c.galleryW?.[i] ?? 0 }))
+    .filter((p) => p.g !== c.hero);
+  const gallery = galleryPairs.slice(0, 5).map((p) => p.g);
+  const breakImage = galleryPairs.find((p) => p.w >= 1400)?.g;
+  const grid = galleryPairs
+    .filter((p) => p.g !== breakImage)
+    .slice(0, 4)
+    .map((p) => p.g);
+  const displayName = c.name.replace(/ \/\/ LiveModern$/, "");
   // Standfirst: the editorial deck. Use the curated meta description when we have
   // one — never a naive sentence split (". " breaks on "Mr. C", "St. Regis", etc).
   const standfirst = (c.metaDescription || c.body[0] || "").trim();
@@ -294,12 +304,12 @@ export default async function CommunityPage({
       {breakImage ? (
         <>
           <figure className="bleed">
-            <Img src={breakImage} alt={c.name} sizes="100vw" widths={[640, 960, 1200, 1600, 1920]} />
+            <Img src={breakImage} alt={displayName} sizes="100vw" widths={[640, 960, 1200, 1600, 1920]} />
           </figure>
           <div className="wrap">
             <p className="caption">
               <span>
-                Inside <em>{c.name}</em>.
+                Inside <em>{displayName}</em>.
               </span>
               <span>Fig. 2</span>
             </p>
