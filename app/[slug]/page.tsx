@@ -8,6 +8,7 @@ import LeadBand from "@/components/LeadBand";
 import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
+import Gallery from "@/components/Gallery";
 import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import {
@@ -125,12 +126,8 @@ export default async function CommunityPage({
   const galleryPairs = c.gallery
     .map((g, i) => ({ g, w: c.galleryW?.[i] ?? 0 }))
     .filter((p) => p.g !== c.hero);
-  const gallery = galleryPairs.slice(0, 5).map((p) => p.g);
+  const gallery = galleryPairs.map((p) => p.g);
   const breakImage = galleryPairs.find((p) => p.w >= 1400)?.g;
-  const grid = galleryPairs
-    .filter((p) => p.g !== breakImage)
-    .slice(0, 4)
-    .map((p) => p.g);
   const displayName = c.name.replace(/ \/\/ LiveModern$/, "");
   // Standfirst: the editorial deck. Use the curated meta description when we have
   // one — never a naive sentence split (". " breaks on "Mr. C", "St. Regis", etc).
@@ -356,27 +353,16 @@ export default async function CommunityPage({
         </div>
       ) : null}
 
-      {!hub && grid.length ? (
+      {!hub && gallery.length ? (
         <div className="wrap">
           <section className="sec" id="gallery">
             <div className="sec-head">
               <div>
-                <p className="eyebrow">Gallery &middot; {c.gallery.length} images</p>
+                <p className="eyebrow">Gallery &middot; {gallery.length} images</p>
                 <h2 className="serif">Inside the building.</h2>
               </div>
             </div>
-            <div className="gal">
-              {grid.map((g, i) => (
-                <figure key={i}>
-                  <Img
-                    src={g}
-                    alt={`${c.name} — image ${i + 1}`}
-                    sizes="(max-width:900px) 50vw, 25vw"
-                    widths={[390, 640, 800]}
-                  />
-                </figure>
-              ))}
-            </div>
+            <Gallery images={gallery} name={displayName} />
           </section>
         </div>
       ) : null}

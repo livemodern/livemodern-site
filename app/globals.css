@@ -499,3 +499,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cidx-tags{display:block;margin-top:7px;font-size:9.5px;font-weight:500;letter-spacing:.13em;
   text-transform:uppercase;color:var(--muted)}
 .cidx-empty{margin-top:8px;color:var(--muted);font-size:15px}
+
+/* ── GALLERY (real): clickable cells + lightbox (reuses .fp-lb) ── */
+.gal-cell{position:relative;display:block;padding:0;border:0;background:none;cursor:pointer;
+  aspect-ratio:4/3;overflow:hidden}
+.gal-cell img{width:100%;height:100%;object-fit:cover;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.gal-cell:hover img{transform:scale(1.045)}
+.gal-cell .gal-zoom{position:absolute;bottom:10px;right:10px;background:rgba(255,255,255,.94);
+  padding:5px 11px;font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink);opacity:0;transition:opacity .3s}
+.gal-cell:hover .gal-zoom{opacity:1}
+.gal-stage img{background:transparent;padding:0}
