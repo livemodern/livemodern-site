@@ -8,7 +8,13 @@ const cf = (u: string, w: number, q = 82) =>
 const cfSet = (u: string, ws: number[], q = 82) =>
   u ? ws.map((w) => `${cf(u, w, q)} ${w}w`).join(", ") : "";
 
-const VISIBLE_CAP = 8; // 2 rows of 4 on desktop; the rest behind "Show all"
+/** First cell spans 2x2 (4 slots), so k images fill (k+3) slots. Complete
+ *  4-col rows need (k+3)%4===0 -> show 9, else 5, else everything: no holes. */
+function fitCount(n: number): number {
+  if (n >= 9) return 9;
+  if (n >= 5) return 5;
+  return n;
+}
 
 export default function Gallery({
   images,
@@ -48,8 +54,9 @@ export default function Gallery({
 
   if (!images.length) return null;
 
-  const visible = expanded ? images : images.slice(0, VISIBLE_CAP);
-  const hidden = images.length - VISIBLE_CAP;
+  const cap = fitCount(images.length);
+  const visible = expanded ? images : images.slice(0, cap);
+  const hidden = images.length - cap;
   const active = idx != null ? images[idx] : null;
 
   return (
@@ -71,9 +78,9 @@ export default function Gallery({
         ))}
       </div>
 
-      {hidden > 0 && !expanded ? (
-        <button className="fp-more" type="button" onClick={() => setExpanded(true)}>
-          Show all {images.length} images
+      {hidden > 0 ? (
+        <button className="gal-more" type="button" onClick={() => setExpanded((e) => !e)}>
+          {expanded ? "Show fewer" : `All ${images.length} images \u2192`}
         </button>
       ) : null}
 
