@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import IndexRow from "@/components/IndexRow";
 import type { Community } from "@/lib/communities";
 
 const HIDDEN = new Set(["New Construction"]);
 
+/**
+ * All county sections + rows render (SEO + no-JS friendly — this is not gated
+ * behind useSearchParams). The chip bar is progressive enhancement: toggling
+ * chips hides non-matching rows and collapses empty county sections.
+ * Deep-link: ?lifestyle=<tag> pre-selects a chip on mount.
+ */
 export default function IndexFilter({
   buildings,
   counties,
@@ -14,14 +19,12 @@ export default function IndexFilter({
   buildings: Community[];
   counties: string[];
 }) {
-  const params = useSearchParams();
   const [active, setActive] = useState<Set<string>>(new Set());
 
-  // Seed from ?lifestyle= (homepage lifestyle rail deep-links here).
   useEffect(() => {
-    const q = params.get("lifestyle");
+    const q = new URLSearchParams(window.location.search).get("lifestyle");
     if (q) setActive(new Set([q]));
-  }, [params]);
+  }, []);
 
   const chips = useMemo(() => {
     const counts = new Map<string, number>();
@@ -31,26 +34,27 @@ export default function IndexFilter({
     return [...counts.entries()].sort((a, z) => z[1] - a[1]).map(([t]) => t);
   }, [buildings]);
 
-  const matches = (b: Community) => {
+  const grouped = useMemo(
+    () =>
+      counties
+        .map((county) => ({
+          county,
+          rows: buildings
+            .filter((b) => b.county === county)
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        }))
+        .filter((g) => g.rows.length),
+    [buildings, counties],
+  );
+
+  const rowMatches = (b: Community) => {
     if (!active.size) return true;
     const t = new Set(b.lifestyles ?? []);
     for (const a of active) if (!t.has(a)) return false;
     return true;
   };
 
-  const grouped = useMemo(
-    () =>
-      counties.map((county) => ({
-        county,
-        rows: buildings
-          .filter((b) => b.county === county && matches(b))
-          .sort((a, b) => a.name.localeCompare(b.name)),
-      })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [buildings, counties, active],
-  );
-
-  const total = grouped.reduce((n, g) => n + g.rows.length, 0);
+  const total = active.size ? buildings.filter(rowMatches).length : buildings.length;
 
   const toggle = (t: string) =>
     setActive((prev) => {
@@ -61,7 +65,7 @@ export default function IndexFilter({
     });
 
   return (
-    <>
+    <div>
       <div className="idx-filter">
         <div className="idx-chips" role="group" aria-label="Filter by lifestyle">
           {chips.map((t) => (
@@ -87,31 +91,39 @@ export default function IndexFilter({
         ) : null}
       </div>
 
-      {grouped.map(({ county, rows }) =>
-        rows.length ? (
-          <section className="sec" key={county} style={{ paddingBottom: 0 }}>
+      {grouped.map(({ county, rows }) => {
+        const shown = rows.filter(rowMatches);
+        return (
+          <section
+            className="sec"
+            key={county}
+            style={{ paddingBottom: 0, display: shown.length ? undefined : "none" }}
+          >
             <div className="sec-head">
               <div>
                 <p className="eyebrow">
-                  {county} &middot; {rows.length} tower{rows.length === 1 ? "" : "s"}
+                  {county} &middot; {shown.length || rows.length} tower
+                  {(shown.length || rows.length) === 1 ? "" : "s"}
                 </p>
                 <h2 className="serif">{county}</h2>
               </div>
             </div>
             <div style={{ marginTop: 8 }}>
               {rows.map((c) => (
-                <IndexRow key={c.slug} c={c} />
+                <div key={c.slug} style={{ display: rowMatches(c) ? undefined : "none" }}>
+                  <IndexRow c={c} />
+                </div>
               ))}
             </div>
           </section>
-        ) : null,
-      )}
+        );
+      })}
 
-      {total === 0 ? (
+      {active.size && total === 0 ? (
         <p className="cidx-empty" style={{ marginTop: 24 }}>
           No towers match that combination — try removing a filter.
         </p>
       ) : null}
-    </>
+    </div>
   );
 }

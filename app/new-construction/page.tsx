@@ -4,7 +4,6 @@ import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
 import IndexFilter from "@/components/IndexFilter";
 import { getBuildings, COUNTIES } from "@/lib/communities";
-import { Suspense } from "react";
 
 export const revalidate = 3600;
 
@@ -33,9 +32,7 @@ export default function NewConstruction() {
           </p>
         </section>
 
-        <Suspense fallback={null}>
-          <IndexFilter buildings={buildings} counties={[...COUNTIES]} />
-        </Suspense>
+        <IndexFilter buildings={buildings} counties={[...COUNTIES]} />
 
         <div style={{ height: 80 }} />
       </div>
