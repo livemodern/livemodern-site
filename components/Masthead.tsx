@@ -69,18 +69,18 @@ export default function Masthead({ active, user = null }: { active?: string; use
               <span />
             </button>
           </div>
-        </div>
 
-        {/* Desktop: Login sits BELOW the masthead rule, right-aligned in the crumb row */}
-        {user ? (
-          <Link className="mast-login acct desk-only" href="/account">
-            {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
-          </Link>
-        ) : (
-          <Link className="mast-login acct desk-only" href="/login">
-            Login
-          </Link>
-        )}
+          {/* Desktop: Login sits BELOW the masthead rule, right-aligned with the content column */}
+          {user ? (
+            <Link className="mast-login acct desk-only" href="/account">
+              {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
+            </Link>
+          ) : (
+            <Link className="mast-login acct desk-only" href="/login">
+              Login
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Slide-in drawer (mobile) */}

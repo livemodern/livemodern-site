@@ -51,7 +51,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mast-right{display:flex;align-items:center;gap:18px}
 .mast-tel{font-size:11px;font-weight:500;letter-spacing:.18em;color:var(--ink);white-space:nowrap}
 .mast-tel:hover{color:var(--accent)}
-.masthead>.wrap{position:relative}
+.masthead-main{position:relative}
 .mast-login{position:absolute;right:0;top:calc(100% + 15px);z-index:20;background:var(--paper);
   padding:3px 0 3px 12px}
 .tel{font-size:10.5px;letter-spacing:.18em;color:var(--muted);display:none}
