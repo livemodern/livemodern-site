@@ -9,7 +9,7 @@ import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import Gallery from "@/components/Gallery";
-import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import {
   getBuildingInventory,
@@ -188,7 +188,7 @@ export default async function CommunityPage({
           <div className="wrap">
             <p className="eyebrow">
               {c.city ? `${c.city} · ` : ""}
-              {isBuilding ? "New Construction" : "Collection"}
+              {isBuilding ? statusPill(c.facts) : "Collection"}
             </p>
             <h1 className="serif">{hub ? hub.label : c.name.replace(/ \/\/ LiveModern$/, "")}</h1>
           </div>
@@ -217,7 +217,11 @@ export default async function CommunityPage({
           <div className="stat">
             <p className="caps">Status</p>
             <div className="v serif">
-              {inventory.activeCount > 0 ? `${inventory.activeCount} Available` : isBuilding ? "Now Selling" : "Curated"}
+              {inventory.activeCount > 0
+                ? `${inventory.activeCount} Available`
+                : isBuilding
+                  ? stageLabel(c.facts) ?? "Now Selling"
+                  : "Curated"}
             </div>
           </div>
           <div className="stat">
@@ -259,39 +263,68 @@ export default async function CommunityPage({
             </div>
 
             <aside className="sheet">
-              <h4>Fact Sheet</h4>
+              <h4>The Facts</h4>
               <dl>
-                <div className="f">
-                  <dt>Name</dt>
-                  <dd>{c.name}</dd>
-                </div>
+                {isBuilding && stageLabel(c.facts) ? (
+                  <div className="f">
+                    <dt>Stage</dt>
+                    <dd>{stageLabel(c.facts)}</dd>
+                  </div>
+                ) : null}
+                {c.facts?.developer ? (
+                  <div className="f">
+                    <dt>Developer</dt>
+                    <dd>{c.facts.developer}</dd>
+                  </div>
+                ) : null}
+                {c.facts?.architect ? (
+                  <div className="f">
+                    <dt>Architect</dt>
+                    <dd>
+                      {c.facts.architect}
+                      {c.facts.architect2 ? ` · ${c.facts.architect2}` : ""}
+                    </dd>
+                  </div>
+                ) : null}
+                {c.facts?.unit_count ? (
+                  <div className="f">
+                    <dt>Residences</dt>
+                    <dd>{c.facts.unit_count}</dd>
+                  </div>
+                ) : null}
+                {c.facts?.stories ? (
+                  <div className="f">
+                    <dt>Stories</dt>
+                    <dd>{c.facts.stories}</dd>
+                  </div>
+                ) : null}
+                {c.facts?.completion ? (
+                  <div className="f">
+                    <dt>Completion</dt>
+                    <dd>{c.facts.completion}</dd>
+                  </div>
+                ) : null}
                 {c.city ? (
                   <div className="f">
-                    <dt>City</dt>
-                    <dd>{c.city}</dd>
+                    <dt>Location</dt>
+                    <dd>{c.county ? `${c.city}, ${c.county}` : c.city}</dd>
                   </div>
                 ) : null}
-                {c.county ? (
-                  <div className="f">
-                    <dt>County</dt>
-                    <dd>{c.county}</dd>
-                  </div>
-                ) : null}
-                <div className="f">
-                  <dt>Type</dt>
-                  <dd>{isBuilding ? "Condominium" : "Collection"}</dd>
-                </div>
-                <div className="f">
-                  <dt>Status</dt>
-                  <dd>{isBuilding ? "Now selling" : "Curated search"}</dd>
-                </div>
                 <div className="f">
                   <dt>Pricing</dt>
-                  <dd>On request</dd>
+                  <dd>{priceFrom ? money(priceFrom) : "On request"}</dd>
                 </div>
               </dl>
+              {c.facts?.developer ? (
+                <p className="sheet-credit">
+                  Development by {c.facts.developer}. Modern Living Group represents buyers
+                  alongside the developer &mdash; we are not the developer.
+                </p>
+              ) : null}
               <a className="btn btn-dark" href="#inquire">
-                Request pricing
+                {statusPill(c.facts) === "Pre-Construction" && isBuilding
+                  ? "Request the package"
+                  : "Request pricing"}
               </a>
             </aside>
           </div>

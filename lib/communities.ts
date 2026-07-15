@@ -1,5 +1,34 @@
 import raw from "@/data/communities.json";
 
+export type BuildingFacts = {
+  status?: "presale" | "pre_construction" | "under_construction" | "new_construction";
+  developer?: string;
+  architect?: string;
+  architect2?: string;
+  unit_count?: number;
+  stories?: number;
+  completion?: number;
+  price_from?: number;
+};
+
+/** The two-pill classification the page shows. presale/pre_construction/
+ *  under_construction all read "Pre-Construction"; new_construction reads
+ *  "New Construction". */
+export function statusPill(f?: BuildingFacts): "Pre-Construction" | "New Construction" {
+  return f?.status === "new_construction" ? "New Construction" : "Pre-Construction";
+}
+
+/** The granular stage label for the fact sheet (more detail than the pill). */
+export function stageLabel(f?: BuildingFacts): string | null {
+  switch (f?.status) {
+    case "presale": return "Pre-Sale";
+    case "pre_construction": return "Pre-Construction";
+    case "under_construction": return "Under Construction";
+    case "new_construction": return "New Construction";
+    default: return null;
+  }
+}
+
 export type Community = {
   slug: string;
   name: string;
@@ -13,6 +42,7 @@ export type Community = {
   gallery: string[];
   galleryW?: number[];
   lifestyles?: string[];
+  facts?: BuildingFacts;
 };
 
 /** The three city hub pages (old-site "View All" URLs, preserved slugs). */
