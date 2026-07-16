@@ -479,7 +479,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .readmore-btn:hover{color:var(--accent)}
 
 /* ── CITY HUB: lifestyle chips + area-grouped building index ── */
-.cidx-chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 34px}
+.cidx-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 34px}
+@media(min-width:640px){.cidx-chips{display:flex;flex-wrap:wrap}}
+.cidx-chips .chip{text-align:center;padding:11px 12px;line-height:1.25}
+@media(min-width:640px){.cidx-chips .chip{text-align:left;padding:9px 16px}}
 .chip{background:none;border:1px solid var(--line);padding:9px 16px;font:inherit;font-size:10.5px;
   font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);cursor:pointer;
   transition:border-color .25s,background .25s,color .25s}
@@ -552,7 +555,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ── NEW-CONSTRUCTION INDEX: lifestyle filter bar ── */
 .idx-filter{margin:26px 0 8px;padding-bottom:4px}
-.idx-chips{display:flex;flex-wrap:wrap;gap:8px}
+.idx-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(min-width:640px){.idx-chips{display:flex;flex-wrap:wrap}}
+.idx-chips .chip{text-align:center;padding:11px 12px;line-height:1.25}
+@media(min-width:640px){.idx-chips .chip{text-align:left;padding:9px 16px}}
 .idx-count{margin-top:14px;font-size:10.5px;font-weight:500;letter-spacing:.16em;
   text-transform:uppercase;color:var(--muted)}
 
