@@ -9,7 +9,7 @@ import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import Gallery from "@/components/Gallery";
-import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import {
   getBuildingInventory,
@@ -212,7 +212,9 @@ export default async function CommunityPage({
           </div>
           <div className="stat">
             <p className="caps">County</p>
-            <div className="v serif">{c.county ?? "—"}</div>
+            <div className="v serif">
+              {countyShort(c.county) ?? collectionCounty(c.slug) ?? "South Florida"}
+            </div>
           </div>
           <div className="stat">
             <p className="caps">Status</p>

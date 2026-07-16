@@ -149,3 +149,21 @@ export function lifestyleCounts(): Record<string, number> {
 export function buildingsByLifestyle(tag: string): Community[] {
   return getBuildings().filter((c) => (c.lifestyles ?? []).includes(tag));
 }
+
+
+/** Infer a display county for a collection (which store no county) from its
+ *  slug. Uses the short forms Patrick prefers (Dade, Broward, Palm Beach). */
+export function collectionCounty(slug: string): string | null {
+  const s = slug.toLowerCase();
+  if (s.startsWith("miami") || s.includes("brickell") || s.includes("hollywood")) return "Dade";
+  if (s.startsWith("fort-lauderdale") || s.includes("pompano")) return "Broward";
+  if (s.startsWith("palm-beach") || s.includes("downtown-palm-beach")) return "Palm Beach";
+  return null; // south-florida-wide collections stay blank
+}
+
+/** Short county label for display (Miami-Dade -> Dade). */
+export function countyShort(county?: string | null): string | null {
+  if (!county) return null;
+  if (county === "Miami-Dade") return "Dade";
+  return county;
+}
