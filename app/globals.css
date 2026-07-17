@@ -365,8 +365,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* compliance */
 .compliance{margin-top:20px;padding:22px var(--pad);background:var(--band);border-top:1px solid var(--line)}
-.c-in{max-width:1360px;margin:0 auto;display:flex;gap:16px;align-items:flex-start}
-.bmls{width:56px;height:auto;flex:none;object-fit:contain}
+.c-in{max-width:1360px;margin:0 auto;padding:0 var(--pad);display:flex;gap:18px;align-items:flex-start}
+.bmls{width:92px;height:auto;flex:none;object-fit:contain;margin-top:1px}
 .compliance p{font-size:10.5px;color:var(--muted);line-height:1.7;max-width:110ch}
 .compliance .courtesy{color:var(--ink-2)}
 
