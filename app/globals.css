@@ -292,9 +292,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* ═══════════════ LISTING DETAIL PAGE ═══════════════ */
 .l-gallery{display:grid;grid-template-columns:1fr;gap:2px}
 @media(min-width:900px){.l-gallery{grid-template-columns:2fr 1fr 1fr;grid-template-rows:1fr 1fr;height:60vh}}
-.l-gallery a{position:relative;overflow:hidden;background:var(--band);display:block}
-.l-gallery a img{width:100%;height:100%;object-fit:cover;transition:transform 1.1s cubic-bezier(.2,.7,.2,1)}
-.l-gallery a:hover img{transform:scale(1.04)}
+.l-gallery a,.l-gallery button{position:relative;overflow:hidden;background:var(--band);display:block;
+  padding:0;border:0;margin:0;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.l-gallery a img,.l-gallery button img{width:100%;height:100%;object-fit:cover;
+  transition:transform 1.1s cubic-bezier(.2,.7,.2,1)}
+.l-gallery a:hover img,.l-gallery button:hover img{transform:scale(1.04)}
 .l-hero{aspect-ratio:16/10}
 @media(min-width:900px){.l-hero{grid-row:span 2;aspect-ratio:auto}}
 .l-thumb{display:none;aspect-ratio:4/3}
@@ -654,7 +656,3 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* fold-out is a mobile path; hide on desktop (desktop uses the popup directly) */
 @media(min-width:900px){.l-foldout{display:none}}
 
-/* make l-hero / l-thumb buttons look identical to the old <a> tiles */
-.l-gallery button.l-hero,.l-gallery button.l-thumb{padding:0;border:0;background:var(--band);
-  cursor:pointer;font:inherit;text-align:left;display:block;width:100%}
-.l-gallery button.l-hero{position:relative;overflow:hidden}
