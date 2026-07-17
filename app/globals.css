@@ -637,3 +637,24 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .jr-feat-card:hover .jr-feat-im img{transform:scale(1.05)}
 .jr-feat-bd{display:block;padding-top:12px}
 .jr-feat-n{display:block;font-size:16px;line-height:1.14;margin-bottom:5px}
+
+/* ── LISTING GALLERY: mobile fold-out (inline full grid) ── */
+.l-foldout{margin:2px 0 0}
+.l-foldout-head{display:flex;justify-content:space-between;align-items:baseline;
+  padding:18px 0 12px;border-bottom:1px solid var(--rule);margin-bottom:2px}
+.l-foldout-head .serif{font-size:18px}
+.l-fold-close{background:none;border:0;padding:0;font:inherit;font-size:10.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.l-fold-close:hover{color:var(--accent)}
+.l-foldout-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.l-fold-cell{position:relative;display:block;padding:0;border:0;background:var(--band);cursor:pointer;
+  aspect-ratio:1;overflow:hidden}
+.l-fold-cell img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+.l-fold-cell:active img{transform:scale(1.03)}
+/* fold-out is a mobile path; hide on desktop (desktop uses the popup directly) */
+@media(min-width:900px){.l-foldout{display:none}}
+
+/* make l-hero / l-thumb buttons look identical to the old <a> tiles */
+.l-gallery button.l-hero,.l-gallery button.l-thumb{padding:0;border:0;background:var(--band);
+  cursor:pointer;font:inherit;text-align:left;display:block;width:100%}
+.l-gallery button.l-hero{position:relative;overflow:hidden}

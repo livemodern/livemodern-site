@@ -5,6 +5,7 @@ import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import ReadMore from "@/components/ReadMore";
 import { getBySlug } from "@/lib/communities";
+import ListingGallery from "@/components/ListingGallery";
 import {
   getListing,
   sampleListings,
@@ -81,7 +82,6 @@ export default async function ListingPage({
   const agent = featuredAgentFor(l);
   const photos = (l.image_urls ?? []).slice(0, 24);
   const hero = photos[0];
-  const grid = photos.slice(1, 5);
   const community = l.community_slug ? getBySlug(l.community_slug) : undefined;
   const amenities = amenityList(l.building_amenities);
   const wf = l.waterfront_features
@@ -134,37 +134,14 @@ export default async function ListingPage({
         </p>
       </div>
 
-      {/* GALLERY */}
-      <section className="l-gallery">
-        {hero ? (
-          <a href="#photos" className="l-hero">
-            <span className="status-tag">
-              {presale ? "For Sale · Pre-Construction" : kind === "home" ? "For Sale · Home" : "For Sale · Condo"}
-            </span>
-            <img
-              src={mls(hero, 1400)}
-              srcSet={mlsSrcSet(hero, [640, 960, 1400])}
-              sizes="(max-width:900px) 100vw, 66vw"
-              alt={fullAddress(l)}
-              // eslint-disable-next-line @next/next/no-img-element
-            />
-          </a>
-        ) : null}
-        {grid.map((p, i) => (
-          <a key={i} href="#photos" className="l-thumb">
-            <img
-              src={mls(p, 700)}
-              srcSet={mlsSrcSet(p, [390, 700])}
-              sizes="(max-width:900px) 50vw, 25vw"
-              alt=""
-              loading="lazy"
-            />
-            {i === grid.length - 1 && photos.length > 5 ? (
-              <span className="more">View all {photos.length} photos</span>
-            ) : null}
-          </a>
-        ))}
-      </section>
+      {/* GALLERY — desktop popup, mobile fold-out */}
+      <ListingGallery
+        photos={photos}
+        statusLabel={
+          presale ? "For Sale · Pre-Construction" : kind === "home" ? "For Sale · Home" : "For Sale · Condo"
+        }
+        address={fullAddress(l)}
+      />
 
       {/* HEADER */}
       <div className="wrap">
@@ -254,22 +231,7 @@ export default async function ListingPage({
               </section>
             ) : null}
 
-            <section id="photos">
-              <h2 className="sec-h serif">Gallery · {photos.length} photos</h2>
-              <div className="l-grid">
-                {photos.slice(0, 12).map((p, i) => (
-                  <figure key={i}>
-                    <img
-                      src={mls(p, 800)}
-                      srcSet={mlsSrcSet(p, [390, 640, 800])}
-                      sizes="(max-width:900px) 50vw, 25vw"
-                      alt={`${fullAddress(l)} — photo ${i + 1}`}
-                      loading="lazy"
-                    />
-                  </figure>
-                ))}
-              </div>
-            </section>
+
           </div>
 
           {/* FEATURED AGENT — always ours, never the listing agent */}
