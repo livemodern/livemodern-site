@@ -230,7 +230,7 @@ export default function Home() {
                   life is vertical.
                 </h2>
               </div>
-              <Link className="link" href="/modern-homes">
+              <Link className="link" href="/collections">
                 All collections &nbsp;&rarr;
               </Link>
             </div>

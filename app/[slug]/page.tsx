@@ -9,7 +9,7 @@ import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import Gallery from "@/components/Gallery";
-import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, COLLECTION_THEMES } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import {
   getBuildingInventory,
@@ -133,6 +133,8 @@ export default async function CommunityPage({
   // one — never a naive sentence split (". " breaks on "Mr. C", "St. Regis", etc).
   const standfirst = (c.metaDescription || c.body[0] || "").trim();
   const isBuilding = c.type === "building";
+  const sib = !isBuilding && !hub ? collectionSiblings(c.slug) : null;
+  const sibItems = sib ? (sib.siblings.map(getBySlug).filter(Boolean) as typeof related) : [];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -156,7 +158,7 @@ export default async function CommunityPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Masthead active={isBuilding ? "nc" : "homes"} loginBand />
+      <Masthead active={isBuilding ? "nc" : "collections"} loginBand />
 
       <div className="wrap">
         <p className="crumb">
@@ -510,6 +512,40 @@ export default async function CommunityPage({
         cta="Send me availability"
         withInterest
       />
+
+      {sib && sibItems.length ? (
+        <div className="band">
+          <div className="wrap">
+            <section className="sec" style={{ paddingBottom: 0 }}>
+              <div className="sec-head">
+                <div>
+                  <p className="eyebrow">More {sib.theme}</p>
+                  <h2 className="serif">Keep exploring.</h2>
+                </div>
+                <Link className="link" href="/collections">
+                  All collections &nbsp;&rarr;
+                </Link>
+              </div>
+              <div className="col-rail">
+                {sibItems.map((x) => (
+                  <Link className="tile" key={x.slug} href={`/${x.slug}`}>
+                    <Img
+                      src={x.hero}
+                      alt={x.name.replace(" // LiveModern", "")}
+                      fill
+                      sizes="(max-width:640px) 100vw, 33vw"
+                    />
+                    <div className="tile-in">
+                      <p className="caps">{x.county ?? "South Florida"}</p>
+                      <h3>{x.name.replace(" // LiveModern", "")}</h3>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+      ) : null}
 
       {related.length ? (
         <div className="wrap">

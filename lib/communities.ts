@@ -167,3 +167,38 @@ export function countyShort(county?: string | null): string | null {
   if (county === "Miami-Dade") return "Dade";
   return county;
 }
+
+
+/** Collections taxonomy — the lifestyle spine. Each theme groups the geographic
+ *  collection variants beneath it. Order within a theme: PB, FTL, Miami, wide. */
+export const COLLECTION_THEMES: { theme: string; blurb: string; slugs: string[] }[] = [
+  { theme: "Waterfront", blurb: "Intracoastal, river, and canal — living on the water.",
+    slugs: ["modern-waterfront-homes-south-florida","palm-beach-waterfront-homes","fort-lauderdale-waterfront-homes","miami-waterfront-homes"] },
+  { theme: "Oceanfront & Beach", blurb: "Directly on the sand, from Palm Beach to Miami.",
+    slugs: ["palm-beach-beachfront-condos","fort-lauderdale-beachfront-condos","fort-lauderdale-beachfront-homes","miami-beachfront-condos"] },
+  { theme: "Boating & Deepwater", blurb: "Docks, deepwater, and direct ocean access.",
+    slugs: ["palm-beach-boating-homes","fort-lauderdale-boating-condos","miami-boating-condos"] },
+  { theme: "Golf", blurb: "Club living on South Florida's best courses.",
+    slugs: ["palm-beach-golf-course-homes","fort-lauderdale-golf-course-homes","miami-golf-course-homes"] },
+  { theme: "Equestrian", blurb: "Barns, bridle paths, and Wellington's winter circuit.",
+    slugs: ["palm-beach-equestrian-homes","fort-lauderdale-equestrian-homes"] },
+  { theme: "Island & Downtown", blurb: "Palm Beach island addresses and walkable downtowns.",
+    slugs: ["palm-beach-island-homes-for-sale","downtown-palm-beach-county-condos"] },
+  { theme: "City Condos", blurb: "Skyline living across the three metros.",
+    slugs: ["palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos","brickell-flatiron-condos","hollywood-arts-condos","casamar-pompano-beach-condos"] },
+  { theme: "New Construction Homes", blurb: "Newly built, never lived in.",
+    slugs: ["new-construction-homes-south-florida","miami-new-construction-homes"] },
+];
+
+/** Slugified theme id for anchors + side-nav links (#theme-waterfront). */
+export function themeAnchor(theme: string): string {
+  return "theme-" + theme.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+
+/** For a collection slug, return its theme + sibling collections (same theme). */
+export function collectionSiblings(slug: string): { theme: string; siblings: string[] } | null {
+  const t = COLLECTION_THEMES.find((x) => x.slugs.includes(slug));
+  if (!t) return null;
+  return { theme: t.theme, siblings: t.slugs.filter((s) => s !== slug) };
+}

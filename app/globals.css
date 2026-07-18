@@ -656,3 +656,38 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* fold-out is a mobile path; hide on desktop (desktop uses the popup directly) */
 @media(min-width:900px){.l-foldout{display:none}}
 
+
+/* ═══════════════════ COLLECTIONS ═══════════════════ */
+/* two-column: content + sticky side-nav (side-nav hidden on mobile) */
+.col-layout{display:block}
+@media(min-width:1000px){
+  .col-layout{display:grid;grid-template-columns:1fr 220px;gap:56px;align-items:start}
+}
+.col-main{min-width:0}
+
+/* themed section */
+.col-theme{padding-bottom:52px;scroll-margin-top:96px}
+.col-theme-head{border-bottom:1px solid var(--rule);padding-bottom:14px;margin-bottom:2px}
+.col-theme-head h2{font-size:clamp(24px,3.4vw,40px);line-height:1.05}
+.col-theme-head p{margin-top:8px;font-size:14px;color:var(--muted);max-width:52ch}
+/* rail: 3-up on desktop, 2-up tablet, 1-up mobile */
+.col-rail{display:grid;grid-template-columns:1fr;gap:2px;margin-top:24px}
+@media(min-width:560px){.col-rail{grid-template-columns:1fr 1fr}}
+@media(min-width:1100px){.col-rail{grid-template-columns:1fr 1fr 1fr}}
+.col-rail .tile{aspect-ratio:4/5}
+
+/* sticky side-nav */
+.col-nav{display:none}
+@media(min-width:1000px){
+  .col-nav{display:block;position:sticky;top:96px}
+}
+.col-nav-h{font-size:9.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--muted);padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:6px}
+.col-nav-link{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:11px 0;font-size:13px;color:var(--ink);border-bottom:1px solid var(--line);
+  transition:color .2s,padding-left .2s}
+.col-nav-link:last-of-type{border-bottom:0}
+.col-nav-link:hover{color:var(--accent);padding-left:5px}
+.col-nav-n{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.col-nav-cta{margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)}
+.col-nav-cta p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px}
