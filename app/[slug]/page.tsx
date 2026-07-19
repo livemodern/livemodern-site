@@ -9,8 +9,9 @@ import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import Gallery from "@/components/Gallery";
-import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, COLLECTION_THEMES } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
+import LifestyleHubPage from "@/components/LifestyleHubPage";
 import {
   getBuildingInventory,
   getFloorplans,
@@ -26,7 +27,10 @@ import {
 export const revalidate = 3600;
 
 export function generateStaticParams() {
-  return getAll().map((c) => ({ slug: c.slug }));
+  return [
+    ...getAll().map((c) => ({ slug: c.slug })),
+    ...LIFESTYLE_HUBS.map((h) => ({ slug: h.slug })),
+  ];
 }
 
 export async function generateMetadata({
@@ -35,6 +39,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const lh = hubBySlugLife(slug);
+  if (lh)
+    return {
+      title: `${lh.theme} — South Florida New Construction | LiveModern`,
+      description: lh.blurb,
+    };
   const c = getBySlug(slug);
   if (!c) return {};
   return {
@@ -94,6 +104,8 @@ export default async function CommunityPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const lifeHub = hubBySlugLife(slug);
+  if (lifeHub) return <LifestyleHubPage hub={lifeHub} />;
   const c = getBySlug(slug);
   if (!c) notFound();
 

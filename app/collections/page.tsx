@@ -4,25 +4,32 @@ import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
-import { getBySlug, COLLECTION_THEMES, themeAnchor, type Community } from "@/lib/communities";
+import {
+  getBySlug,
+  LIFESTYLE_HUBS,
+  CURATED_SEARCHES,
+  themeAnchor,
+  type Community,
+} from "@/lib/communities";
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Collections — LiveModern",
   description:
-    "South Florida luxury curated by lifestyle — waterfront, oceanfront, boating, golf, equestrian, and city living across Palm Beach, Fort Lauderdale, and Miami.",
+    "South Florida luxury curated by lifestyle — boating, waterfront, beach, downtown, golf, island, and estate living across Palm Beach, Fort Lauderdale, and Miami.",
 };
 
-function label(c: Community) {
-  return c.name.replace(" // LiveModern", "");
-}
+const clean = (c: Community) => c.name.replace(" // LiveModern", "");
 
 export default function Collections() {
-  const themes = COLLECTION_THEMES.map((t) => ({
-    ...t,
-    items: t.slugs.map(getBySlug).filter(Boolean) as Community[],
-  })).filter((t) => t.items.length);
+  // lifestyle hubs that have at least one spoke to show
+  const hubs = LIFESTYLE_HUBS.map((h) => ({
+    ...h,
+    items: h.spokes.map(getBySlug).filter(Boolean) as Community[],
+  })).filter((h) => h.items.length);
+
+  const curated = CURATED_SEARCHES.map(getBySlug).filter(Boolean) as Community[];
 
   return (
     <>
@@ -37,8 +44,8 @@ export default function Collections() {
             how you live.
           </h1>
           <p style={{ marginTop: 14, maxWidth: "56ch", color: "var(--muted)", fontSize: 15 }}>
-            South Florida&rsquo;s modern condos and homes, gathered by lifestyle &mdash; waterfront,
-            oceanfront, boating, golf, equestrian, and city living, from Palm Beach to Miami.
+            South Florida&rsquo;s modern condos and homes, gathered by lifestyle &mdash; then narrowed
+            by market. Start with the life you&rsquo;re after; we&rsquo;ll take it from there.
           </p>
         </section>
       </div>
@@ -46,44 +53,92 @@ export default function Collections() {
       <div className="wrap">
         <div className="col-layout">
           <div className="col-main">
-            {themes.map((t) => (
-              <section className="col-theme" id={themeAnchor(t.theme)} key={t.theme}>
+            {/* ── BY LIFESTYLE ── */}
+            {hubs.map((h) => (
+              <section className="col-theme" id={themeAnchor(h.theme)} key={h.slug}>
                 <div className="col-theme-head">
-                  <h2 className="serif">{t.theme}</h2>
-                  <p>{t.blurb}</p>
+                  <div className="col-theme-titles">
+                    <h2 className="serif">{h.theme}</h2>
+                    <p>{h.blurb}</p>
+                  </div>
+                  <Link className="col-theme-all link" href={`/${h.slug}`}>
+                    View all &rarr;
+                  </Link>
                 </div>
                 <div className="col-rail">
-                  {t.items.map((c) => (
+                  {h.items.map((c) => (
                     <Link className="tile" key={c.slug} href={`/${c.slug}`}>
                       <Img
                         src={c.hero}
-                        alt={label(c)}
+                        alt={clean(c)}
                         fill
                         sizes="(max-width:640px) 100vw, (max-width:1040px) 50vw, 33vw"
                       />
                       <div className="tile-in">
                         <p className="caps">{c.county ?? "South Florida"}</p>
-                        <h3>{label(c)}</h3>
+                        <h3>{clean(c)}</h3>
                       </div>
                     </Link>
                   ))}
                 </div>
               </section>
             ))}
+
+            {/* ── CURATED SEARCHES ── */}
+            {curated.length ? (
+              <section className="col-theme" id="theme-curated">
+                <div className="col-theme-head">
+                  <div className="col-theme-titles">
+                    <h2 className="serif">Curated Searches</h2>
+                    <p>Named market slices &mdash; ready-made searches worth saving.</p>
+                  </div>
+                </div>
+                <div className="col-rail">
+                  {curated.map((c) => (
+                    <Link className="tile" key={c.slug} href={`/${c.slug}`}>
+                      <Img
+                        src={c.hero}
+                        alt={clean(c)}
+                        fill
+                        sizes="(max-width:640px) 100vw, (max-width:1040px) 50vw, 33vw"
+                      />
+                      <div className="tile-in">
+                        <p className="caps">{c.county ?? "South Florida"}</p>
+                        <h3>{clean(c)}</h3>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
 
+          {/* STICKY SIDE-NAV — two groups: Lifestyle + Curated */}
           <aside className="col-nav" aria-label="Collections">
-            <p className="col-nav-h">Browse</p>
+            <p className="col-nav-h">By Lifestyle</p>
             <nav>
-              {themes.map((t) => (
-                <a key={t.theme} href={`#${themeAnchor(t.theme)}`} className="col-nav-link">
-                  {t.theme}
-                  <span className="col-nav-n">{t.items.length}</span>
+              {hubs.map((h) => (
+                <a key={h.slug} href={`#${themeAnchor(h.theme)}`} className="col-nav-link">
+                  {h.theme}
+                  <span className="col-nav-n">{h.items.length}</span>
                 </a>
               ))}
             </nav>
+            {curated.length ? (
+              <>
+                <p className="col-nav-h" style={{ marginTop: 22 }}>
+                  Curated
+                </p>
+                <nav>
+                  <a href="#theme-curated" className="col-nav-link">
+                    Market searches
+                    <span className="col-nav-n">{curated.length}</span>
+                  </a>
+                </nav>
+              </>
+            ) : null}
             <div className="col-nav-cta">
-              <p>Looking for something specific?</p>
+              <p>Want to combine lifestyles?</p>
               <a href="#inquire" className="link">
                 Tell us &nbsp;&rarr;
               </a>

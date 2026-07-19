@@ -169,36 +169,60 @@ export function countyShort(county?: string | null): string | null {
 }
 
 
-/** Collections taxonomy — the lifestyle spine. Each theme groups the geographic
- *  collection variants beneath it. Order within a theme: PB, FTL, Miami, wide. */
-export const COLLECTION_THEMES: { theme: string; blurb: string; slugs: string[] }[] = [
-  { theme: "Waterfront", blurb: "Intracoastal, river, and canal — living on the water.",
-    slugs: ["modern-waterfront-homes-south-florida","palm-beach-waterfront-homes","fort-lauderdale-waterfront-homes","miami-waterfront-homes"] },
-  { theme: "Oceanfront & Beach", blurb: "Directly on the sand, from Palm Beach to Miami.",
-    slugs: ["palm-beach-beachfront-condos","fort-lauderdale-beachfront-condos","fort-lauderdale-beachfront-homes","miami-beachfront-condos"] },
-  { theme: "Boating & Deepwater", blurb: "Docks, deepwater, and direct ocean access.",
-    slugs: ["palm-beach-boating-homes","fort-lauderdale-boating-condos","miami-boating-condos"] },
-  { theme: "Golf", blurb: "Club living on South Florida's best courses.",
-    slugs: ["palm-beach-golf-course-homes","fort-lauderdale-golf-course-homes","miami-golf-course-homes"] },
-  { theme: "Equestrian", blurb: "Barns, bridle paths, and Wellington's winter circuit.",
-    slugs: ["palm-beach-equestrian-homes","fort-lauderdale-equestrian-homes"] },
-  { theme: "Island & Downtown", blurb: "Palm Beach island addresses and walkable downtowns.",
-    slugs: ["palm-beach-island-homes-for-sale","downtown-palm-beach-county-condos"] },
-  { theme: "City Condos", blurb: "Skyline living across the three metros.",
-    slugs: ["palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos","brickell-flatiron-condos","hollywood-arts-condos","casamar-pompano-beach-condos"] },
-  { theme: "New Construction Homes", blurb: "Newly built, never lived in.",
-    slugs: ["new-construction-homes-south-florida","miami-new-construction-homes"] },
+/** ── Collections taxonomy ──────────────────────────────────────────────
+ *  Two lenses, rendered as two groups in the Collections side-nav:
+ *   1) LIFESTYLE — 8 durable, region-recurring ways to live. Each is a hub
+ *      page (/{slug}) with a county filter, linking down to its area "spoke"
+ *      pages (the existing collections) which carry the SEO.
+ *   2) CURATED — named market slices (new-construction status searches). Not
+ *      lifestyles; each is itself a narrow SEO page.
+ *  (By Design — architecture — becomes a 3rd group later, from the vision
+ *   enrichment pipeline.) */
+
+export type LifestyleHub = { theme: string; slug: string; blurb: string; spokes: string[] };
+
+export const LIFESTYLE_HUBS: LifestyleHub[] = [
+  { theme: "Boating & Deepwater", slug: "boating", blurb: "Private docks, deepwater, and direct ocean access.",
+    spokes: ["palm-beach-boating-homes","fort-lauderdale-boating-condos","miami-boating-condos"] },
+  { theme: "Waterfront", slug: "waterfront", blurb: "Intracoastal, river, canal, and lake \u2014 living on the water.",
+    spokes: ["palm-beach-waterfront-homes","fort-lauderdale-waterfront-homes","miami-waterfront-homes","modern-waterfront-homes-south-florida"] },
+  { theme: "Beach & Oceanfront", slug: "beach", blurb: "Directly on the sand, from Palm Beach to Miami.",
+    spokes: ["palm-beach-beachfront-condos","fort-lauderdale-beachfront-condos","fort-lauderdale-beachfront-homes","miami-beachfront-condos"] },
+  { theme: "Downtown & Urban", slug: "downtown", blurb: "Walkable high-rise living in the city core.",
+    spokes: ["downtown-palm-beach-county-condos","palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos"] },
+  { theme: "Golf & Club", slug: "golf", blurb: "Country-club living on South Florida's best courses.",
+    spokes: ["palm-beach-golf-course-homes","fort-lauderdale-golf-course-homes","miami-golf-course-homes"] },
+  { theme: "Island", slug: "island", blurb: "Barrier-island exclusivity and seclusion.",
+    spokes: ["palm-beach-island-homes-for-sale"] },
+  { theme: "Estates & Land", slug: "estates", blurb: "Acreage, privacy, and estate living \u2014 including Wellington's equestrian corridor.",
+    spokes: ["palm-beach-equestrian-homes","fort-lauderdale-equestrian-homes"] },
+  { theme: "Historic", slug: "historic", blurb: "Historic districts and restored period residences.",
+    spokes: [] },
 ];
 
-/** Slugified theme id for anchors + side-nav links (#theme-waterfront). */
+/** Curated searches — named market slices (not lifestyles). */
+export const CURATED_SEARCHES: string[] = [
+  "new-construction-homes-south-florida",
+  "miami-new-construction-homes",
+];
+
+export function hubBySlugLife(slug: string): LifestyleHub | undefined {
+  return LIFESTYLE_HUBS.find((h) => h.slug === slug);
+}
+
+/** For a collection (spoke) slug, find the lifestyle hub it belongs to. */
+export function hubForSpoke(slug: string): LifestyleHub | undefined {
+  return LIFESTYLE_HUBS.find((h) => h.spokes.includes(slug));
+}
+
+/** Slugified theme id for anchors (#theme-waterfront). */
 export function themeAnchor(theme: string): string {
   return "theme-" + theme.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-
-/** For a collection slug, return its theme + sibling collections (same theme). */
+/** Sibling spokes within the same lifestyle (for cross-nav on spoke pages). */
 export function collectionSiblings(slug: string): { theme: string; siblings: string[] } | null {
-  const t = COLLECTION_THEMES.find((x) => x.slugs.includes(slug));
-  if (!t) return null;
-  return { theme: t.theme, siblings: t.slugs.filter((s) => s !== slug) };
+  const h = hubForSpoke(slug);
+  if (!h) return null;
+  return { theme: h.theme, siblings: h.spokes.filter((s) => s !== slug) };
 }
