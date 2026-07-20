@@ -11,6 +11,7 @@ import {
   themeAnchor,
   type Community,
 } from "@/lib/communities";
+import { DESIGN_FAMILIES } from "@/lib/design";
 
 export const revalidate = 3600;
 
@@ -84,6 +85,27 @@ export default function Collections() {
               </section>
             ))}
 
+            {/* ── BY DESIGN ── */}
+            <section className="col-theme" id="theme-design">
+              <div className="col-theme-head">
+                <div className="col-theme-titles">
+                  <h2 className="serif">By Design</h2>
+                  <p>The only search that reads the architecture &mdash; browse by style.</p>
+                </div>
+                <Link className="col-theme-all link" href="/design">
+                  View all &rarr;
+                </Link>
+              </div>
+              <div className="dz-mini">
+                {DESIGN_FAMILIES.map((f) => (
+                  <Link key={f.slug} className="dz-mini-card" href={`/design/${f.slug}`}>
+                    <span className="dz-mini-t serif">{f.family}</span>
+                    <span className="dz-mini-s">{f.styles.slice(0, 3).join(" · ")}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
             {/* ── CURATED SEARCHES ── */}
             {curated.length ? (
               <section className="col-theme" id="theme-curated">
@@ -137,6 +159,15 @@ export default function Collections() {
                 </nav>
               </>
             ) : null}
+            <p className="col-nav-h" style={{ marginTop: 22 }}>
+              By Design
+            </p>
+            <nav>
+              <a href="/design" className="col-nav-link">
+                Architectural styles
+                <span className="col-nav-n">{DESIGN_FAMILIES.length}</span>
+              </a>
+            </nav>
             <div className="col-nav-cta">
               <p>Want to combine lifestyles?</p>
               <a href="#inquire" className="link">
