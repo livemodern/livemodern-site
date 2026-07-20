@@ -276,7 +276,7 @@ export async function getBuildingInventory(communitySlug: string): Promise<Build
     const recentSales = rows
       .filter((r) => r.status === "Closed" && r.close_price)
       .sort((a, b) => (b.close_price ?? 0) - (a.close_price ?? 0))
-      .slice(0, 6);
+      .slice(0, 24);
 
     return {
       forSale,

@@ -12,6 +12,7 @@ import Gallery from "@/components/Gallery";
 import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import LifestyleHubPage from "@/components/LifestyleHubPage";
+import UnitGrid from "@/components/UnitGrid";
 import {
   getBuildingInventory,
   getFloorplans,
@@ -438,11 +439,11 @@ export default async function CommunityPage({
           </div>
 
           {inventory.forSale.length > 0 ? (
-            <div className="unit-grid">
+            <UnitGrid noun="residences for sale">
               {inventory.forSale.map((u) => (
                 <UnitCard key={u.mls_id} u={u} />
               ))}
-            </div>
+            </UnitGrid>
           ) : null}
 
           {inventory.forRent.length > 0 ? (
@@ -492,11 +493,11 @@ export default async function CommunityPage({
                 <h2 className="serif">What&rsquo;s traded here.</h2>
               </div>
             </div>
-            <div className="unit-grid">
+            <UnitGrid noun="sales">
               {inventory.recentSales.map((u) => (
                 <UnitCard key={u.mls_id} u={u} sold />
               ))}
-            </div>
+            </UnitGrid>
           </section>
         ) : null}
 
