@@ -9,7 +9,7 @@ import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import Gallery from "@/components/Gallery";
-import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife, cf } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import LifestyleHubPage from "@/components/LifestyleHubPage";
 import UnitGrid from "@/components/UnitGrid";
@@ -59,7 +59,7 @@ export async function generateMetadata({
   };
 }
 
-function UnitCard({ u, rent, sold }: { u: Listing; rent?: boolean; sold?: boolean }) {
+function UnitCard({ u, rent, sold, fallback }: { u: Listing; rent?: boolean; sold?: boolean; fallback?: string }) {
   const photo = (u.image_urls ?? [])[0];
   const price = sold ? (u.close_price ?? u.list_price) : u.list_price;
   const pending = u.status === "ActiveUnderContract" || u.status === "Pending";
@@ -79,6 +79,14 @@ function UnitCard({ u, rent, sold }: { u: Listing; rent?: boolean; sold?: boolea
             srcSet={mlsSrcSet(photo, [390, 600])}
             sizes="(max-width:640px) 100vw, 33vw"
             alt={`${u.building_name ?? ""} ${u.unit_number ?? ""}`}
+            loading="lazy"
+          />
+        ) : fallback ? (
+          <img
+            className="unit-im-fallback"
+            src={cf(fallback, 600)}
+            sizes="(max-width:640px) 100vw, 33vw"
+            alt={u.building_name ?? ""}
             loading="lazy"
           />
         ) : null}
@@ -441,7 +449,7 @@ export default async function CommunityPage({
           {inventory.forSale.length > 0 ? (
             <UnitGrid noun="residences for sale">
               {inventory.forSale.map((u) => (
-                <UnitCard key={u.mls_id} u={u} />
+                <UnitCard key={u.mls_id} u={u} fallback={c.hero} />
               ))}
             </UnitGrid>
           ) : null}
@@ -456,7 +464,7 @@ export default async function CommunityPage({
               </div>
               <div className="unit-grid">
                 {inventory.forRent.map((u) => (
-                  <UnitCard key={u.mls_id} u={u} rent />
+                  <UnitCard key={u.mls_id} u={u} rent fallback={c.hero} />
                 ))}
               </div>
             </>
@@ -495,7 +503,7 @@ export default async function CommunityPage({
             </div>
             <UnitGrid noun="sales">
               {inventory.recentSales.map((u) => (
-                <UnitCard key={u.mls_id} u={u} sold />
+                <UnitCard key={u.mls_id} u={u} sold fallback={c.hero} />
               ))}
             </UnitGrid>
           </section>

@@ -702,3 +702,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   text-transform:uppercase;color:var(--ink);cursor:pointer;transition:background .25s,color .25s}
 .unit-more:hover{background:var(--ink);color:var(--paper)}
 .unit-more-i{font-size:11px}
+
+/* ── BUILDING: unit-card image fallback (building hero when no MLS photo) ── */
+.unit-im-fallback{opacity:.9}
