@@ -436,7 +436,7 @@ export default async function CommunityPage({
         </div>
       ) : null}
 
-      {hub ? null : (
+      {isBuilding ? (
       <div className="wrap">
         <section className="sec" id="availability" style={{ paddingTop: 0 }}>
           <div className="sec-head">
@@ -535,7 +535,7 @@ export default async function CommunityPage({
           </section>
         ) : null}
       </div>
-      )}
+      ) : null}
 
       {spokeHub && spokeListings.length ? (
         <div className="wrap">
