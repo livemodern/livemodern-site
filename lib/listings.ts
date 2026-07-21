@@ -337,3 +337,82 @@ export function planSpecs(details: string | null): { beds?: string; baths?: stri
   const sqft = details.match(/([\d,]+)\s*Sq/i)?.[1];
   return { beds, baths, sqft };
 }
+
+
+/** LiveModern inventory floors for lifestyle queries. */
+const LIFESTYLE_CONDO_FLOOR = 2000000;
+const LIFESTYLE_HOME_FLOOR = 3000000;
+
+export type LifestyleListing = {
+  mls_id: string;
+  street_address: string;
+  unit_number: string | null;
+  city: string;
+  county: string;
+  list_price: number | null;
+  beds: number | null;
+  baths: number | null;
+  sqft: number | null;
+  image_urls: string[] | null;
+  property_subtype: string | null;
+  arch_style: string | null;
+  community_slug: string | null;
+};
+
+/**
+ * Active listings carrying a lifestyle tag (written by the data-first tagger).
+ * Condos surface at $2M+, homes at $3M+ — the curated LiveModern floors.
+ * Priced high to low. Powers the lifestyle hub pages.
+ */
+export async function listingsByLifestyle(
+  lifestyle: string,
+  limit = 60,
+): Promise<LifestyleListing[]> {
+  if (!SB_KEY) return [];
+  const tag = encodeURIComponent(`{"${lifestyle}"}`);
+  const sel =
+    "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug";
+  // condos $2M+ OR homes $3M+ — expressed as an OR filter
+  const or =
+    `or=(` +
+    `and(property_subtype.in.(Condominium,Apartment),list_price.gte.${LIFESTYLE_CONDO_FLOOR}),` +
+    `and(property_subtype.in.(SingleFamilyResidence,Townhouse,Villa),list_price.gte.${LIFESTYLE_HOME_FLOOR})` +
+    `)`;
+  const url =
+    `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
+    `&status=eq.Active&${or}` +
+    `&select=${sel}&order=list_price.desc&limit=${limit}`;
+  try {
+    const res = await fetch(url, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+      next: { revalidate: 900 },
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as LifestyleListing[];
+  } catch {
+    return [];
+  }
+}
+
+/** Count of active tagged listings for a lifestyle (for hub headers). */
+export async function lifestyleCount(lifestyle: string): Promise<number> {
+  if (!SB_KEY) return 0;
+  const tag = encodeURIComponent(`{"${lifestyle}"}`);
+  const url =
+    `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}&status=eq.Active&select=id&limit=1`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: SB_KEY,
+        Authorization: `Bearer ${SB_KEY}`,
+        Prefer: "count=exact",
+        Range: "0-0",
+      },
+      next: { revalidate: 900 },
+    });
+    const cr = res.headers.get("content-range") ?? "/0";
+    return parseInt(cr.split("/").pop() ?? "0", 10);
+  } catch {
+    return 0;
+  }
+}

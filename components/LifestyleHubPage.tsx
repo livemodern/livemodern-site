@@ -10,6 +10,8 @@ import {
   type LifestyleHub,
   type Community,
 } from "@/lib/communities";
+import { listingsByLifestyle } from "@/lib/listings";
+import LifestyleListings from "@/components/LifestyleListings";
 
 /**
  * A lifestyle hub (/boating, /waterfront, ...). The UI surface for one
@@ -17,8 +19,9 @@ import {
  * this lifestyle tag, and links down to the area "spoke" collections that
  * carry the SEO.
  */
-export default function LifestyleHubPage({ hub }: { hub: LifestyleHub }) {
+export default async function LifestyleHubPage({ hub }: { hub: LifestyleHub }) {
   const spokes = hub.spokes.map(getBySlug).filter(Boolean) as Community[];
+  const liveListings = await listingsByLifestyle(hub.theme, 90);
 
   // Buildings tagged with this lifestyle → the live, filterable inventory.
   const tagged = getBuildings()
@@ -116,6 +119,23 @@ export default function LifestyleHubPage({ hub }: { hub: LifestyleHub }) {
               <HubFilter buildings={tagged} />
             </section>
           </div>
+        </div>
+      ) : null}
+
+      {/* LIVE TAGGED LISTINGS — data-first lifestyle inventory */}
+      {liveListings.length ? (
+        <div className="wrap">
+          <section className="sec">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">On the market &middot; {liveListings.length}</p>
+                <h2 className="serif" style={{ fontSize: "clamp(22px,3vw,32px)" }}>
+                  {hub.theme} listings.
+                </h2>
+              </div>
+            </div>
+            <LifestyleListings listings={liveListings} />
+          </section>
         </div>
       ) : null}
 
