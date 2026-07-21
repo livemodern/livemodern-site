@@ -4,13 +4,59 @@ import { useState } from "react";
 import { mls, mlsSrcSet, money } from "@/lib/listings";
 import type { DesignHome } from "@/lib/design";
 
-export default function DesignGrid({ homes }: { homes: DesignHome[] }) {
+/**
+ * By-Design grid with interactive style filter chips. The chips (British West
+ * Indies, Bermuda, etc.) filter the grid in place. Style label sits on the
+ * card's lower-right, off the photo — consistent with the lifestyle cards.
+ */
+export default function DesignGrid({
+  homes,
+  styles,
+  counts,
+}: {
+  homes: DesignHome[];
+  styles: string[];
+  counts: Record<string, number>;
+}) {
+  const [style, setStyle] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const shown = expanded ? homes : homes.slice(0, 12);
-  const hidden = homes.length - 12;
+
+  const filtered = style ? homes.filter((h) => h.arch_style === style) : homes;
+  const shown = expanded ? filtered : filtered.slice(0, 12);
+  const hidden = filtered.length - 12;
 
   return (
     <>
+      {styles.length > 1 ? (
+        <div className="dz-substyles">
+          <button
+            type="button"
+            className={`dz-substyle${style === null ? " on" : ""}`}
+            onClick={() => {
+              setStyle(null);
+              setExpanded(false);
+            }}
+          >
+            All
+            <span className="dz-chip-n">{homes.length}</span>
+          </button>
+          {styles.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`dz-substyle${style === s ? " on" : ""}`}
+              onClick={() => {
+                setStyle(style === s ? null : s);
+                setExpanded(false);
+              }}
+            >
+              {s}
+              <span className="dz-chip-n">{counts[s]}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="unit-grid">
         {shown.map((h) => {
           const photo = (h.image_urls ?? [])[0];
@@ -26,7 +72,6 @@ export default function DesignGrid({ homes }: { homes: DesignHome[] }) {
                     loading="lazy"
                   />
                 ) : null}
-                <span className="unit-tag dz-tag">{h.arch_style}</span>
               </div>
               <div className="unit-bd">
                 <div className="unit-p serif">{money(h.list_price)}</div>
@@ -36,19 +81,23 @@ export default function DesignGrid({ homes }: { homes: DesignHome[] }) {
                   <span>{h.baths ?? "—"} Bath</span>
                   <span>{h.sqft ? h.sqft.toLocaleString() : "—"} SF</span>
                 </div>
-                <div className="dz-loc">
-                  {h.city}
-                  {h.city && h.county ? " · " : ""}
-                  {h.county === "Miami-Dade" ? "Dade" : h.county}
+                <div className="dz-loc dz-loc-row">
+                  <span>
+                    {h.city}
+                    {h.city && h.county ? " · " : ""}
+                    {h.county === "Miami-Dade" ? "Dade" : h.county}
+                  </span>
+                  {h.arch_style ? <span className="dz-loc-style">{h.arch_style}</span> : null}
                 </div>
               </div>
             </a>
           );
         })}
       </div>
+
       {hidden > 0 ? (
         <button type="button" className="unit-more" onClick={() => setExpanded((e) => !e)}>
-          {expanded ? "Show fewer" : `View all ${homes.length} homes`}
+          {expanded ? "Show fewer" : `View all ${filtered.length} homes`}
           <span className="unit-more-i" aria-hidden="true">
             {expanded ? " \u2191" : " \u2193"}
           </span>
