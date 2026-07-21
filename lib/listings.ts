@@ -372,23 +372,27 @@ export async function listingsByLifestyle(
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
   const sel =
     "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug";
-  // condos $2M+ OR homes $3M+ — expressed as an OR filter
-  const or =
-    `or=(` +
-    `and(property_subtype.in.(Condominium,Apartment),list_price.gte.${LIFESTYLE_CONDO_FLOOR}),` +
-    `and(property_subtype.in.(SingleFamilyResidence,Townhouse,Villa),list_price.gte.${LIFESTYLE_HOME_FLOOR})` +
-    `)`;
+  // Query by tag at the lower ($2M) floor, then apply the split floor in JS —
+  // a single clean filter is far more robust than a PostgREST or=() in fetch.
   const url =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
-    `&status=eq.Active&${or}` +
-    `&select=${sel}&order=list_price.desc&limit=${limit}`;
+    `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}` +
+    `&select=${sel}&order=list_price.desc&limit=${limit * 2}`;
   try {
     const res = await fetch(url, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
       next: { revalidate: 900 },
     });
     if (!res.ok) return [];
-    return (await res.json()) as LifestyleListing[];
+    const rows = (await res.json()) as LifestyleListing[];
+    // condos surface at $2M+, homes at $3M+
+    const isCondo = (t: string | null) => t === "Condominium" || t === "Apartment";
+    return rows
+      .filter(
+        (r) =>
+          isCondo(r.property_subtype) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR,
+      )
+      .slice(0, limit);
   } catch {
     return [];
   }
