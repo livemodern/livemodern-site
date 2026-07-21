@@ -284,12 +284,19 @@ export default async function CommunityPage({
                 { href: "#the-index", label: "The Index" },
                 { href: "#inquire", label: "Inquire" },
               ]
-            : [
+            : isBuilding
+              ? [
                 { href: "#story", label: "The Story" },
                 ...(gallery.length ? [{ href: "#gallery", label: "Gallery" }] : []),
                 { href: "#availability", label: "Availability" },
                 ...(floorplans.length ? [{ href: "#floorplans", label: "Floor Plans" }] : []),
                 ...(inventory.recentSales.length ? [{ href: "#recent-sales", label: "Recent Sales" }] : []),
+                { href: "#inquire", label: "Inquire" },
+              ]
+              : [
+                { href: "#story", label: "The Story" },
+                ...(gallery.length ? [{ href: "#gallery", label: "Gallery" }] : []),
+                ...(spokeHub && spokeListings.length ? [{ href: "#listings", label: "Listings" }] : []),
                 { href: "#inquire", label: "Inquire" },
               ]
         }
@@ -384,7 +391,7 @@ export default async function CommunityPage({
           <div className="wrap">
             <p className="caption">
               <span>
-                Inside <em>{displayName}</em>.
+                {isBuilding ? <>Inside <em>{displayName}</em>.</> : <em>{displayName}</em>}
               </span>
               <span>Fig. 2</span>
             </p>
@@ -437,7 +444,7 @@ export default async function CommunityPage({
             <div className="sec-head">
               <div>
                 <p className="eyebrow">Gallery &middot; {gallery.length} images</p>
-                <h2 className="serif">Inside the building.</h2>
+                <h2 className="serif">{isBuilding ? "Inside the building." : "The setting."}</h2>
               </div>
             </div>
             <Gallery images={gallery} name={displayName} />
@@ -548,7 +555,7 @@ export default async function CommunityPage({
 
       {spokeHub && spokeListings.length ? (
         <div className="wrap">
-          <section className="sec">
+          <section className="sec" id="listings">
             <div className="sec-head">
               <div>
                 <p className="eyebrow">On the market &middot; {spokeListings.length}</p>
