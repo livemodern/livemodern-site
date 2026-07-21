@@ -364,22 +364,27 @@ export type LifestyleListing = {
  * Condos surface at $2M+, homes at $3M+ — the curated LiveModern floors.
  * Priced high to low. Powers the lifestyle hub pages.
  */
+export type PropertyKind = "condos" | "homes" | "any";
+
+const CONDO_SUBTYPES = ["Condominium", "Apartment", "Townhouse"];
+const HOME_SUBTYPES = ["SingleFamilyResidence", "Villa"];
+
 export async function listingsByLifestyle(
   lifestyle: string,
   limit = 60,
   county?: string,
+  kind: PropertyKind = "any",
 ): Promise<LifestyleListing[]> {
   if (!SB_KEY) return [];
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
   const sel =
     "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug";
   const countyFilter = county ? `&county=eq.${encodeURIComponent(county)}` : "";
-  // Query by tag at the lower ($2M) floor, then apply the split floor in JS —
-  // a single clean filter is far more robust than a PostgREST or=() in fetch.
+  // Query by tag at the lower ($2M) floor, then apply the split floor + type in JS.
   const url =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
     `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}${countyFilter}` +
-    `&select=${sel}&order=list_price.desc&limit=${limit * 2}`;
+    `&select=${sel}&order=list_price.desc&limit=${limit * 3}`;
   try {
     const res = await fetch(url, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
@@ -387,17 +392,26 @@ export async function listingsByLifestyle(
     });
     if (!res.ok) return [];
     const rows = (await res.json()) as LifestyleListing[];
-    // condos surface at $2M+, homes at $3M+
     const isCondo = (t: string | null) => t === "Condominium" || t === "Apartment";
     return rows
-      .filter(
-        (r) =>
-          isCondo(r.property_subtype) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR,
-      )
+      .filter((r) => {
+        // property-type gate from the spoke's slug (condos vs homes)
+        if (kind === "condos" && !CONDO_SUBTYPES.includes(r.property_subtype ?? "")) return false;
+        if (kind === "homes" && !HOME_SUBTYPES.includes(r.property_subtype ?? "")) return false;
+        // price floor: condos $2M+, homes $3M+
+        return isCondo(r.property_subtype) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR;
+      })
       .slice(0, limit);
   } catch {
     return [];
   }
+}
+
+/** Derive the property-type gate a spoke slug implies (…-condos vs …-homes). */
+export function kindFromSlug(slug: string): PropertyKind {
+  if (/condos?\b/.test(slug)) return "condos";
+  if (/homes?\b/.test(slug)) return "homes";
+  return "any";
 }
 
 /** Count of active tagged listings for a lifestyle (for hub headers). */
