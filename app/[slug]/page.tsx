@@ -13,12 +13,15 @@ import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, a
 import CityIndex from "@/components/CityIndex";
 import LifestyleHubPage from "@/components/LifestyleHubPage";
 import LifestyleListings from "@/components/LifestyleListings";
+import SpokeEnrichment from "@/components/SpokeEnrichment";
+import { contentForTheme } from "@/lib/spoke-content";
 import UnitGrid from "@/components/UnitGrid";
 import {
   getBuildingInventory,
   getFloorplans,
   isPending,
   kindFromSlug,
+  lifestyleStats,
   listingsByLifestyle,
   mls,
   mlsSrcSet,
@@ -165,9 +168,14 @@ export default async function CommunityPage({
   const spokeCountyShort = spokeHub ? collectionCounty(c.slug) : null;
   const spokeCountyFull =
     spokeCountyShort === "Dade" ? "Miami-Dade" : spokeCountyShort ?? undefined;
+  const spokeKind = kindFromSlug(c.slug);
   const spokeListings = spokeHub
-    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, kindFromSlug(c.slug))
+    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, spokeKind)
     : [];
+  const spokeStats = spokeHub
+    ? await lifestyleStats(spokeHub.theme, spokeCountyFull, spokeKind)
+    : null;
+  const spokeContent = spokeHub ? contentForTheme(spokeHub.theme) : undefined;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -552,6 +560,14 @@ export default async function CommunityPage({
             <LifestyleListings listings={spokeListings} />
           </section>
         </div>
+      ) : null}
+
+      {spokeHub && spokeStats && spokeContent ? (
+        <SpokeEnrichment
+          stats={spokeStats}
+          content={spokeContent}
+          county={spokeCountyShort}
+        />
       ) : null}
 
       <LeadBand
