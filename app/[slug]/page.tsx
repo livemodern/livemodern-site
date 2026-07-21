@@ -537,14 +537,6 @@ export default async function CommunityPage({
       </div>
       )}
 
-      <LeadBand
-        eyebrow={c.name}
-        heading="Request pricing and floor plans."
-        copy="Available lines, pricing, deposit schedule, and delivery timing — sent directly, not through a portal."
-        cta="Send me availability"
-        withInterest
-      />
-
       {spokeHub && spokeListings.length ? (
         <div className="wrap">
           <section className="sec">
@@ -560,6 +552,14 @@ export default async function CommunityPage({
           </section>
         </div>
       ) : null}
+
+      <LeadBand
+        eyebrow={c.name}
+        heading="Request pricing and floor plans."
+        copy="Available lines, pricing, deposit schedule, and delivery timing — sent directly, not through a portal."
+        cta="Send me availability"
+        withInterest
+      />
 
       {sib && sibItems.length ? (
         <div className="band">
