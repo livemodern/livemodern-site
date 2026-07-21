@@ -436,3 +436,80 @@ export async function lifestyleCount(lifestyle: string): Promise<number> {
     return 0;
   }
 }
+
+
+export type LifestyleStats = {
+  count: number;
+  minPrice: number | null;
+  maxPrice: number | null;
+  medianPrice: number | null;
+  attributes: Record<string, number>;
+  oceanAccess: number;
+  noFixedBridges: number;
+  topCities: { city: string; n: number }[];
+};
+
+/**
+ * Live market stats for a lifestyle + county + kind — powers the stats bar and
+ * attribute chips on the spoke pages. One query, computed in JS.
+ */
+export async function lifestyleStats(
+  lifestyle: string,
+  county?: string,
+  kind: PropertyKind = "any",
+): Promise<LifestyleStats> {
+  const empty: LifestyleStats = {
+    count: 0, minPrice: null, maxPrice: null, medianPrice: null,
+    attributes: {}, oceanAccess: 0, noFixedBridges: 0, topCities: [],
+  };
+  if (!SB_KEY) return empty;
+  const tag = encodeURIComponent(`{"${lifestyle}"}`);
+  const cf = county ? `&county=eq.${encodeURIComponent(county)}` : "";
+  const url =
+    `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
+    `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}${cf}` +
+    `&select=list_price,property_subtype,city,lifestyle_attributes,waterfront_features&limit=1500`;
+  try {
+    const res = await fetch(url, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return empty;
+    type Row = {
+      list_price: number | null; property_subtype: string | null; city: string | null;
+      lifestyle_attributes: string[] | null; waterfront_features: string | null;
+    };
+    const raw = (await res.json()) as Row[];
+    const isCondo = (t: string | null) => t === "Condominium" || t === "Apartment";
+    const rows = raw.filter((r) => {
+      const st = r.property_subtype ?? "";
+      if (kind === "condos" && !CONDO_SUBTYPES.includes(st)) return false;
+      if (kind === "homes" && !HOME_SUBTYPES.includes(st)) return false;
+      return isCondo(st) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR;
+    });
+    if (!rows.length) return empty;
+    const prices = rows.map((r) => r.list_price ?? 0).filter((n) => n > 0).sort((a, b) => a - b);
+    const median = prices.length ? prices[Math.floor(prices.length / 2)] : null;
+    const attributes: Record<string, number> = {};
+    const cityCounts: Record<string, number> = {};
+    let oceanAccess = 0, noFixedBridges = 0;
+    for (const r of rows) {
+      for (const a of r.lifestyle_attributes ?? []) attributes[a] = (attributes[a] ?? 0) + 1;
+      if (r.city) cityCounts[r.city] = (cityCounts[r.city] ?? 0) + 1;
+      const wf = r.waterfront_features ?? "";
+      if (wf.includes("OceanAccess")) oceanAccess++;
+      if (wf.includes("NoFixedBridges")) noFixedBridges++;
+    }
+    const topCities = Object.entries(cityCounts)
+      .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([city, n]) => ({ city, n }));
+    return {
+      count: rows.length,
+      minPrice: prices[0] ?? null,
+      maxPrice: prices[prices.length - 1] ?? null,
+      medianPrice: median,
+      attributes, oceanAccess, noFixedBridges, topCities,
+    };
+  } catch {
+    return empty;
+  }
+}
