@@ -18,6 +18,7 @@ import {
   getBuildingInventory,
   getFloorplans,
   isPending,
+  kindFromSlug,
   listingsByLifestyle,
   mls,
   mlsSrcSet,
@@ -165,7 +166,7 @@ export default async function CommunityPage({
   const spokeCountyFull =
     spokeCountyShort === "Dade" ? "Miami-Dade" : spokeCountyShort ?? undefined;
   const spokeListings = spokeHub
-    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull)
+    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, kindFromSlug(c.slug))
     : [];
 
   const jsonLd = {
