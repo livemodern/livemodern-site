@@ -367,16 +367,18 @@ export type LifestyleListing = {
 export async function listingsByLifestyle(
   lifestyle: string,
   limit = 60,
+  county?: string,
 ): Promise<LifestyleListing[]> {
   if (!SB_KEY) return [];
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
   const sel =
     "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug";
+  const countyFilter = county ? `&county=eq.${encodeURIComponent(county)}` : "";
   // Query by tag at the lower ($2M) floor, then apply the split floor in JS —
   // a single clean filter is far more robust than a PostgREST or=() in fetch.
   const url =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
-    `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}` +
+    `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}${countyFilter}` +
     `&select=${sel}&order=list_price.desc&limit=${limit * 2}`;
   try {
     const res = await fetch(url, {
