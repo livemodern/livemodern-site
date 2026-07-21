@@ -725,9 +725,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dz-go{font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
 
 /* family page: style sub-nav + card locality + badge */
-.dz-substyles{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.dz-substyles{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
 .dz-substyle{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);
-  border:1px solid var(--line);padding:8px 13px}
+  border:1px solid var(--line);padding:9px 14px;background:none;cursor:pointer;font-family:inherit;
+  transition:border-color .2s,color .2s,background .2s}
+.dz-substyle:hover{border-color:var(--ink);color:var(--ink)}
+.dz-substyle.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.dz-substyle.on .dz-chip-n{color:rgba(255,255,255,.6)}
 .dz-tag{background:rgba(13,23,59,.86)}
 .dz-loc{font-size:11px;letter-spacing:.04em;color:var(--muted);margin-top:8px}
 
