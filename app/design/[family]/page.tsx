@@ -66,22 +66,13 @@ export default async function DesignFamilyPage({
           <p style={{ marginTop: 14, maxWidth: "56ch", color: "var(--muted)", fontSize: 15 }}>
             {f.blurb}
           </p>
-          {/* style sub-nav within the family */}
-          <div className="dz-substyles">
-            {stylesPresent.map((s) => (
-              <span key={s} className="dz-substyle">
-                {s}
-                <span className="dz-chip-n">{counts[s]}</span>
-              </span>
-            ))}
-          </div>
         </section>
       </div>
 
       <div className="wrap">
         <section className="sec" style={{ paddingTop: 0 }}>
           {homes.length ? (
-            <DesignGrid homes={homes} />
+            <DesignGrid homes={homes} styles={stylesPresent} counts={counts} />
           ) : (
             <div className="avail">
               <div className="avail-txt">
