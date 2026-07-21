@@ -12,11 +12,13 @@ import Gallery from "@/components/Gallery";
 import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife, cf } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import LifestyleHubPage from "@/components/LifestyleHubPage";
+import LifestyleListings from "@/components/LifestyleListings";
 import UnitGrid from "@/components/UnitGrid";
 import {
   getBuildingInventory,
   getFloorplans,
   isPending,
+  listingsByLifestyle,
   mls,
   mlsSrcSet,
   money,
@@ -156,6 +158,15 @@ export default async function CommunityPage({
   const isBuilding = c.type === "building";
   const sib = !isBuilding && !hub ? collectionSiblings(c.slug) : null;
   const sibItems = sib ? (sib.siblings.map(getBySlug).filter(Boolean) as typeof related) : [];
+  // Spoke pages (a lifestyle collection like palm-beach-boating-homes) surface
+  // the live tagged inventory for that lifestyle, filtered to the page's county.
+  const spokeHub = !isBuilding && !hub ? hubForSpoke(c.slug) : undefined;
+  const spokeCountyShort = spokeHub ? collectionCounty(c.slug) : null;
+  const spokeCountyFull =
+    spokeCountyShort === "Dade" ? "Miami-Dade" : spokeCountyShort ?? undefined;
+  const spokeListings = spokeHub
+    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull)
+    : [];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -533,6 +544,22 @@ export default async function CommunityPage({
         cta="Send me availability"
         withInterest
       />
+
+      {spokeHub && spokeListings.length ? (
+        <div className="wrap">
+          <section className="sec">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">On the market &middot; {spokeListings.length}</p>
+                <h2 className="serif" style={{ fontSize: "clamp(22px,3vw,34px)" }}>
+                  {spokeHub.theme} in {spokeCountyShort ?? "South Florida"}.
+                </h2>
+              </div>
+            </div>
+            <LifestyleListings listings={spokeListings} />
+          </section>
+        </div>
+      ) : null}
 
       {sib && sibItems.length ? (
         <div className="band">
