@@ -70,7 +70,6 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
                     loading="lazy"
                   />
                 ) : null}
-                {l.arch_style ? <span className="unit-tag dz-tag">{l.arch_style}</span> : null}
               </div>
               <div className="unit-bd">
                 <div className="unit-p serif">{money(l.list_price)}</div>
@@ -83,10 +82,13 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
                   <span>{l.baths ?? "—"} Bath</span>
                   <span>{l.sqft ? l.sqft.toLocaleString() : "—"} SF</span>
                 </div>
-                <div className="dz-loc">
-                  {l.city}
-                  {l.city && l.county ? " · " : ""}
-                  {l.county === "Miami-Dade" ? "Dade" : l.county}
+                <div className="dz-loc dz-loc-row">
+                  <span>
+                    {l.city}
+                    {l.city && l.county ? " · " : ""}
+                    {l.county === "Miami-Dade" ? "Dade" : l.county}
+                  </span>
+                  {l.arch_style ? <span className="dz-loc-style">{l.arch_style}</span> : null}
                 </div>
               </div>
             </a>
