@@ -264,14 +264,24 @@ export default async function CommunityPage({
             <div className="v serif">
               {inventory.activeCount > 0
                 ? `${inventory.activeCount} Available`
-                : isBuilding
-                  ? stageLabel(c.facts) ?? "Now Selling"
-                  : "Curated"}
+                : spokeStats && spokeStats.count > 0
+                  ? `${spokeStats.count} Available`
+                  : isBuilding
+                    ? stageLabel(c.facts) ?? "Now Selling"
+                    : "Curated"}
             </div>
           </div>
           <div className="stat">
-            <p className="caps">{priceFrom ? "Priced from" : "Pricing"}</p>
-            <div className="v serif">{priceFrom ? money(priceFrom) : "On request"}</div>
+            <p className="caps">
+              {priceFrom ? "Priced from" : spokeStats && spokeStats.minPrice ? "From" : "Pricing"}
+            </p>
+            <div className="v serif">
+              {priceFrom
+                ? money(priceFrom)
+                : spokeStats && spokeStats.minPrice
+                  ? money(spokeStats.minPrice)
+                  : "On request"}
+            </div>
           </div>
         </div>
       </div>
@@ -315,7 +325,7 @@ export default async function CommunityPage({
             </div>
 
             <aside className="sheet">
-              <h4>The Facts</h4>
+              <h4>{isBuilding ? "The Facts" : "At a Glance"}</h4>
               <dl>
                 {isBuilding && stageLabel(c.facts) ? (
                   <div className="f">
@@ -362,9 +372,21 @@ export default async function CommunityPage({
                     <dd>{c.county ? `${c.city}, ${c.county}` : c.city}</dd>
                   </div>
                 ) : null}
+                {!isBuilding && spokeStats && spokeStats.count > 0 ? (
+                  <div className="f">
+                    <dt>On the market</dt>
+                    <dd>{spokeStats.count} listings</dd>
+                  </div>
+                ) : null}
                 <div className="f">
                   <dt>Pricing</dt>
-                  <dd>{priceFrom ? money(priceFrom) : "On request"}</dd>
+                  <dd>
+                    {priceFrom
+                      ? money(priceFrom)
+                      : spokeStats && spokeStats.minPrice && spokeStats.maxPrice
+                        ? `${money(spokeStats.minPrice)} – ${money(spokeStats.maxPrice)}`
+                        : "On request"}
+                  </dd>
                 </div>
               </dl>
               {c.facts?.developer ? (
@@ -373,10 +395,17 @@ export default async function CommunityPage({
                   alongside the developer &mdash; we are not the developer.
                 </p>
               ) : null}
-              <a className="btn btn-dark" href="#inquire">
-                {statusPill(c.facts) === "Pre-Construction" && isBuilding
-                  ? "Request the package"
-                  : "Request pricing"}
+              <a
+                className="btn btn-dark"
+                href={!isBuilding && spokeHub && spokeListings.length ? "#listings" : "#inquire"}
+              >
+                {isBuilding
+                  ? statusPill(c.facts) === "Pre-Construction"
+                    ? "Request the package"
+                    : "Request pricing"
+                  : spokeHub && spokeListings.length
+                    ? "Browse listings"
+                    : "Request pricing"}
               </a>
             </aside>
           </div>
