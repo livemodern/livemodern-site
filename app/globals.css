@@ -745,3 +745,39 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dz-loc-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .dz-loc-style{flex:none;font-size:9.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
   color:var(--muted)}
+
+
+/* ═══════════════════ SPOKE ENRICHMENT (stats + insider + faq) ═══════════════════ */
+/* live market stats bar */
+.spoke-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);margin:8px 0 8px}
+@media(min-width:720px){.spoke-stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+.spoke-stat{background:var(--paper);padding:22px 20px;text-align:center}
+.spoke-stat-v{font-size:clamp(20px,2.6vw,30px);line-height:1;color:var(--navy)}
+.spoke-stat-l{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:9px}
+
+/* insider explainer */
+.spoke-insider-head{max-width:60ch;margin-bottom:34px}
+.spoke-insider-head h2{font-size:clamp(24px,3.4vw,38px);line-height:1.05;margin-top:12px}
+.spoke-deck{margin-top:16px;font-size:15px;line-height:1.65;color:var(--ink-2)}
+.spoke-points{display:grid;grid-template-columns:1fr;gap:2px;background:var(--line);border:1px solid var(--line)}
+@media(min-width:760px){.spoke-points{grid-template-columns:1fr 1fr}}
+.spoke-point{background:var(--paper);padding:26px 26px 28px}
+.spoke-point h3{font-size:18px;line-height:1.15;margin-bottom:9px;color:var(--navy)}
+.spoke-point p{font-size:13.5px;line-height:1.62;color:var(--ink-2)}
+
+/* where it concentrates */
+.spoke-areas{font-size:15px;line-height:1.7;color:var(--ink-2);max-width:70ch;margin-top:10px}
+.spoke-areas strong{color:var(--ink);font-weight:600}
+.spoke-area-n{color:var(--muted);font-size:12px}
+
+/* faq accordion */
+.spoke-faqs{border-top:1px solid var(--line)}
+.spoke-faq{border-bottom:1px solid var(--line)}
+.spoke-faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;
+  padding:22px 4px;background:none;border:0;cursor:pointer;text-align:left;
+  font-size:16px;font-weight:500;color:var(--ink);font-family:inherit}
+.spoke-faq-q:hover{color:var(--accent)}
+.spoke-faq-i{flex:none;font-size:20px;color:var(--accent);line-height:1;width:20px;text-align:center}
+.spoke-faq-a{padding:0 40px 26px 4px;font-size:14.5px;line-height:1.7;color:var(--ink-2);max-width:80ch}
+.spoke-faq-sec{padding-top:0}
