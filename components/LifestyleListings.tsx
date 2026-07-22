@@ -50,6 +50,12 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
     () => [...new Set(countyScoped.map((l) => l.arch_style).filter(Boolean))].sort() as string[],
     [countyScoped],
   );
+  // Only offer the style filter when enough of the set is actually classified —
+  // a 2-of-218 filter is worse than none.
+  const styleCoverage = countyScoped.length
+    ? countyScoped.filter((l) => l.arch_style).length / countyScoped.length
+    : 0;
+  const showStyleFilter = styleOptions.length > 1 && styleCoverage >= 0.25;
 
   const filtered = useMemo(() => {
     const out = countyScoped.filter((l) => {
@@ -171,7 +177,7 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
           </label>
         ) : null}
 
-        {styleOptions.length > 1 ? (
+        {showStyleFilter ? (
           <label className="lf-f">
             <span>Design style</span>
             <select value={style} onChange={(e) => { setStyle(e.target.value); setExpanded(false); }}>
