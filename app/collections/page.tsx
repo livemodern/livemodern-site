@@ -11,7 +11,7 @@ import {
   themeAnchor,
   type Community,
 } from "@/lib/communities";
-import { DESIGN_FAMILIES } from "@/lib/design";
+import { DESIGN_FAMILIES, styleCounts } from "@/lib/design";
 
 export const revalidate = 3600;
 
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 const clean = (c: Community) => c.name.replace(" // LiveModern", "");
 
-export default function Collections() {
+export default async function Collections() {
   // lifestyle hubs that have at least one spoke to show
   const hubs = LIFESTYLE_HUBS.map((h) => ({
     ...h,
@@ -31,6 +31,13 @@ export default function Collections() {
   })).filter((h) => h.items.length);
 
   const curated = CURATED_SEARCHES.map(getBySlug).filter(Boolean) as Community[];
+
+  // By Design — live style counts, families with inventory only
+  const counts = await styleCounts();
+  const families = DESIGN_FAMILIES.map((f) => ({
+    ...f,
+    n: f.styles.reduce((sum, s) => sum + (counts[s] ?? 0), 0),
+  })).filter((f) => f.n > 0);
 
   return (
     <>
@@ -55,6 +62,41 @@ export default function Collections() {
         <div className="col-layout">
           <div className="col-main">
             {/* ── BY LIFESTYLE ── */}
+            {/* ── BY DESIGN (lead section) ── */}
+            {families.length ? (
+              <section className="col-theme" id="theme-design">
+                <div className="col-theme-head">
+                  <div className="col-theme-titles">
+                    <h2 className="serif">By Design</h2>
+                    <p>
+                      Most searches filter by beds and price. Ours reads the architecture &mdash;
+                      every home classified by style.
+                    </p>
+                  </div>
+                </div>
+                <div className="dz-grid">
+                  {families.map((f) => (
+                    <Link key={f.slug} className="dz-card" href={`/design/${f.slug}`}>
+                      <div className="dz-card-bd">
+                        <p className="dz-n">{f.n} homes</p>
+                        <h3 className="serif">{f.family}</h3>
+                        <p className="dz-blurb">{f.blurb}</p>
+                        <div className="dz-styles">
+                          {f.styles
+                            .filter((s) => (counts[s] ?? 0) > 0)
+                            .map((s) => (
+                              <span key={s} className="dz-chip">
+                                {s} <span className="dz-chip-n">{counts[s]}</span>
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {hubs.map((h) => (
               <section className="col-theme" id={themeAnchor(h.theme)} key={h.slug}>
                 <div className="col-theme-head">
@@ -84,27 +126,6 @@ export default function Collections() {
                 </div>
               </section>
             ))}
-
-            {/* ── BY DESIGN ── */}
-            <section className="col-theme" id="theme-design">
-              <div className="col-theme-head">
-                <div className="col-theme-titles">
-                  <h2 className="serif">By Design</h2>
-                  <p>The only search that reads the architecture &mdash; browse by style.</p>
-                </div>
-                <Link className="col-theme-all link" href="/design">
-                  View all &rarr;
-                </Link>
-              </div>
-              <div className="dz-mini">
-                {DESIGN_FAMILIES.map((f) => (
-                  <Link key={f.slug} className="dz-mini-card" href={`/design/${f.slug}`}>
-                    <span className="dz-mini-t serif">{f.family}</span>
-                    <span className="dz-mini-s">{f.styles.slice(0, 3).join(" · ")}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
 
             {/* ── CURATED SEARCHES ── */}
             {curated.length ? (
@@ -137,7 +158,14 @@ export default function Collections() {
 
           {/* STICKY SIDE-NAV — two groups: Lifestyle + Curated */}
           <aside className="col-nav" aria-label="Collections">
-            <p className="col-nav-h">By Lifestyle</p>
+            <p className="col-nav-h">By Design</p>
+            <nav>
+              <a href="#theme-design" className="col-nav-link">
+                Architectural styles
+                <span className="col-nav-n">{families.length}</span>
+              </a>
+            </nav>
+            <p className="col-nav-h" style={{ marginTop: 22 }}>By Lifestyle</p>
             <nav>
               {hubs.map((h) => (
                 <a key={h.slug} href={`#${themeAnchor(h.theme)}`} className="col-nav-link">
@@ -159,15 +187,6 @@ export default function Collections() {
                 </nav>
               </>
             ) : null}
-            <p className="col-nav-h" style={{ marginTop: 22 }}>
-              By Design
-            </p>
-            <nav>
-              <a href="/design" className="col-nav-link">
-                Architectural styles
-                <span className="col-nav-n">{DESIGN_FAMILIES.length}</span>
-              </a>
-            </nav>
             <div className="col-nav-cta">
               <p>Want to combine lifestyles?</p>
               <a href="#inquire" className="link">
