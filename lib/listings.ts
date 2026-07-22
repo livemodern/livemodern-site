@@ -384,7 +384,7 @@ export async function listingsByLifestyle(
   const url =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
     `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}${countyFilter}` +
-    `&select=${sel}&order=list_price.desc&limit=${limit * 3}`;
+    `&select=${sel}&order=list_price.asc&limit=${Math.max(limit, 400)}`;
   try {
     const res = await fetch(url, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
@@ -401,7 +401,10 @@ export async function listingsByLifestyle(
         // price floor: condos $2M+, homes $3M+
         return isCondo(r.property_subtype) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR;
       })
-      .slice(0, limit);
+      // Trim the photo array to the single image the card renders. Listings carry
+      // ~49 image URLs each; serializing them all into the client component would
+      // put ~1.1MB of JSON in the page payload for no benefit (~120KB trimmed).
+      .map((r) => ({ ...r, image_urls: (r.image_urls ?? []).slice(0, 1) }));
   } catch {
     return [];
   }
