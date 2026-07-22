@@ -716,7 +716,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dz-card-bd{padding:30px 28px 26px}
 .dz-n{font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);
   margin-bottom:12px}
-.dz-card-bd h2{font-size:clamp(22px,2.6vw,30px);line-height:1.08;margin-bottom:10px}
+.dz-card-bd h2,.dz-card-bd h3{font-size:clamp(22px,2.6vw,30px);line-height:1.08;margin-bottom:10px}
 .dz-blurb{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin-bottom:18px;max-width:44ch}
 .dz-styles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
 .dz-chip{font-size:10.5px;letter-spacing:.03em;color:var(--ink-2);background:var(--paper);
@@ -816,6 +816,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .lf-reset:hover{color:var(--ink)}
 
 /* mid-page section lead (lifestyle intro on Collections) */
-.col-lead{padding:8px 0 30px}
-.col-lead h2{font-size:clamp(26px,3.6vw,40px);line-height:1.05;margin-top:12px}
-.col-lead>p:last-child{margin-top:14px;max-width:56ch;color:var(--muted);font-size:15px;line-height:1.6}
+.col-lead{padding:44px 0 34px}
+.col-lead h2{font-size:clamp(26px,3.6vw,40px);line-height:1.05;margin-top:14px}
+.col-lead>p:last-child{margin-top:16px;max-width:56ch;color:var(--muted);font-size:15px;line-height:1.65}
+@media(max-width:719px){
+  /* mobile: the type is large relative to the column, so give sections real air */
+  .col-lead{padding:34px 0 30px}
+  .dz-card-bd{padding:26px 22px 24px}
+  .dz-blurb{margin-bottom:16px}
+  .dz-grid{gap:2px}
+  .col-theme{padding-bottom:40px}
+}
