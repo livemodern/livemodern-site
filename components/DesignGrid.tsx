@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { mls, mlsSrcSet, money } from "@/lib/listings";
 import type { DesignHome } from "@/lib/design";
 
@@ -12,14 +12,24 @@ import type { DesignHome } from "@/lib/design";
 export default function DesignGrid({
   homes,
   styles,
-  counts,
 }: {
   homes: DesignHome[];
   styles: string[];
-  counts: Record<string, number>;
 }) {
   const [style, setStyle] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+
+  // Counts come from the homes actually loaded, so a chip never promises more
+  // than the grid can show.
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const h of homes) if (h.arch_style) c[h.arch_style] = (c[h.arch_style] ?? 0) + 1;
+    return c;
+  }, [homes]);
+  const stylesPresent = useMemo(
+    () => styles.filter((s) => (counts[s] ?? 0) > 0),
+    [styles, counts],
+  );
 
   const filtered = style ? homes.filter((h) => h.arch_style === style) : homes;
   const shown = expanded ? filtered : filtered.slice(0, 12);
@@ -27,7 +37,7 @@ export default function DesignGrid({
 
   return (
     <>
-      {styles.length > 1 ? (
+      {stylesPresent.length > 1 ? (
         <div className="dz-substyles">
           <button
             type="button"
@@ -40,7 +50,7 @@ export default function DesignGrid({
             All
             <span className="dz-chip-n">{homes.length}</span>
           </button>
-          {styles.map((s) => (
+          {stylesPresent.map((s) => (
             <button
               key={s}
               type="button"
