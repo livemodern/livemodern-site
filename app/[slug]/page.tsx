@@ -15,6 +15,7 @@ import LifestyleHubPage from "@/components/LifestyleHubPage";
 import LifestyleListings from "@/components/LifestyleListings";
 import SpokeEnrichment from "@/components/SpokeEnrichment";
 import { contentForTheme } from "@/lib/spoke-content";
+import { spokeFacts } from "@/lib/spoke-facts";
 import UnitGrid from "@/components/UnitGrid";
 import {
   getBuildingInventory,
@@ -176,6 +177,7 @@ export default async function CommunityPage({
     ? await lifestyleStats(spokeHub.theme, spokeCountyFull, spokeKind)
     : null;
   const spokeContent = spokeHub ? contentForTheme(spokeHub.theme) : undefined;
+  const spokeFactSet = spokeHub ? spokeFacts(spokeHub.theme, spokeCountyFull) : undefined;
   // Gallery policy: buildings always show their (multi-image) galleries. Collections
   // hide the gallery by default (a 1-image gallery looks bad) — the CMS can opt a
   // collection back in per-page via `showGallery: true` once it has real photos.
@@ -412,6 +414,20 @@ export default async function CommunityPage({
                     ? "Browse listings"
                     : "Request pricing"}
               </a>
+
+              {!isBuilding && spokeFactSet ? (
+                <div className="sheet-facts">
+                  <h4>{spokeFactSet.heading}</h4>
+                  <ul>
+                    {spokeFactSet.facts.map((f) => (
+                      <li key={f.term}>
+                        <span className="sheet-fact-t">{f.term}</span>
+                        <span className="sheet-fact-b">{f.body}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </aside>
           </div>
         </section>
