@@ -49,11 +49,12 @@ export default async function Collections() {
           <h1 className="serif" style={{ fontSize: "clamp(34px,6vw,64px)", marginTop: 16 }}>
             Curated by
             <br />
-            how you live.
+            architecture.
           </h1>
-          <p style={{ marginTop: 14, maxWidth: "56ch", color: "var(--muted)", fontSize: 15 }}>
-            South Florida&rsquo;s modern condos and homes, gathered by lifestyle &mdash; then narrowed
-            by market. Start with the life you&rsquo;re after; we&rsquo;ll take it from there.
+          <p style={{ marginTop: 14, maxWidth: "58ch", color: "var(--muted)", fontSize: 15 }}>
+            Most searches filter by beds and price. Ours reads the architecture &mdash; every home
+            classified by style, so you can look for the British West Indies estate or the
+            glass-walled modern, not just &ldquo;5 bed, waterfront.&rdquo;
           </p>
         </section>
       </div>
@@ -65,15 +66,6 @@ export default async function Collections() {
             {/* ── BY DESIGN (lead section) ── */}
             {families.length ? (
               <section className="col-theme" id="theme-design">
-                <div className="col-theme-head">
-                  <div className="col-theme-titles">
-                    <h2 className="serif">By Design</h2>
-                    <p>
-                      Most searches filter by beds and price. Ours reads the architecture &mdash;
-                      every home classified by style.
-                    </p>
-                  </div>
-                </div>
                 <div className="dz-grid">
                   {families.map((f) => (
                     <Link key={f.slug} className="dz-card" href={`/design/${f.slug}`}>
@@ -96,6 +88,17 @@ export default async function Collections() {
                 </div>
               </section>
             ) : null}
+
+            {/* ── LIFESTYLE INTRO ── */}
+            <section className="col-lead" id="theme-lifestyle">
+              <p className="eyebrow">By Lifestyle</p>
+              <h2 className="serif">Curated by how you live.</h2>
+              <p>
+                South Florida&rsquo;s modern condos and homes, gathered by lifestyle &mdash; then
+                narrowed by market. Start with the life you&rsquo;re after; we&rsquo;ll take it from
+                there.
+              </p>
+            </section>
 
             {hubs.map((h) => (
               <section className="col-theme" id={themeAnchor(h.theme)} key={h.slug}>
