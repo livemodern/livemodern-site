@@ -8,7 +8,7 @@ import DesignGrid from "@/components/DesignGrid";
 import {
   DESIGN_FAMILIES,
   familyBySlug,
-  homesByStyle,
+  homesByFamily,
   styleCounts,
 } from "@/lib/design";
 
@@ -43,7 +43,7 @@ export default async function DesignFamilyPage({
 
   const counts = await styleCounts();
   const stylesPresent = f.styles.filter((s) => (counts[s] ?? 0) > 0);
-  const homes = await homesByStyle(f.styles, 90);
+  const homes = await homesByFamily(f.styles, 250);
 
   return (
     <>
@@ -72,7 +72,7 @@ export default async function DesignFamilyPage({
       <div className="wrap">
         <section className="sec" style={{ paddingTop: 0 }}>
           {homes.length ? (
-            <DesignGrid homes={homes} styles={stylesPresent} counts={counts} />
+            <DesignGrid homes={homes} styles={stylesPresent} />
           ) : (
             <div className="avail">
               <div className="avail-txt">
