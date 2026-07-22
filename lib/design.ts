@@ -141,6 +141,44 @@ export async function homesByStyle(
   return (await res.json()) as DesignHome[];
 }
 
+/**
+ * Homes for a whole family, fetched ONE STYLE AT A TIME so every style is
+ * properly represented. A single pooled query ordered by price starved the
+ * smaller styles — a family capped at 90 rows could contain just one
+ * Mid-Century Modern even though 35 exist. Per-style capping guarantees any
+ * style under the cap is complete. Photo arrays are trimmed to the single
+ * image the card renders (listings carry ~49 URLs each).
+ */
+export async function homesByFamily(
+  styles: string[],
+  perStyle = 250,
+): Promise<DesignHome[]> {
+  if (!SB_KEY || !styles.length) return [];
+  const results = await Promise.all(
+    styles.map(async (s) => {
+      const url =
+        `${SB_URL}/rest/v1/properties?arch_style=eq.${encodeURIComponent(s)}` +
+        `&status=eq.Active&list_price=gte.${HOME_FLOOR}` +
+        `&select=mls_id,street_address,city,county,list_price,beds,baths,sqft,image_urls,arch_style,arch_style_secondary` +
+        `&order=list_price.desc&limit=${perStyle}`;
+      try {
+        const res = await fetch(url, {
+          headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+          next: { revalidate: 900 },
+        });
+        if (!res.ok) return [] as DesignHome[];
+        return (await res.json()) as DesignHome[];
+      } catch {
+        return [] as DesignHome[];
+      }
+    }),
+  );
+  return results
+    .flat()
+    .map((h) => ({ ...h, image_urls: (h.image_urls ?? []).slice(0, 1) }))
+    .sort((a, b) => (b.list_price ?? 0) - (a.list_price ?? 0));
+}
+
 export function familyForStyle(style: string): string | undefined {
   return STYLE_TO_FAMILY[style];
 }
