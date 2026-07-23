@@ -12,8 +12,8 @@ export default function Footer() {
               <Logo />
             </Link>
             <p className="blurb">
-              South Florida&rsquo;s new towers and modern homes, indexed. A Modern Living Group
-              company at Compass.
+              South Florida&rsquo;s new towers and modern homes, indexed. LiveModern is a brand
+              of Modern Living Group at Compass.
             </p>
           </div>
           <div>
