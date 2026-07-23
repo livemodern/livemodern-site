@@ -4,7 +4,12 @@ import { useState, useMemo, useEffect } from "react";
 import IndexRow from "@/components/IndexRow";
 import type { Community } from "@/lib/communities";
 
-const HIDDEN = new Set(["New Construction"]);
+// Tags that shouldn't be offered as filters on this index. "New Construction"
+// applies to every building, so it filters nothing. "Golf & Country Club" is a
+// HOMES lifestyle — this register is towers, and only one condo (Akoya, inside
+// Boca West) genuinely qualifies, so a chip leading to ~1 result reads broken.
+// Golf is served on the listing side via the Golf & Club lifestyle pages.
+const HIDDEN = new Set(["New Construction", "Golf & Country Club"]);
 
 /**
  * All county sections + rows render (SEO + no-JS friendly — this is not gated
