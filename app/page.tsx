@@ -34,7 +34,7 @@ const LIFESTYLE_RAIL: { tag: string; blurb: string }[] = [
   { tag: "Branded Residences", blurb: "Ritz-Carlton to Bentley" },
   { tag: "Boating & Deepwater", blurb: "Slips and ocean access" },
   { tag: "Golf & Country Club", blurb: "Club living" },
-  { tag: "Downtown & High-Rise", blurb: "Skyline addresses" },
+  { tag: "Downtown", blurb: "Walkable urban cores" },
 ];
 
 const COLLECTIONS = [
