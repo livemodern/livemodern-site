@@ -827,3 +827,50 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .dz-grid{gap:2px}
   .col-theme{padding-bottom:40px}
 }
+
+/* ── MiLa concierge widget ── */
+.mila-launch{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:9px;
+  background:var(--navy);color:#fff;border-radius:40px;padding:13px 20px 13px 18px;
+  font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  box-shadow:0 8px 30px rgba(13,23,59,.28);transition:transform .3s,opacity .3s}
+.mila-launch:hover{transform:translateY(-2px)}
+.mila-launch.hide{opacity:0;pointer-events:none;transform:scale(.9)}
+.mila-launch-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 0 rgba(0,178,204,.6);animation:milaPulse 2.4s infinite}
+@keyframes milaPulse{0%{box-shadow:0 0 0 0 rgba(0,178,204,.5)}70%{box-shadow:0 0 0 7px rgba(0,178,204,0)}100%{box-shadow:0 0 0 0 rgba(0,178,204,0)}}
+
+.mila-panel{position:fixed;right:22px;bottom:22px;z-index:61;width:min(400px,calc(100vw - 24px));
+  height:min(620px,calc(100vh - 40px));background:var(--paper);border:1px solid var(--rule);
+  border-radius:6px;box-shadow:0 24px 70px rgba(10,10,10,.24);display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;transform:translateY(16px) scale(.98);transform-origin:bottom right;
+  transition:opacity .28s cubic-bezier(.2,.7,.2,1),transform .28s cubic-bezier(.2,.7,.2,1)}
+.mila-panel.on{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+
+.mila-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;
+  border-bottom:1px solid var(--rule);background:var(--navy);color:#fff;border-radius:6px 6px 0 0}
+.mila-name{font-family:var(--font-display),Georgia,serif;font-size:19px;letter-spacing:-.01em;line-height:1}
+.mila-sub{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:4px}
+.mila-x{color:rgba(255,255,255,.7);font-size:24px;line-height:1;padding:0 2px}
+.mila-x:hover{color:#fff}
+
+.mila-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--band)}
+.mila-msg{max-width:86%;font-size:14px;line-height:1.55}
+.mila-msg p{margin:0 0 6px}
+.mila-msg p:last-child{margin:0}
+.mila-msg.assistant{align-self:flex-start;background:var(--paper);border:1px solid var(--line);
+  border-radius:3px 12px 12px 12px;padding:11px 14px;color:var(--ink-2)}
+.mila-msg.user{align-self:flex-end;background:var(--navy);color:#fff;border-radius:12px 3px 12px 12px;padding:11px 14px}
+
+.mila-typing{display:flex;gap:4px;align-items:center;height:10px}
+.mila-typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:milaBounce 1.2s infinite}
+.mila-typing span:nth-child(2){animation-delay:.18s}
+.mila-typing span:nth-child(3){animation-delay:.36s}
+@keyframes milaBounce{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+
+.mila-input{display:flex;gap:8px;align-items:flex-end;padding:12px;border-top:1px solid var(--rule);background:var(--paper);border-radius:0 0 6px 6px}
+.mila-input textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:20px;padding:10px 14px;
+  font-family:inherit;font-size:16px;line-height:1.4;max-height:110px;background:var(--paper);color:var(--ink)}
+.mila-input textarea:focus{outline:none;border-color:var(--accent)}
+.mila-input button{flex:none;width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:18px;line-height:1;transition:opacity .2s}
+.mila-input button:disabled{opacity:.35}
