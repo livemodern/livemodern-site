@@ -158,6 +158,7 @@ export function collectionCounty(slug: string): string | null {
   if (s.startsWith("miami") || s.includes("brickell") || s.includes("hollywood")) return "Dade";
   if (s.startsWith("fort-lauderdale") || s.includes("pompano")) return "Broward";
   if (s.startsWith("palm-beach") || s.includes("downtown-palm-beach")) return "Palm Beach";
+  if (s.startsWith("martin")) return "Martin";
   return null; // south-florida-wide collections stay blank
 }
 
@@ -183,15 +184,15 @@ export type LifestyleHub = { theme: string; slug: string; blurb: string; spokes:
 
 export const LIFESTYLE_HUBS: LifestyleHub[] = [
   { theme: "Boating & Deepwater", slug: "boating", blurb: "Private docks, deepwater, and direct ocean access.",
-    spokes: ["palm-beach-boating-homes","fort-lauderdale-boating-condos","miami-boating-condos"] },
+    spokes: ["palm-beach-boating-homes","palm-beach-boating-condos","fort-lauderdale-boating-homes","fort-lauderdale-boating-condos","miami-boating-homes","miami-boating-condos"] },
   { theme: "Waterfront", slug: "waterfront", blurb: "Intracoastal, river, canal, and lake \u2014 living on the water.",
-    spokes: ["palm-beach-waterfront-homes","fort-lauderdale-waterfront-homes","miami-waterfront-homes","modern-waterfront-homes-south-florida"] },
+    spokes: ["palm-beach-waterfront-homes","palm-beach-waterfront-condos","fort-lauderdale-waterfront-homes","fort-lauderdale-waterfront-condos","miami-waterfront-homes","miami-waterfront-condos"] },
   { theme: "Beach & Oceanfront", slug: "beach", blurb: "Directly on the sand, from Palm Beach to Miami.",
-    spokes: ["palm-beach-beachfront-condos","fort-lauderdale-beachfront-condos","miami-beachfront-condos"] },
+    spokes: ["palm-beach-beachfront-condos","palm-beach-beachfront-homes","fort-lauderdale-beachfront-condos","fort-lauderdale-beachfront-homes","miami-beachfront-condos","miami-beachfront-homes"] },
   { theme: "Downtown & Urban", slug: "downtown", blurb: "Walkable high-rise living in the city core.",
-    spokes: ["downtown-palm-beach-county-condos","palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos"] },
+    spokes: ["palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos"] },
   { theme: "Golf & Club", slug: "golf", blurb: "Country-club living on South Florida's best courses.",
-    spokes: ["palm-beach-golf-course-homes","miami-golf-course-homes"] },
+    spokes: ["palm-beach-golf-course-homes","martin-county-golf-course-homes","miami-golf-course-homes"] },
   { theme: "Island", slug: "island", blurb: "Barrier-island exclusivity and seclusion.",
     spokes: ["palm-beach-island-homes-for-sale"] },
   { theme: "Estates & Land", slug: "estates", blurb: "Acreage, privacy, and estate living \u2014 including Wellington's equestrian corridor.",
@@ -204,6 +205,8 @@ export const LIFESTYLE_HUBS: LifestyleHub[] = [
 export const CURATED_SEARCHES: string[] = [
   "new-construction-homes-south-florida",
   "miami-new-construction-homes",
+  "modern-waterfront-homes-south-florida",
+  "downtown-palm-beach-county-condos",
 ];
 
 export function hubBySlugLife(slug: string): LifestyleHub | undefined {

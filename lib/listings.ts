@@ -343,6 +343,12 @@ export function planSpecs(details: string | null): { beds?: string; baths?: stri
 const LIFESTYLE_CONDO_FLOOR = 2000000;
 const LIFESTYLE_HOME_FLOOR = 3000000;
 
+/** Per-spoke price-floor overrides. Martin County trades below the coastal
+ *  core, so its golf spoke opens at $1M instead of the $3M home floor. */
+export const SPOKE_PRICE_FLOOR: Record<string, number> = {
+  "martin-county-golf-course-homes": 1_000_000,
+};
+
 export type LifestyleListing = {
   mls_id: string;
   street_address: string;
@@ -374,6 +380,7 @@ export async function listingsByLifestyle(
   limit = 60,
   county?: string,
   kind: PropertyKind = "any",
+  minPrice?: number,
 ): Promise<LifestyleListing[]> {
   if (!SB_KEY) return [];
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
@@ -383,7 +390,7 @@ export async function listingsByLifestyle(
   // Query by tag at the lower ($2M) floor, then apply the split floor + type in JS.
   const url =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
-    `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}${countyFilter}` +
+    `&status=eq.Active&list_price=gte.${minPrice ?? LIFESTYLE_CONDO_FLOOR}${countyFilter}` +
     `&select=${sel}&order=list_price.asc&limit=${Math.max(limit, 400)}`;
   try {
     const res = await fetch(url, {
@@ -398,8 +405,11 @@ export async function listingsByLifestyle(
         // property-type gate from the spoke's slug (condos vs homes)
         if (kind === "condos" && !CONDO_SUBTYPES.includes(r.property_subtype ?? "")) return false;
         if (kind === "homes" && !HOME_SUBTYPES.includes(r.property_subtype ?? "")) return false;
-        // price floor: condos $2M+, homes $3M+
-        return isCondo(r.property_subtype) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR;
+        // price floor: condos $2M+, homes $3M+ (unless the spoke overrides it)
+        return (
+          isCondo(r.property_subtype) ||
+          (r.list_price ?? 0) >= (minPrice ?? LIFESTYLE_HOME_FLOOR)
+        );
       })
       // Trim the photo array to the single image the card renders. Listings carry
       // ~49 image URLs each; serializing them all into the client component would
@@ -460,6 +470,7 @@ export async function lifestyleStats(
   lifestyle: string,
   county?: string,
   kind: PropertyKind = "any",
+  minPrice?: number,
 ): Promise<LifestyleStats> {
   const empty: LifestyleStats = {
     count: 0, minPrice: null, maxPrice: null, medianPrice: null,
@@ -470,7 +481,7 @@ export async function lifestyleStats(
   const cf = county ? `&county=eq.${encodeURIComponent(county)}` : "";
   const url =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
-    `&status=eq.Active&list_price=gte.${LIFESTYLE_CONDO_FLOOR}${cf}` +
+    `&status=eq.Active&list_price=gte.${minPrice ?? LIFESTYLE_CONDO_FLOOR}${cf}` +
     `&select=list_price,property_subtype,city,lifestyle_attributes,waterfront_features&limit=1500`;
   try {
     const res = await fetch(url, {
@@ -488,7 +499,7 @@ export async function lifestyleStats(
       const st = r.property_subtype ?? "";
       if (kind === "condos" && !CONDO_SUBTYPES.includes(st)) return false;
       if (kind === "homes" && !HOME_SUBTYPES.includes(st)) return false;
-      return isCondo(st) || (r.list_price ?? 0) >= LIFESTYLE_HOME_FLOOR;
+      return isCondo(st) || (r.list_price ?? 0) >= (minPrice ?? LIFESTYLE_HOME_FLOOR);
     });
     if (!rows.length) return empty;
     const prices = rows.map((r) => r.list_price ?? 0).filter((n) => n > 0).sort((a, b) => a - b);

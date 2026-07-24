@@ -24,6 +24,7 @@ import {
   kindFromSlug,
   lifestyleStats,
   listingsByLifestyle,
+  SPOKE_PRICE_FLOOR,
   mls,
   mlsSrcSet,
   money,
@@ -170,11 +171,12 @@ export default async function CommunityPage({
   const spokeCountyFull =
     spokeCountyShort === "Dade" ? "Miami-Dade" : spokeCountyShort ?? undefined;
   const spokeKind = kindFromSlug(c.slug);
+  const spokeFloor = spokeHub ? SPOKE_PRICE_FLOOR[c.slug] : undefined;
   const spokeListings = spokeHub
-    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, spokeKind)
+    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, spokeKind, spokeFloor)
     : [];
   const spokeStats = spokeHub
-    ? await lifestyleStats(spokeHub.theme, spokeCountyFull, spokeKind)
+    ? await lifestyleStats(spokeHub.theme, spokeCountyFull, spokeKind, spokeFloor)
     : null;
   const spokeContent = spokeHub ? contentForTheme(spokeHub.theme) : undefined;
   const spokeFactSet = spokeHub ? spokeFacts(spokeHub.theme, spokeCountyFull) : undefined;
