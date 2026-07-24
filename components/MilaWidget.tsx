@@ -1,8 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import MilaAvatar from "@/components/MilaAvatar";
+import { formatInline } from "@/lib/format-inline";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Card = {
+  mls_id: string; address: string; city: string | null; price: string;
+  beds: number | null; baths: number | null; sqft: number | null;
+  arch_style: string | null; image: string | null; href: string;
+};
+type Msg = { role: "user" | "assistant"; content: string; cards?: Card[] };
 
 const GREETING =
   "Hi, my name is MiLa — I'm an AI agent for Modern Living Group. I'm great at narrowing down your home hunt, or matching you with the right agent based on their experience and areas of expertise. What brings you to the site today?";
@@ -49,7 +56,7 @@ export default function MilaWidget() {
         body: JSON.stringify({ messages: next, sessionId: sessionId.current }),
       });
       const data = await res.json();
-      setMessages([...next, { role: "assistant", content: data.reply || data.error || "Sorry — try me again?" }]);
+      setMessages([...next, { role: "assistant", content: data.reply || data.error || "Sorry — try me again?", cards: data.cards?.length ? data.cards : undefined }]);
     } catch {
       setMessages([...next, { role: "assistant", content: "I lost my connection for a second — say that again?" }]);
     } finally {
@@ -76,9 +83,12 @@ export default function MilaWidget() {
       {/* Panel */}
       <div className={`mila-panel ${open ? "on" : ""}`} role="dialog" aria-label="MiLa concierge">
         <header className="mila-head">
-          <div>
-            <div className="mila-name">MiLa</div>
-            <div className="mila-sub">LiveModern concierge</div>
+          <div className="mila-head-id">
+            <MilaAvatar size={38} />
+            <div>
+              <div className="mila-name">MiLa</div>
+              <div className="mila-sub">AI Concierge · Modern Living</div>
+            </div>
           </div>
           <button className="mila-x" onClick={() => setOpen(false)} aria-label="Close">×</button>
         </header>
@@ -86,8 +96,24 @@ export default function MilaWidget() {
         <div className="mila-body" ref={scrollRef}>
           <div className="mila-msg assistant"><p>{GREETING}</p></div>
           {messages.map((m, i) => (
-            <div key={i} className={`mila-msg ${m.role}`}>
-              {m.content.split("\n").filter(Boolean).map((line, j) => <p key={j}>{line}</p>)}
+            <div key={i}>
+              <div className={`mila-msg ${m.role}`}>
+                {m.content.split("\n").filter(Boolean).map((line, j) => <p key={j}>{formatInline(line)}</p>)}
+              </div>
+              {m.cards && m.cards.length > 0 && (
+                <div className="mila-cards">
+                  {m.cards.map((c) => (
+                    <a className="mila-card" key={c.mls_id} href={c.href} target="_blank" rel="noopener noreferrer">
+                      <div className="mila-card-im" style={c.image ? { backgroundImage: `url(${c.image})` } : undefined} />
+                      <div className="mila-card-b">
+                        <div className="mila-card-price">{c.price}</div>
+                        <div className="mila-card-addr">{c.address}{c.city ? `, ${c.city}` : ""}</div>
+                        <div className="mila-card-meta">{[c.beds ? `${c.beds} BD` : null, c.baths ? `${c.baths} BA` : null].filter(Boolean).join(" · ")}</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {busy && (
