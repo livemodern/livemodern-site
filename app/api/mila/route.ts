@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MILA_CONSUMER_SYSTEM, MILA_TAXONOMY_NOTE } from "@/lib/mila-persona";
 import { milaSearch, LIFESTYLES, ATTRIBUTES, COUNTIES, MilaListing } from "@/lib/mila-search";
+import { mls as mlsImg } from "@/lib/listings";
 import { mlgTrackRecord } from "@/lib/mila-track-record";
 import { matchAgent } from "@/lib/mila-agents";
 import { resolveKnownVisitor } from "@/lib/mila-identity";
@@ -139,6 +140,37 @@ function listingLine(l: MilaListing): string {
   return bits.join(" · ") + ` [mls:${l.mls_id}]`;
 }
 
+// Structured card the FRONTEND renders (photo + specs + link). Returned to the
+// client alongside MiLa's text so she can say "check these out" and the UI shows
+// real cards — not just a text list.
+interface MilaCard {
+  mls_id: string;
+  address: string;
+  city: string | null;
+  price: string;
+  beds: number | null;
+  baths: number | null;
+  sqft: number | null;
+  arch_style: string | null;
+  image: string | null;
+  href: string;
+}
+function listingCard(l: MilaListing): MilaCard {
+  const addr = [l.street_address, l.unit_number ? `#${l.unit_number}` : null].filter(Boolean).join(" ");
+  return {
+    mls_id: l.mls_id,
+    address: addr || l.community_slug || "Listing",
+    city: l.city,
+    price: money(l.list_price),
+    beds: l.beds,
+    baths: l.baths,
+    sqft: l.sqft,
+    arch_style: l.arch_style,
+    image: l.image_url ? mlsImg(l.image_url, 600) : null,
+    href: `/listing/${l.mls_id}`,
+  };
+}
+
 async function runTool(name: string, input: any, ctx: { sessionContactId?: string | null }): Promise<any> {
   if (name === "search_listings") {
     const { count, listings } = await milaSearch({
@@ -150,6 +182,7 @@ async function runTool(name: string, input: any, ctx: { sessionContactId?: strin
       total_matches: count,
       showing: listings.length,
       listings: listings.map(listingLine),
+      _cards: listings.map(listingCard),   // surfaced to the client, stripped before the model sees results
       note: count === 0 ? "No exact matches — suggest the closest real alternative and be honest about the trade-off." : undefined,
     };
   }
@@ -393,6 +426,7 @@ export async function POST(req: NextRequest) {
   const messages: any[] = [...history];
   const toolsUsed: string[] = [];
   const listingsShown: string[] = [];
+  const cards: any[] = [];
   let leadCaptured = false;
   let capturedLead: { name: string; email: string | null; phone: string | null } | null = null;
 
@@ -449,7 +483,7 @@ export async function POST(req: NextRequest) {
         if (leadCaptured && capturedLead) {
           void sendChatSummary({ apiKey, lead: capturedLead, transcript: finalTranscript, listingsShown });
         }
-        return NextResponse.json({ reply: scan.clean });
+        return NextResponse.json({ reply: scan.clean, cards });
       }
 
       messages.push({ role: "assistant", content: data.content });
@@ -462,6 +496,12 @@ export async function POST(req: NextRequest) {
           for (const line of out.listings) {
             const m = String(line).match(/\[mls:([^\]]+)\]/);
             if (m) listingsShown.push(m[1]);
+          }
+          // Pull structured cards out for the CLIENT; strip before the model
+          // sees the result (keeps her context lean — she has the text lines).
+          if (Array.isArray(out._cards)) {
+            for (const c of out._cards) if (!cards.find((x) => x.mls_id === c.mls_id)) cards.push(c);
+            delete out._cards;
           }
         }
         if (tu.name === "capture_lead" && out?.ok) { leadCaptured = true; if (out.lead) capturedLead = out.lead; }

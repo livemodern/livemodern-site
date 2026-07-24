@@ -874,3 +874,79 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mila-input button{flex:none;width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;
   font-size:18px;line-height:1;transition:opacity .2s}
 .mila-input button:disabled{opacity:.35}
+
+/* ── MiLa full page (/mila) ── */
+.mila-page{min-height:70vh}
+.mila-hero{text-align:center;padding:48px var(--pad) 24px;max-width:720px;margin:0 auto}
+.mila-hero-av{display:flex;justify-content:center;margin-bottom:20px}
+.mila-hero h1{font-size:clamp(38px,7vw,68px);margin:6px 0 16px}
+.mila-hero .eyebrow{display:inline-block;padding-left:0}
+.mila-hero .eyebrow::before{display:none}
+.mila-hero-sub{font-size:16px;line-height:1.7;color:var(--ink-2);max-width:560px;margin:0 auto}
+
+.mila-chat-section{max-width:840px;margin:0 auto;padding:0 var(--pad) 60px}
+.mfull{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:10px;overflow:hidden;
+  background:var(--paper);height:min(640px,72vh)}
+.mfull-scroll{flex:1;overflow-y:auto;background:var(--band)}
+.mfull-inner{padding:24px;display:flex;flex-direction:column;gap:18px;max-width:760px;margin:0 auto}
+
+.mfull-row{display:flex;gap:12px;align-items:flex-start}
+.mfull-row.user{justify-content:flex-end}
+.mfull-av{flex:none;margin-top:2px}
+.mfull-bubble-wrap{max-width:80%;display:flex;flex-direction:column;gap:12px}
+.mfull-row.user .mfull-bubble-wrap{align-items:flex-end}
+.mfull-bubble{font-size:15px;line-height:1.6}
+.mfull-bubble p{margin:0 0 8px}
+.mfull-bubble p:last-child{margin:0}
+.mfull-bubble.assistant{background:var(--paper);border:1px solid var(--line);border-radius:4px 16px 16px 16px;
+  padding:14px 18px;color:var(--ink-2)}
+.mfull-bubble.user{background:var(--navy);color:#fff;border-radius:16px 4px 16px 16px;padding:14px 18px;max-width:80%}
+
+/* listing cards in chat */
+.mfull-cards{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:560px){.mfull-cards{grid-template-columns:1fr 1fr}}
+.mfull-card{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:var(--paper);transition:box-shadow .25s,transform .25s;color:inherit}
+.mfull-card:hover{box-shadow:0 12px 34px rgba(10,10,10,.13);transform:translateY(-2px)}
+.mfull-card-im{aspect-ratio:4/3;background-size:cover;background-position:center;background-color:#e9eef2;
+  display:flex;align-items:center;justify-content:center}
+.mfull-card-noim{font-family:var(--font-display),Georgia,serif;color:#9fb0bd;font-size:14px;letter-spacing:.04em}
+.mfull-card-body{padding:12px 14px}
+.mfull-card-price{font-weight:600;font-size:16px;color:var(--ink)}
+.mfull-card-addr{font-size:13px;color:var(--ink-2);margin-top:2px;line-height:1.35}
+.mfull-card-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.mfull-card-style{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin-top:8px;font-weight:600}
+.mfull-card-cta{font-size:12px;font-weight:600;color:var(--accent);margin-top:10px}
+
+.mfull-typing{display:flex;gap:4px;align-items:center;height:12px}
+.mfull-typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:milaBounce 1.2s infinite}
+.mfull-typing span:nth-child(2){animation-delay:.18s}
+.mfull-typing span:nth-child(3){animation-delay:.36s}
+
+.mfull-starters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:8px 0 4px}
+.mfull-starter{border:1px solid var(--line);background:var(--paper);border-radius:30px;padding:10px 18px;
+  font-size:13px;color:var(--ink-2);transition:border-color .2s,color .2s}
+.mfull-starter:hover{border-color:var(--accent);color:var(--accent)}
+
+.mfull-input-bar{border-top:1px solid var(--rule);background:var(--paper);padding:14px}
+.mfull-input-inner{display:flex;gap:10px;align-items:flex-end;max-width:760px;margin:0 auto}
+.mfull-input-inner textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:22px;padding:12px 18px;
+  font-family:inherit;font-size:16px;line-height:1.4;max-height:120px;background:var(--paper);color:var(--ink)}
+.mfull-input-inner textarea:focus{outline:none;border-color:var(--accent)}
+.mfull-input-inner button{flex:none;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:19px;transition:opacity .2s}
+.mfull-input-inner button:disabled{opacity:.35}
+.mfull-disclaimer{text-align:center;font-size:11px;color:var(--muted);margin:10px auto 0;max-width:520px}
+
+/* ── MiLa widget: avatar header + in-widget cards ── */
+.mila-head-id{display:flex;align-items:center;gap:11px}
+.mila-cards{display:flex;flex-direction:column;gap:8px;margin:8px 0 4px}
+.mila-card{display:flex;gap:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  background:var(--paper);color:inherit;transition:box-shadow .2s}
+.mila-card:hover{box-shadow:0 6px 18px rgba(10,10,10,.12)}
+.mila-card-im{width:88px;flex:none;background-size:cover;background-position:center;background-color:#e9eef2}
+.mila-card-b{padding:9px 10px 9px 0;min-width:0}
+.mila-card-price{font-weight:600;font-size:14px;color:var(--ink)}
+.mila-card-addr{font-size:12px;color:var(--ink-2);margin-top:1px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mila-card-meta{font-size:11px;color:var(--muted);margin-top:3px}
