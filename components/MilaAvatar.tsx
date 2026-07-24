@@ -9,7 +9,7 @@ import { useState } from "react";
 
 export default function MilaAvatar({ size = 40, ring = false }: { size?: number; ring?: boolean }) {
   const [imgOk, setImgOk] = useState(true);
-  const src = "/mila-avatar.jpg"; // drop a real portrait here to use it
+  const src = "https://images.mlrecloud.com/site/livemodern/mila-avatar.jpg";
 
   return (
     <span
