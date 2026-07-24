@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const GREETING =
-  "Hi, I'm MiLa — LiveModern's concierge. Tell me a little about what you're looking for, or just how you'd love to live down here, and I'll help you find it. No rush, no pressure.";
+  "Hi, my name is MiLa — I'm an AI agent for Modern Living Group. I'm great at narrowing down your home hunt, or matching you with the right agent based on their experience and areas of expertise. What brings you to the site today?";
 
 export default function MilaWidget() {
   const [open, setOpen] = useState(false);

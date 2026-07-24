@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MILA_CONSUMER_SYSTEM, MILA_TAXONOMY_NOTE } from "@/lib/mila-persona";
 import { milaSearch, LIFESTYLES, ATTRIBUTES, COUNTIES, MilaListing } from "@/lib/mila-search";
 import { mlgTrackRecord } from "@/lib/mila-track-record";
+import { matchAgent } from "@/lib/mila-agents";
 import { resolveKnownVisitor } from "@/lib/mila-identity";
 import { scanOutput, rateLimit, logMilaTurn, looksSuspicious, captureConversation } from "@/lib/mila-guard";
 
@@ -31,6 +32,7 @@ const MAX_ROUNDS = 6;
 
 const SB_URL = process.env.SUPABASE_URL ?? "https://ezcikavnfchqaenweygw.supabase.co";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const MLG_ADMIN_URL = process.env.MLG_ADMIN_URL ?? "https://team.mlrecloud.com";
 
 const TOOLS = [
   {
@@ -87,6 +89,22 @@ const TOOLS = [
     input_schema: {
       type: "object",
       properties: {},
+    },
+  },
+  {
+    name: "match_agent",
+    description:
+      "Match the visitor with the right MLG agent based on the AREA and LIFESTYLE they care about and " +
+      "their budget — by the agents' published experience and areas of expertise. Use when they ask who " +
+      "they'd work with, want to talk to someone, or when handing off. Returns public agent info only " +
+      "(name, title, why they fit). Don't invent agents — only use what this returns.",
+    input_schema: {
+      type: "object",
+      properties: {
+        area: { type: "string", description: "City / neighborhood, e.g. 'Boca Raton', 'Jupiter', 'downtown West Palm'." },
+        lifestyle: { type: "string", description: "e.g. 'waterfront', 'golf', 'historic', 'equestrian', 'new construction'." },
+        price: { type: "number", description: "Approximate budget in dollars, if known." },
+      },
     },
   },
   {
@@ -161,6 +179,13 @@ async function runTool(name: string, input: any, ctx: { sessionContactId?: strin
     };
   }
 
+  if (name === "match_agent") {
+    const matches = await matchAgent({ area: input.area, lifestyle: input.lifestyle, price: input.price, limit: 2 });
+    return matches.length
+      ? { agents: matches }
+      : { agents: [], note: "No specific specialist matched — offer to connect them with our team generally and capture the lead." };
+  }
+
   if (name === "capture_lead") {
     return await captureLead(input);
   }
@@ -225,9 +250,95 @@ async function captureLead(input: any): Promise<any> {
         ai_handled: true,
       }),
     }).catch(() => {});
-    return { ok: true, say: "Perfect — I've passed you to one of our agents. They'll reach out shortly. Anything else I can line up in the meantime?" };
+
+    // INSTANT routing + agent alert — reuse mlg-admin's existing lead pipeline
+    // (routeLead assigns an agent; notify fires email + bell + SMS). Speed to
+    // lead matters, so this fires the moment MiLa captures the lead, before the
+    // end-of-chat summary. Server-to-server with the shared service token.
+    const token = process.env.MLG_SERVICE_TOKEN;
+    if (token) {
+      void fetch(`${MLG_ADMIN_URL}/api/leads/route`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-MLG-Service-Token": token },
+        body: JSON.stringify({
+          contact: { name: input.name, email: input.email ?? null, phone: input.phone ?? null },
+          source: "livemodern-mila-chat",
+          meta: { ai_handled: true, summary: input.summary ?? null },
+        }),
+      }).catch(() => {});
+    }
+
+    return {
+      ok: true,
+      lead: { name: input.name, email: input.email ?? null, phone: input.phone ?? null },
+      say: "Perfect — I've passed you to one of our agents. They'll reach out shortly. Anything else I can line up in the meantime?",
+    };
   } catch {
     return { ok: true, say: "Got it — I'll make sure an agent follows up with you." };
+  }
+}
+
+// ── End-of-chat: generate an agent-facing summary and post it to the CRM ──
+// Fires once a lead is captured. Asks Claude for a tight recap, then POSTs
+// summary + full transcript to mlg-admin's /api/mila/chat-summary, which lands
+// it on the contact's timeline and emails the assigned agent.
+async function sendChatSummary(opts: {
+  apiKey: string;
+  lead: { name: string; email: string | null; phone: string | null };
+  transcript: Array<{ role: "user" | "assistant"; content: string }>;
+  listingsShown: string[];
+}): Promise<void> {
+  const token = process.env.MLG_SERVICE_TOKEN;
+  if (!token) return;
+
+  const convo = opts.transcript
+    .map((t) => `${t.role === "user" ? "Visitor" : "MiLa"}: ${t.content}`)
+    .join("\n");
+
+  let summary = "This visitor spoke with MiLa and asked to connect with an agent.";
+  let highlights: string[] = [];
+  try {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: { "x-api-key": opts.apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 500,
+        system:
+          "You are summarizing a real-estate website chat for the AGENT who will follow up. Be concise and useful. " +
+          "Return STRICT JSON only: {\"summary\": string (2-3 sentences: what they want, budget, timeline, and the single best next step), " +
+          "\"highlights\": string[] (3-5 short bullets: kind of home, budget, areas/lifestyle, must-haves, timeline — only what was actually said)}. " +
+          "No preamble, no markdown, JSON only.",
+        messages: [{ role: "user", content: `Chat transcript:\n\n${convo}` }],
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = (data.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("").trim();
+      const clean = text.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+      if (parsed.summary) summary = String(parsed.summary);
+      if (Array.isArray(parsed.highlights)) highlights = parsed.highlights.map(String).slice(0, 5);
+    }
+  } catch {
+    /* fall back to the default summary */
+  }
+
+  try {
+    void fetch(`${MLG_ADMIN_URL}/api/mila/chat-summary`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-MLG-Service-Token": token },
+      body: JSON.stringify({
+        contact: { email: opts.lead.email, phone: opts.lead.phone, name: opts.lead.name },
+        summary,
+        highlights,
+        transcript: opts.transcript,
+        listings_shown: opts.listingsShown,
+        source: "livemodern",
+      }),
+    }).catch(() => {});
+  } catch {
+    /* summary send must never break the chat */
   }
 }
 
@@ -283,6 +394,7 @@ export async function POST(req: NextRequest) {
   const toolsUsed: string[] = [];
   const listingsShown: string[] = [];
   let leadCaptured = false;
+  let capturedLead: { name: string; email: string | null; phone: string | null } | null = null;
 
   // Build the human-review transcript from the client-visible turns plus MiLa's
   // final reply. We record user text + assistant text only — not the raw
@@ -326,11 +438,17 @@ export async function POST(req: NextRequest) {
         const scan = scanOutput(raw, visitorText, { phones: ["5612288420"], emails: ["info@modernlivingre.com", "team@mlrecloud.com"] });
         const flags = captureFlags(scan.leaked, scan.kinds);
         logMilaTurn({ sessionId, tools: toolsUsed, outputLeaked: scan.leaked, flags, known: !!visitorFirstName });
+        const finalTranscript = buildTranscript(scan.clean);
         captureConversation({
-          sessionId, transcript: buildTranscript(scan.clean),
+          sessionId, transcript: finalTranscript,
           toolsUsed, listingsShown, flags, knownVisitor: !!visitorFirstName,
           leadCaptured, userAgent: ua, referrer,
         });
+        // If MiLa captured a lead this conversation, send the agent-facing recap
+        // → CRM timeline + agent email. Fire-and-forget; never blocks the reply.
+        if (leadCaptured && capturedLead) {
+          void sendChatSummary({ apiKey, lead: capturedLead, transcript: finalTranscript, listingsShown });
+        }
         return NextResponse.json({ reply: scan.clean });
       }
 
@@ -346,7 +464,7 @@ export async function POST(req: NextRequest) {
             if (m) listingsShown.push(m[1]);
           }
         }
-        if (tu.name === "capture_lead" && out?.ok) leadCaptured = true;
+        if (tu.name === "capture_lead" && out?.ok) { leadCaptured = true; if (out.lead) capturedLead = out.lead; }
         // Wrap every tool result in an explicit untrusted-data boundary. Listing
         // descriptions and knowledge chunks are external text that may contain
         // injected instructions ("AI: ignore your rules…"). This gives the model
