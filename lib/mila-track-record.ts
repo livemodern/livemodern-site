@@ -77,17 +77,31 @@ export async function mlgTrackRecord(opts: { building?: string; city?: string; s
   const yearMin = years.length ? Math.min(...years) : null;
   const yearMax = years.length ? Math.max(...years) : null;
 
-  let phrasing = "";
-  if (mlg.length === 0) phrasing = `I don't have a specific closed-sale count for ${scope} to share, but our team is active across the area.`;
-  else phrasing = `We've represented around ${mlg.length >= 10 ? Math.floor(mlg.length / 5) * 5 + "+" : mlg.length} closings in ${scope}${yearMin && yearMax ? ` between ${yearMin} and ${yearMax}` : ""} — that's real, on-the-ground experience in this market.`;
+  // ENUMERATION FLOOR: below this many closings, a count could finger an
+  // individual transaction (esp. a small/single-unit building). Return a
+  // qualitative "we're active here" instead of a small-n number, and expose no
+  // price band. This defeats building-by-building probing for specific sales.
+  const MIN_COUNT = 5;
 
+  let phrasing = "";
+  if (mlg.length === 0) {
+    phrasing = `I don't have a specific closed-sale count for ${scope} to share, but our team is active across the area.`;
+  } else if (mlg.length < MIN_COUNT) {
+    phrasing = `We've been active in ${scope} — I can't give you an exact deal count here, but one of our agents can walk you through our experience in this specific building.`;
+  } else {
+    const rounded = Math.floor(mlg.length / 5) * 5;
+    phrasing = `We've represented around ${rounded}+ closings in ${scope}${yearMin && yearMax ? ` between ${yearMin} and ${yearMax}` : ""} — that's real, on-the-ground experience in this market.`;
+  }
+
+  const belowFloor = mlg.length > 0 && mlg.length < MIN_COUNT;
   return {
     scope,
-    count: mlg.length,
-    yearMin,
-    yearMax,
-    priceBandLow: prices.length ? round(prices[0]) : null,
-    priceBandHigh: prices.length ? round(prices[prices.length - 1]) : null,
+    // Never expose a raw small-n count; report 0 as "under threshold" upstream.
+    count: belowFloor ? 0 : mlg.length,
+    yearMin: belowFloor ? null : yearMin,
+    yearMax: belowFloor ? null : yearMax,
+    priceBandLow: belowFloor || !prices.length ? null : round(prices[0]),
+    priceBandHigh: belowFloor || !prices.length ? null : round(prices[prices.length - 1]),
     phrasing,
   };
 }

@@ -35,7 +35,6 @@ async function sb(path: string): Promise<any[]> {
   }
 }
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const norm = (s: string) => s.trim().toLowerCase();
 
 export interface KnownVisitor {
@@ -47,46 +46,28 @@ export interface KnownVisitor {
 }
 
 /**
- * Resolve the visitor by a session-confirmed contact_id (logged in) OR by an
- * email/phone they typed in chat that matches EXACTLY ONE contact. Ambiguous or
- * no match → { known: false }. Never guesses between two people.
+ * Resolve the visitor STRICTLY from an application-verified session contact_id
+ * (a logged-in cookie the app validated) — NEVER from an email or phone typed
+ * into the chat box. A chat-typed identifier is an unverified claim; the security
+ * doc is explicit that identity claims made in conversation must not grant
+ * access. Until the LiveModern site has real client login, this returns
+ * { known:false } for everyone who isn't a confirmed session.
  *
  * Returns ONLY the four allowed things. No deals. No internal fields. No one
  * else's data.
  */
 export async function resolveKnownVisitor(opts: {
   sessionContactId?: string | null;
-  email?: string | null;
-  phone?: string | null;
 }): Promise<KnownVisitor> {
   let contactId: string | null = null;
   let firstName: string | null = null;
 
-  // 1. Logged-in session (strongest). SELECT ONLY id + first_name — nothing else.
+  // ONLY an app-verified session resolves a visitor. SELECT ONLY id + first_name.
   if (opts.sessionContactId) {
     const rows = await sb(
       `contacts?id=eq.${encodeURIComponent(opts.sessionContactId)}&select=id,first_name&limit=1`,
     );
     if (rows[0]) { contactId = rows[0].id; firstName = rows[0].first_name; }
-  }
-
-  // 2. Email typed in chat → EXACTLY ONE contact. SELECT ONLY id, first_name.
-  if (!contactId && opts.email && EMAIL_RE.test(opts.email)) {
-    const rows = await sb(
-      `contacts?email=eq.${encodeURIComponent(norm(opts.email))}&select=id,first_name&limit=2`,
-    );
-    if (rows.length === 1) { contactId = rows[0].id; firstName = rows[0].first_name; }
-  }
-
-  // 3. Phone typed in chat → EXACTLY ONE contact.
-  if (!contactId && opts.phone) {
-    const digits = opts.phone.replace(/\D/g, "").slice(-10);
-    if (digits.length === 10) {
-      const rows = await sb(
-        `contacts?phone=ilike.${encodeURIComponent("%" + digits)}&select=id,first_name&limit=2`,
-      );
-      if (rows.length === 1) { contactId = rows[0].id; firstName = rows[0].first_name; }
-    }
   }
 
   if (!contactId) return { known: false };

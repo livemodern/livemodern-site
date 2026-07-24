@@ -14,6 +14,18 @@ export default function MilaWidget() {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sessionId = useRef<string>("");
+
+  useEffect(() => {
+    // Per-tab session id — used for rate limiting + audit log correlation. Not
+    // identity (never authenticates anyone), just a stable handle for this chat.
+    if (!sessionId.current) {
+      sessionId.current =
+        (typeof crypto !== "undefined" && "randomUUID" in crypto)
+          ? crypto.randomUUID()
+          : "s_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -34,7 +46,7 @@ export default function MilaWidget() {
       const res = await fetch("/api/mila", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, sessionId: sessionId.current }),
       });
       const data = await res.json();
       setMessages([...next, { role: "assistant", content: data.reply || data.error || "Sorry — try me again?" }]);
