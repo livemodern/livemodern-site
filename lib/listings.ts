@@ -389,17 +389,28 @@ export async function listingsByLifestyle(
     "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug,lot_size_acres";
   const countyFilter = county ? `&county=eq.${encodeURIComponent(county)}` : "";
   // Query by tag at the lower ($2M) floor, then apply the split floor + type in JS.
-  const url =
+  // A tag+county set can exceed PostgREST's 1,000-row cap (e.g. Palm Beach
+  // Waterfront is ~800, Miami-Dade is ~870), so we page through the whole set.
+  // A price-ascending 400-row slice silently dropped the pricier listings —
+  // which is why filtering the client bar to a costlier city (North Palm Beach)
+  // showed only the 3 cheapest that happened to fall inside the window.
+  const base =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
     `&status=eq.Active&list_price=gte.${minPrice ?? LIFESTYLE_CONDO_FLOOR}${countyFilter}` +
-    `&select=${sel}&order=list_price.asc&limit=${Math.max(limit, 400)}`;
+    `&select=${sel}&order=list_price.asc`;
+  void limit; // retained for signature compatibility; the full set is loaded and paged client-side
   try {
-    const res = await fetch(url, {
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
-      next: { revalidate: 900 },
-    });
-    if (!res.ok) return [];
-    const rows = (await res.json()) as LifestyleListing[];
+    const rows: LifestyleListing[] = [];
+    for (let offset = 0; offset < 6000; offset += 1000) {
+      const res = await fetch(`${base}&limit=1000&offset=${offset}`, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+        next: { revalidate: 900 },
+      });
+      if (!res.ok) break;
+      const page = (await res.json()) as LifestyleListing[];
+      rows.push(...page);
+      if (page.length < 1000) break;
+    }
     const isCondo = (t: string | null) => t === "Condominium" || t === "Apartment";
     return rows
       .filter((r) => {
@@ -480,21 +491,26 @@ export async function lifestyleStats(
   if (!SB_KEY) return empty;
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
   const cf = county ? `&county=eq.${encodeURIComponent(county)}` : "";
-  const url =
+  const statsBase =
     `${SB_URL}/rest/v1/properties?lifestyle_tags=cs.${tag}` +
     `&status=eq.Active&list_price=gte.${minPrice ?? LIFESTYLE_CONDO_FLOOR}${cf}` +
-    `&select=list_price,property_subtype,city,lifestyle_attributes,waterfront_features&limit=1500`;
+    `&select=list_price,property_subtype,city,lifestyle_attributes,waterfront_features`;
   try {
-    const res = await fetch(url, {
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return empty;
     type Row = {
       list_price: number | null; property_subtype: string | null; city: string | null;
       lifestyle_attributes: string[] | null; waterfront_features: string | null;
     };
-    const raw = (await res.json()) as Row[];
+    const raw: Row[] = [];
+    for (let offset = 0; offset < 6000; offset += 1000) {
+      const res = await fetch(`${statsBase}&limit=1000&offset=${offset}`, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+        next: { revalidate: 3600 },
+      });
+      if (!res.ok) return empty;
+      const page = (await res.json()) as Row[];
+      raw.push(...page);
+      if (page.length < 1000) break;
+    }
     const isCondo = (t: string | null) => t === "Condominium" || t === "Apartment";
     const rows = raw.filter((r) => {
       const st = r.property_subtype ?? "";
