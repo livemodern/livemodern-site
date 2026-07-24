@@ -564,6 +564,8 @@ export type SpokeQuery = {
   minAcres?: number;
   minPrice?: number;
   kind?: PropertyKind;
+  /** array-contains match on lifestyle_attributes, e.g. "equestrian". */
+  attribute?: string;
 };
 
 export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
@@ -606,6 +608,12 @@ export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
   "miami-estate-homes": {
     county: "Miami-Dade", minAcres: 1, minPrice: 3_000_000, kind: "homes",
   },
+  // Equestrian is curated by the MLS HorseAmenities/HorseYN signal (barns,
+  // paddocks, riding rings) — tagged as the "equestrian" attribute — not by lot
+  // size. Wellington, Loxahatchee, and the Jupiter horse corridor.
+  "palm-beach-equestrian-homes": {
+    county: "Palm Beach", attribute: "equestrian", minPrice: 2_000_000, kind: "homes",
+  },
 };
 
 const GEO_SELECT =
@@ -635,6 +643,8 @@ export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
   if (q.zips?.length)
     parts.push(`or=${encodeURIComponent(`(${q.zips.map((z) => `zip.eq.${z}`).join(",")})`)}`);
   if (q.minAcres) parts.push(`lot_size_acres=gte.${q.minAcres}`);
+  if (q.attribute)
+    parts.push(`lifestyle_attributes=cs.${encodeURIComponent(`{${q.attribute}}`)}`);
   if (q.kind === "homes") parts.push(`property_subtype=in.(${HOME_SUBTYPES.join(",")})`);
   if (q.kind === "condos") parts.push(`property_subtype=in.(${CONDO_SUBTYPES.join(",")})`);
 

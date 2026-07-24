@@ -187,11 +187,11 @@ export type LifestyleHub = { theme: string; slug: string; blurb: string; spokes:
 
 export const LIFESTYLE_HUBS: LifestyleHub[] = [
   { theme: "Boating & Deepwater", slug: "boating", blurb: "Private docks, deepwater, and direct ocean access.",
-    spokes: ["palm-beach-boating-homes","palm-beach-boating-condos","fort-lauderdale-boating-homes","fort-lauderdale-boating-condos","miami-boating-homes","miami-boating-condos"] },
+    spokes: ["palm-beach-boating-homes","fort-lauderdale-boating-homes","miami-boating-homes","palm-beach-boating-condos","fort-lauderdale-boating-condos","miami-boating-condos"] },
   { theme: "Waterfront", slug: "waterfront", blurb: "Intracoastal, river, canal, and lake \u2014 living on the water.",
-    spokes: ["palm-beach-waterfront-homes","palm-beach-waterfront-condos","fort-lauderdale-waterfront-homes","fort-lauderdale-waterfront-condos","miami-waterfront-homes","miami-waterfront-condos"] },
+    spokes: ["palm-beach-waterfront-homes","fort-lauderdale-waterfront-homes","miami-waterfront-homes","palm-beach-waterfront-condos","fort-lauderdale-waterfront-condos","miami-waterfront-condos"] },
   { theme: "Beach & Oceanfront", slug: "beach", blurb: "Directly on the sand, from Palm Beach to Miami.",
-    spokes: ["palm-beach-beachfront-condos","palm-beach-beachfront-homes","fort-lauderdale-beachfront-condos","fort-lauderdale-beachfront-homes","miami-beachfront-condos","miami-beachfront-homes"] },
+    spokes: ["palm-beach-beachfront-homes","fort-lauderdale-beachfront-homes","miami-beachfront-homes","palm-beach-beachfront-condos","fort-lauderdale-beachfront-condos","miami-beachfront-condos"] },
   { theme: "Downtown & Urban", slug: "downtown", blurb: "Walkable high-rise living in the city core.",
     spokes: ["palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos"] },
   { theme: "Golf & Club", slug: "golf", blurb: "Country-club living on South Florida's best courses.",
