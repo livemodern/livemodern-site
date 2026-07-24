@@ -24,6 +24,10 @@ function priceLabel(n: number): string {
 
 const ROOM_STEPS = [1, 2, 3, 4, 5];
 
+/** Lot-size ladder for estate/land pages. In coastal South Florida an acre is
+ *  already estate scale, so the ladder starts there and steps up fast. */
+const ACRE_STEPS = [1, 2, 3, 5, 10];
+
 export default function LifestyleListings({ listings }: { listings: LifestyleListing[] }) {
   const [county, setCounty] = useState<string | null>(null);
   const [minPrice, setMinPrice] = useState<number | "">("");
@@ -32,7 +36,8 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
   const [baths, setBaths] = useState<number | "">("");
   const [city, setCity] = useState<string>("");
   const [style, setStyle] = useState<string>("");
-  const [sort, setSort] = useState<"asc" | "desc">("asc");
+  const [acres, setAcres] = useState<number | "">("");
+  const [sort, setSort] = useState<"asc" | "desc" | "acres">("asc");
   const [expanded, setExpanded] = useState(false);
 
   const counties = useMemo(() => {
@@ -57,6 +62,14 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
     : 0;
   const showStyleFilter = styleOptions.length > 1 && styleCoverage >= 0.25;
 
+  // Lot size only makes sense where the set is land — offer it when a quarter of
+  // the listings report acreage and at least a few clear an acre.
+  const acreCoverage = countyScoped.length
+    ? countyScoped.filter((l) => (l.lot_size_acres ?? 0) > 0).length / countyScoped.length
+    : 0;
+  const showAcreFilter =
+    acreCoverage >= 0.25 && countyScoped.filter((l) => (l.lot_size_acres ?? 0) >= 1).length >= 3;
+
   const filtered = useMemo(() => {
     const out = countyScoped.filter((l) => {
       const p = l.list_price ?? 0;
@@ -66,24 +79,27 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
       if (baths !== "" && (l.baths ?? 0) < baths) return false;
       if (city && l.city !== city) return false;
       if (style && l.arch_style !== style) return false;
+      if (acres !== "" && (l.lot_size_acres ?? 0) < acres) return false;
       return true;
     });
-    return out.sort((a, b) =>
-      sort === "asc"
+    return out.sort((a, b) => {
+      if (sort === "acres") return (b.lot_size_acres ?? 0) - (a.lot_size_acres ?? 0);
+      return sort === "asc"
         ? (a.list_price ?? 0) - (b.list_price ?? 0)
-        : (b.list_price ?? 0) - (a.list_price ?? 0),
-    );
-  }, [countyScoped, minPrice, maxPrice, beds, baths, city, style, sort]);
+        : (b.list_price ?? 0) - (a.list_price ?? 0);
+    });
+  }, [countyScoped, minPrice, maxPrice, beds, baths, city, style, acres, sort]);
 
   const shown = expanded ? filtered : filtered.slice(0, 12);
   const hidden = filtered.length - 12;
 
   const activeCount =
     (minPrice !== "" ? 1 : 0) + (maxPrice !== "" ? 1 : 0) + (beds !== "" ? 1 : 0) +
-    (baths !== "" ? 1 : 0) + (city ? 1 : 0) + (style ? 1 : 0);
+    (baths !== "" ? 1 : 0) + (city ? 1 : 0) + (style ? 1 : 0) + (acres !== "" ? 1 : 0);
 
   const reset = () => {
     setMinPrice(""); setMaxPrice(""); setBeds(""); setBaths(""); setCity(""); setStyle("");
+    setAcres("");
     setExpanded(false);
   };
 
@@ -189,11 +205,30 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
           </label>
         ) : null}
 
+        {showAcreFilter ? (
+          <label className="lf-f">
+            <span>Lot size</span>
+            <select
+              value={acres}
+              onChange={(e) => { setAcres(e.target.value ? Number(e.target.value) : ""); setExpanded(false); }}
+            >
+              <option value="">Any</option>
+              {ACRE_STEPS.map((a) => (
+                <option key={a} value={a}>{a}+ acres</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
         <label className="lf-f">
           <span>Sort</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value as "asc" | "desc")}>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as "asc" | "desc" | "acres")}
+          >
             <option value="asc">Price: low to high</option>
             <option value="desc">Price: high to low</option>
+            {showAcreFilter ? <option value="acres">Lot size: largest first</option> : null}
           </select>
         </label>
       </div>
@@ -238,6 +273,9 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
                     <span>{l.beds ?? "—"} Bed</span>
                     <span>{l.baths ?? "—"} Bath</span>
                     <span>{l.sqft ? l.sqft.toLocaleString() : "—"} SF</span>
+                    {showAcreFilter && (l.lot_size_acres ?? 0) >= 1 ? (
+                      <span>{Number(l.lot_size_acres).toFixed(2).replace(/\.?0+$/, "")} AC</span>
+                    ) : null}
                   </div>
                   <div className="dz-loc dz-loc-row">
                     <span>

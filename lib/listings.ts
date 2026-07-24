@@ -363,6 +363,7 @@ export type LifestyleListing = {
   property_subtype: string | null;
   arch_style: string | null;
   community_slug: string | null;
+  lot_size_acres: number | null;
 };
 
 /**
@@ -385,7 +386,7 @@ export async function listingsByLifestyle(
   if (!SB_KEY) return [];
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
   const sel =
-    "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug";
+    "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug,lot_size_acres";
   const countyFilter = county ? `&county=eq.${encodeURIComponent(county)}` : "";
   // Query by tag at the lower ($2M) floor, then apply the split floor + type in JS.
   const url =
@@ -526,4 +527,167 @@ export async function lifestyleStats(
   } catch {
     return empty;
   }
+}
+
+
+/** ── Geo / criteria spokes ───────────────────────────────────────────────
+ *  Some spokes aren't a lifestyle tag — they're a place (an island) or a
+ *  measurable criterion (estate acreage). They render through exactly the same
+ *  page + filter bar; only the query differs. Server-side filters cover
+ *  county/city/zip/price/acres/type; substring matching on subdivision and
+ *  street runs in JS, because the MLS records islands inconsistently across
+ *  those two fields. */
+export type SpokeQuery = {
+  county?: string;
+  cities?: string[];
+  zips?: string[];
+  /** UPPERCASE substrings matched against subdivision_name (any = match). */
+  subdivisionLike?: string[];
+  /** UPPERCASE substrings matched against street_address (any = match). */
+  streetLike?: string[];
+  minAcres?: number;
+  minPrice?: number;
+  kind?: PropertyKind;
+};
+
+export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
+  // ── Islands (geography) ──
+  "manalapan-homes-for-sale": { cities: ["Manalapan"], minPrice: 2_000_000 },
+  "singer-island-real-estate": { zips: ["33404"], minPrice: 1_000_000 },
+  "jupiter-island-homes-for-sale": {
+    county: "Martin",
+    cities: ["Jupiter Island", "Hobe Sound"],
+    streetLike: ["BEACH RD", "BEACH ROAD", "GOMEZ", "JUPITER ISLAND"],
+    minPrice: 2_000_000,
+  },
+  "key-biscayne-homes-for-sale": { cities: ["Key Biscayne"], minPrice: 2_000_000 },
+  "miami-beach-islands-homes-for-sale": {
+    county: "Miami-Dade",
+    subdivisionLike: [
+      "STAR ISLAND", "FISHER", "HIBISCUS ISLAND", "PALM ISLAND", "VENETIAN",
+      "SUNSET ISLAND", "LA GORCE", "DI LIDO", "RIVO ALTO", "SAN MARINO",
+      "BELLE ISLE", "BISCAYNE POINT", "ALLISON ISLAND",
+    ],
+    minPrice: 2_000_000,
+  },
+  "las-olas-isles-homes-for-sale": {
+    cities: ["Fort Lauderdale"],
+    streetLike: [
+      "ISLE OF VENICE", "NURMI", "HENDRICKS", "SOLAR ISLE", "SEVEN ISLES",
+      "SUNRISE KEY", "FIESTA WAY", "BONTONA", "SAN MARCO", "AQUA VISTA",
+      "DEL LAGO", "CORAL WAY", "LIDO DR", "ISLA BAHIA", "LAS OLAS",
+      "IDLEWYLD", "MOLA AVE", "SEVILLE", "CASTILLA",
+    ],
+    minPrice: 1_500_000,
+  },
+  // ── Estates (acreage) ──
+  "palm-beach-county-estate-homes": {
+    county: "Palm Beach", minAcres: 1, minPrice: 3_000_000, kind: "homes",
+  },
+  "martin-county-estate-homes": {
+    county: "Martin", minAcres: 1, minPrice: 1_000_000, kind: "homes",
+  },
+  "miami-estate-homes": {
+    county: "Miami-Dade", minAcres: 1, minPrice: 3_000_000, kind: "homes",
+  },
+};
+
+const GEO_SELECT =
+  "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft," +
+  "image_urls,property_subtype,arch_style,community_slug,lot_size_acres," +
+  "subdivision_name,lifestyle_attributes,waterfront_features";
+
+type GeoRow = LifestyleListing & {
+  subdivision_name: string | null;
+  lifestyle_attributes: string[] | null;
+  waterfront_features: string | null;
+};
+
+/** Fetch every row matching a geo/criteria spoke. PostgREST caps a response at
+ *  1,000 rows, so page until a short page comes back. */
+export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
+  if (!SB_KEY) return [];
+  const parts = [
+    "status=eq.Active",
+    `list_price=gte.${q.minPrice ?? LIFESTYLE_CONDO_FLOOR}`,
+    `select=${GEO_SELECT}`,
+    "order=list_price.asc",
+  ];
+  if (q.county) parts.push(`county=eq.${encodeURIComponent(q.county)}`);
+  if (q.cities?.length)
+    parts.push(`or=${encodeURIComponent(`(${q.cities.map((c) => `city.eq.${c}`).join(",")})`)}`);
+  if (q.zips?.length)
+    parts.push(`or=${encodeURIComponent(`(${q.zips.map((z) => `zip.eq.${z}`).join(",")})`)}`);
+  if (q.minAcres) parts.push(`lot_size_acres=gte.${q.minAcres}`);
+  if (q.kind === "homes") parts.push(`property_subtype=in.(${HOME_SUBTYPES.join(",")})`);
+  if (q.kind === "condos") parts.push(`property_subtype=in.(${CONDO_SUBTYPES.join(",")})`);
+
+  const out: GeoRow[] = [];
+  try {
+    for (let offset = 0; offset < 5000; offset += 1000) {
+      const url = `${SB_URL}/rest/v1/properties?${parts.join("&")}&limit=1000&offset=${offset}`;
+      const res = await fetch(url, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+        next: { revalidate: 900 },
+      });
+      if (!res.ok) break;
+      const page = (await res.json()) as GeoRow[];
+      out.push(...page);
+      if (page.length < 1000) break;
+    }
+  } catch {
+    return [];
+  }
+
+  // Substring gates run here: an island shows up in subdivision_name on some
+  // records and only in the street address on others.
+  const up = (s: string | null) => (s ?? "").toUpperCase();
+  return out.filter((r) => {
+    if (q.subdivisionLike?.length && q.streetLike?.length) {
+      return (
+        q.subdivisionLike.some((p) => up(r.subdivision_name).includes(p)) ||
+        q.streetLike.some((p) => up(r.street_address).includes(p))
+      );
+    }
+    if (q.subdivisionLike?.length)
+      return q.subdivisionLike.some((p) => up(r.subdivision_name).includes(p));
+    if (q.streetLike?.length)
+      return q.streetLike.some((p) => up(r.street_address).includes(p));
+    return true;
+  });
+}
+
+/** Cards for a geo/criteria spoke — image arrays trimmed like the tag path. */
+export async function listingsByQuery(q: SpokeQuery): Promise<LifestyleListing[]> {
+  const rows = await rowsByQuery(q);
+  return rows.map((r) => ({ ...r, image_urls: (r.image_urls ?? []).slice(0, 1) }));
+}
+
+/** Same stats shape as lifestyleStats, computed from rows we already have. */
+export function statsFromRows(rows: GeoRow[]): LifestyleStats {
+  if (!rows.length)
+    return {
+      count: 0, minPrice: null, maxPrice: null, medianPrice: null,
+      attributes: {}, oceanAccess: 0, noFixedBridges: 0, topCities: [],
+    };
+  const prices = rows.map((r) => r.list_price ?? 0).filter((n) => n > 0).sort((a, b) => a - b);
+  const attributes: Record<string, number> = {};
+  const cityCounts: Record<string, number> = {};
+  let oceanAccess = 0, noFixedBridges = 0;
+  for (const r of rows) {
+    for (const a of r.lifestyle_attributes ?? []) attributes[a] = (attributes[a] ?? 0) + 1;
+    if (r.city) cityCounts[r.city] = (cityCounts[r.city] ?? 0) + 1;
+    const wf = r.waterfront_features ?? "";
+    if (wf.includes("OceanAccess")) oceanAccess++;
+    if (wf.includes("NoFixedBridges")) noFixedBridges++;
+  }
+  return {
+    count: rows.length,
+    minPrice: prices[0] ?? null,
+    maxPrice: prices[prices.length - 1] ?? null,
+    medianPrice: prices.length ? prices[Math.floor(prices.length / 2)] : null,
+    attributes, oceanAccess, noFixedBridges,
+    topCities: Object.entries(cityCounts)
+      .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([city, n]) => ({ city, n })),
+  };
 }

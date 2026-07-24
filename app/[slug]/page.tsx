@@ -25,6 +25,9 @@ import {
   lifestyleStats,
   listingsByLifestyle,
   SPOKE_PRICE_FLOOR,
+  SPOKE_QUERIES,
+  rowsByQuery,
+  statsFromRows,
   mls,
   mlsSrcSet,
   money,
@@ -171,13 +174,21 @@ export default async function CommunityPage({
   const spokeCountyFull =
     spokeCountyShort === "Dade" ? "Miami-Dade" : spokeCountyShort ?? undefined;
   const spokeKind = kindFromSlug(c.slug);
+  // Geo / criteria spokes (islands, estates) resolve through the same page but
+  // query by place or acreage instead of by lifestyle tag.
+  const spokeQuery = spokeHub ? SPOKE_QUERIES[c.slug] : undefined;
+  const geoRows = spokeQuery ? await rowsByQuery(spokeQuery) : [];
   const spokeFloor = spokeHub ? SPOKE_PRICE_FLOOR[c.slug] : undefined;
-  const spokeListings = spokeHub
-    ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, spokeKind, spokeFloor)
-    : [];
-  const spokeStats = spokeHub
-    ? await lifestyleStats(spokeHub.theme, spokeCountyFull, spokeKind, spokeFloor)
-    : null;
+  const spokeListings = spokeQuery
+    ? geoRows.map((r) => ({ ...r, image_urls: (r.image_urls ?? []).slice(0, 1) }))
+    : spokeHub
+      ? await listingsByLifestyle(spokeHub.theme, 90, spokeCountyFull, spokeKind, spokeFloor)
+      : [];
+  const spokeStats = spokeQuery
+    ? statsFromRows(geoRows)
+    : spokeHub
+      ? await lifestyleStats(spokeHub.theme, spokeCountyFull, spokeKind, spokeFloor)
+      : null;
   const spokeContent = spokeHub ? contentForTheme(spokeHub.theme) : undefined;
   const spokeFactSet = spokeHub ? spokeFacts(spokeHub.theme, spokeCountyFull) : undefined;
   // Gallery policy: buildings always show their (multi-image) galleries. Collections

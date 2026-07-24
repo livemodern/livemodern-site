@@ -158,7 +158,10 @@ export function collectionCounty(slug: string): string | null {
   if (s.startsWith("miami") || s.includes("brickell") || s.includes("hollywood")) return "Dade";
   if (s.startsWith("fort-lauderdale") || s.includes("pompano")) return "Broward";
   if (s.startsWith("palm-beach") || s.includes("downtown-palm-beach")) return "Palm Beach";
-  if (s.startsWith("martin")) return "Martin";
+  if (s.startsWith("martin") || s.startsWith("jupiter-island")) return "Martin";
+  if (s.startsWith("manalapan") || s.startsWith("singer-island")) return "Palm Beach";
+  if (s.startsWith("key-biscayne") || s.startsWith("miami-beach-islands")) return "Dade";
+  if (s.startsWith("las-olas")) return "Broward";
   return null; // south-florida-wide collections stay blank
 }
 
@@ -194,9 +197,9 @@ export const LIFESTYLE_HUBS: LifestyleHub[] = [
   { theme: "Golf & Club", slug: "golf", blurb: "Country-club living on South Florida's best courses.",
     spokes: ["palm-beach-golf-course-homes","martin-county-golf-course-homes","miami-golf-course-homes"] },
   { theme: "Island", slug: "island", blurb: "Barrier-island exclusivity and seclusion.",
-    spokes: ["palm-beach-island-homes-for-sale"] },
-  { theme: "Estates & Land", slug: "estates", blurb: "Acreage, privacy, and estate living \u2014 including Wellington's equestrian corridor.",
-    spokes: ["palm-beach-equestrian-homes",] },
+    spokes: ["palm-beach-island-homes-for-sale","manalapan-homes-for-sale","singer-island-real-estate","jupiter-island-homes-for-sale","key-biscayne-homes-for-sale","miami-beach-islands-homes-for-sale","las-olas-isles-homes-for-sale"] },
+  { theme: "Estates & Land", slug: "estates", blurb: "Acreage, privacy, and estate living \u2014 one acre and up, including Wellington's equestrian corridor.",
+    spokes: ["palm-beach-county-estate-homes","martin-county-estate-homes","miami-estate-homes","palm-beach-equestrian-homes"] },
   { theme: "Historic", slug: "historic", blurb: "Historic districts and restored period residences.",
     spokes: [] },
 ];
