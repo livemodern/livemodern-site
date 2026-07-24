@@ -39,6 +39,18 @@ export default function MilaChat() {
           ? crypto.randomUUID()
           : "s_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
+    // Continue a conversation handed off from the floating widget, if any.
+    try {
+      const raw = sessionStorage.getItem("mila_handoff");
+      if (raw) {
+        sessionStorage.removeItem("mila_handoff");
+        const h = JSON.parse(raw);
+        if (Array.isArray(h.messages) && h.messages.length) {
+          setMessages([{ role: "assistant", content: OPENER }, ...h.messages]);
+          if (h.sessionId) sessionId.current = h.sessionId;
+        }
+      }
+    } catch { /* fresh start if handoff unreadable */ }
   }, []);
 
   useEffect(() => {

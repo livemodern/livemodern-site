@@ -68,6 +68,16 @@ export default function MilaWidget() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   }
 
+  // Hand the conversation off to the full /mila page so it continues seamlessly.
+  function expandToPage() {
+    try {
+      if (messages.length) {
+        sessionStorage.setItem("mila_handoff", JSON.stringify({ messages, sessionId: sessionId.current }));
+      }
+    } catch { /* handoff is best-effort */ }
+    window.location.href = "/mila";
+  }
+
   return (
     <>
       {/* Launcher */}
@@ -90,7 +100,14 @@ export default function MilaWidget() {
               <div className="mila-sub">AI Concierge · Modern Living</div>
             </div>
           </div>
-          <button className="mila-x" onClick={() => setOpen(false)} aria-label="Close">×</button>
+          <div className="mila-head-actions">
+            <button className="mila-expand" onClick={expandToPage} aria-label="Open full screen" title="Open full screen">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+              </svg>
+            </button>
+            <button className="mila-x" onClick={() => setOpen(false)} aria-label="Close">×</button>
+          </div>
         </header>
 
         <div className="mila-body" ref={scrollRef}>
