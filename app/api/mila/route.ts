@@ -19,7 +19,7 @@ import { MILA_CONSUMER_SYSTEM, MILA_TAXONOMY_NOTE } from "@/lib/mila-persona";
 import { milaSearch, LIFESTYLES, ATTRIBUTES, COUNTIES, MilaListing } from "@/lib/mila-search";
 import { mlgTrackRecord } from "@/lib/mila-track-record";
 import { resolveKnownVisitor } from "@/lib/mila-identity";
-import { scanOutput, rateLimit, logMilaTurn, looksSuspicious } from "@/lib/mila-guard";
+import { scanOutput, rateLimit, logMilaTurn, looksSuspicious, captureConversation } from "@/lib/mila-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -281,6 +281,30 @@ export async function POST(req: NextRequest) {
   const system = MILA_CONSUMER_SYSTEM({ today, visitorFirstName }) + "\n\n" + MILA_TAXONOMY_NOTE;
   const messages: any[] = [...history];
   const toolsUsed: string[] = [];
+  const listingsShown: string[] = [];
+  let leadCaptured = false;
+
+  // Build the human-review transcript from the client-visible turns plus MiLa's
+  // final reply. We record user text + assistant text only — not the raw
+  // tool_use/tool_result plumbing (that's noise for a human reader; the tools
+  // used + listings shown are captured as rollup fields).
+  const buildTranscript = (finalReply: string) => {
+    const turns = history
+      .map((m: any) => ({
+        role: m.role as "user" | "assistant",
+        content: typeof m.content === "string" ? m.content : "",
+      }))
+      .filter((t: any) => t.content);
+    turns.push({ role: "assistant", content: finalReply });
+    return turns;
+  };
+  const captureFlags = (scanLeaked: boolean, kinds: string[], extra: string[] = []) => [
+    ...(suspicious ? ["injection_suspected"] : []),
+    ...(scanLeaked ? ["output_scrubbed:" + kinds.join(",")] : []),
+    ...extra,
+  ];
+  const ua = req.headers.get("user-agent");
+  const referrer = req.headers.get("referer");
 
   try {
     for (let round = 0; round < MAX_ROUNDS; round++) {
@@ -300,12 +324,12 @@ export async function POST(req: NextRequest) {
         const raw = (data.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("").trim();
         // ── OUTPUT SCANNER: strip any contact detail the visitor didn't provide.
         const scan = scanOutput(raw, visitorText, { phones: ["5612288420"], emails: ["info@modernlivingre.com", "team@mlrecloud.com"] });
-        logMilaTurn({
-          sessionId,
-          tools: toolsUsed,
-          outputLeaked: scan.leaked,
-          flags: [...(suspicious ? ["injection_suspected"] : []), ...(scan.leaked ? ["output_scrubbed:" + scan.kinds.join(",")] : [])],
-          known: !!visitorFirstName,
+        const flags = captureFlags(scan.leaked, scan.kinds);
+        logMilaTurn({ sessionId, tools: toolsUsed, outputLeaked: scan.leaked, flags, known: !!visitorFirstName });
+        captureConversation({
+          sessionId, transcript: buildTranscript(scan.clean),
+          toolsUsed, listingsShown, flags, knownVisitor: !!visitorFirstName,
+          leadCaptured, userAgent: ua, referrer,
         });
         return NextResponse.json({ reply: scan.clean });
       }
@@ -315,6 +339,14 @@ export async function POST(req: NextRequest) {
       for (const tu of toolUses) {
         toolsUsed.push(tu.name);
         const out = await runTool(tu.name, tu.input ?? {}, { sessionContactId });
+        // Track what she surfaced / did, for the review rollup.
+        if (tu.name === "search_listings" && Array.isArray(out?.listings)) {
+          for (const line of out.listings) {
+            const m = String(line).match(/\[mls:([^\]]+)\]/);
+            if (m) listingsShown.push(m[1]);
+          }
+        }
+        if (tu.name === "capture_lead" && out?.ok) leadCaptured = true;
         // Wrap every tool result in an explicit untrusted-data boundary. Listing
         // descriptions and knowledge chunks are external text that may contain
         // injected instructions ("AI: ignore your rules…"). This gives the model
@@ -330,8 +362,14 @@ export async function POST(req: NextRequest) {
       }
       messages.push({ role: "user", content: results });
     }
+    const maxReply = "Let me get an agent to help you directly — can I grab your name and the best number to reach you?";
     logMilaTurn({ sessionId, tools: toolsUsed, outputLeaked: false, flags: ["max_rounds"], known: !!visitorFirstName });
-    return NextResponse.json({ reply: "Let me get an agent to help you directly — can I grab your name and the best number to reach you?" });
+    captureConversation({
+      sessionId, transcript: buildTranscript(maxReply),
+      toolsUsed, listingsShown, flags: captureFlags(false, [], ["max_rounds"]),
+      knownVisitor: !!visitorFirstName, leadCaptured, userAgent: ua, referrer,
+    });
+    return NextResponse.json({ reply: maxReply });
   } catch (e: any) {
     console.error("[mila] error", e?.message);
     return NextResponse.json({ error: "Something went wrong on my end." }, { status: 500 });

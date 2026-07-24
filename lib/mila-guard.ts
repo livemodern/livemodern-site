@@ -135,3 +135,60 @@ const INJECTION_HINTS = [
 export function looksSuspicious(text: string): boolean {
   return INJECTION_HINTS.some((re) => re.test(text));
 }
+
+// ── FULL-TRANSCRIPT CAPTURE (fire-and-forget → mila_conversations) ──────────
+// The human-review record: the WHOLE conversation, upserted per turn keyed on
+// (session_id, site_slug). Separate from the security-minimal site_events log —
+// this one intentionally keeps message bodies so you can read a chat back,
+// analyze accuracy, and spot a problem conversation. No UI here; the viewer
+// lives in mlg-admin.
+
+type TranscriptTurn = { role: "user" | "assistant"; content: string; at?: string };
+
+export function captureConversation(entry: {
+  sessionId: string | null;
+  siteSlug?: string;
+  transcript: TranscriptTurn[];
+  toolsUsed: string[];
+  listingsShown: string[];
+  flags: string[];
+  knownVisitor: boolean;
+  leadCaptured: boolean;
+  userAgent?: string | null;
+  referrer?: string | null;
+}): void {
+  if (!SB_KEY || !entry.sessionId) return;
+  const siteSlug = entry.siteSlug ?? "livemodern";
+  const now = new Date().toISOString();
+  const row = {
+    session_id: entry.sessionId,
+    site_slug: siteSlug,
+    surface: "consumer",
+    transcript: entry.transcript,
+    message_count: entry.transcript.length,
+    tools_used: Array.from(new Set(entry.toolsUsed)),
+    listings_shown: Array.from(new Set(entry.listingsShown)),
+    flags: Array.from(new Set(entry.flags)),
+    known_visitor: entry.knownVisitor,
+    lead_captured: entry.leadCaptured,
+    user_agent: entry.userAgent ?? null,
+    referrer: entry.referrer ?? null,
+    updated_at: now,
+  };
+  try {
+    // Upsert on the (session_id, site_slug) unique index — merge-duplicates so
+    // each turn overwrites the growing transcript for this session.
+    void fetch(`${SB_URL}/rest/v1/mila_conversations?on_conflict=session_id,site_slug`, {
+      method: "POST",
+      headers: {
+        apikey: SB_KEY,
+        Authorization: `Bearer ${SB_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(row),
+    }).catch(() => {});
+  } catch {
+    /* capture must never break the chat */
+  }
+}
