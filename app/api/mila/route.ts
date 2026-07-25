@@ -176,18 +176,31 @@ function listingCard(l: MilaListing): MilaCard {
 
 async function runTool(name: string, input: any, ctx: { sessionContactId?: string | null }): Promise<any> {
   if (name === "search_listings") {
-    const { count, listings } = await milaSearch({
+    const r = await milaSearch({
       lifestyles: input.lifestyles, attributes: input.attributes, archStyle: input.arch_style,
       kind: input.kind, county: input.county, city: input.city, zip: input.zip,
       minPrice: input.min_price, maxPrice: input.max_price,
       bedsMin: input.beds_min, bedsExact: input.beds_exact, bathsMin: input.baths_min, limit: 6,
     });
+    // Below LiveModern's luxury floor → tell MiLa to redirect to the main site,
+    // NOT to show off-brand inventory or claim nothing exists.
+    if (r.belowFloor) {
+      return {
+        below_luxury_floor: true,
+        floor: r.floor,
+        redirect: "modernlivingre.com",
+        note:
+          `LiveModern is our curated luxury collection — ${input.kind === "homes" ? "homes" : "condos"} here start around $${((r.floor ?? 2000000) / 1000000)}M. ` +
+          `This person's budget is below that. Warmly explain LiveModern's focus, then point them to our main site modernlivingre.com, which has lots of options in their range ` +
+          `(if they mentioned downtown West Palm Beach, send them to the downtown WPB search there). Don't show listings here.`,
+      };
+    }
     return {
-      total_matches: count,
-      showing: listings.length,
-      listings: listings.map(listingLine),
-      _cards: listings.map(listingCard),   // surfaced to the client, stripped before the model sees results
-      note: count === 0 ? "No exact matches — suggest the closest real alternative and be honest about the trade-off." : undefined,
+      total_matches: r.count,
+      showing: r.listings.length,
+      listings: r.listings.map(listingLine),
+      _cards: r.listings.map(listingCard),
+      note: r.count === 0 ? "No curated matches for exactly this — suggest the closest real curated option, or offer to have an agent help." : undefined,
     };
   }
 
