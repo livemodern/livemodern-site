@@ -44,15 +44,18 @@ const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        lifestyles: { type: "array", items: { type: "string", enum: LIFESTYLES as unknown as string[] }, description: "Lifestyle tags (AND). e.g. [\"Boating & Deepwater\"]." },
-        attributes: { type: "array", items: { type: "string", enum: ATTRIBUTES as unknown as string[] }, description: "gated, penthouse, walkable, pet-friendly, new-construction." },
+        lifestyles: { type: "array", items: { type: "string", enum: LIFESTYLES as unknown as string[] }, description: "Lifestyle tags (a preference, not a hard filter). e.g. [\"Downtown & Urban\"]." },
+        attributes: { type: "array", items: { type: "string", enum: ATTRIBUTES as unknown as string[] }, description: "gated, penthouse, walkable, pet-friendly, new-construction (preference, not hard filter — many real listings aren't tagged)." },
         arch_style: { type: "string", description: "Architectural style if they care, e.g. \"British West Indies\", \"Contemporary\"." },
         kind: { type: "string", enum: ["condos", "homes", "any"] },
         county: { type: "string", enum: COUNTIES as unknown as string[] },
-        city: { type: "string" },
+        city: { type: "string", description: "City name, or 'downtown WPB' for downtown West Palm Beach." },
+        zip: { type: "string", description: "ZIP if they name an area precisely (e.g. 33401 = downtown WPB)." },
         min_price: { type: "number" },
         max_price: { type: "number" },
         beds_min: { type: "number" },
+        beds_exact: { type: "number", description: "Exact bedroom count if they said '2 bed' / '2/2'." },
+        baths_min: { type: "number" },
       },
     },
   },
@@ -175,8 +178,9 @@ async function runTool(name: string, input: any, ctx: { sessionContactId?: strin
   if (name === "search_listings") {
     const { count, listings } = await milaSearch({
       lifestyles: input.lifestyles, attributes: input.attributes, archStyle: input.arch_style,
-      kind: input.kind, county: input.county, city: input.city,
-      minPrice: input.min_price, maxPrice: input.max_price, bedsMin: input.beds_min, limit: 6,
+      kind: input.kind, county: input.county, city: input.city, zip: input.zip,
+      minPrice: input.min_price, maxPrice: input.max_price,
+      bedsMin: input.beds_min, bedsExact: input.beds_exact, bathsMin: input.baths_min, limit: 6,
     });
     return {
       total_matches: count,
