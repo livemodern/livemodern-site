@@ -451,14 +451,21 @@ export async function POST(req: NextRequest) {
   // final reply. We record user text + assistant text only — not the raw
   // tool_use/tool_result plumbing (that's noise for a human reader; the tools
   // used + listings shown are captured as rollup fields).
-  const buildTranscript = (finalReply: string) => {
+  const buildTranscript = (finalReply: string, shownCards?: any[]) => {
     const turns = history
       .map((m: any) => ({
         role: m.role as "user" | "assistant",
         content: typeof m.content === "string" ? m.content : "",
       }))
       .filter((t: any) => t.content);
-    turns.push({ role: "assistant", content: finalReply });
+    // Append the listings she surfaced this turn as a compact line, so the
+    // review record shows WHAT she presented, not just her words.
+    let reply = finalReply;
+    if (shownCards && shownCards.length) {
+      const lines = shownCards.map((c: any) => `  • ${c.price} — ${c.address}${c.city ? ", " + c.city : ""} (${c.mls_id})`).join("\n");
+      reply = finalReply + "\n[Listings shown:\n" + lines + "\n]";
+    }
+    turns.push({ role: "assistant", content: reply });
     return turns;
   };
   const captureFlags = (scanLeaked: boolean, kinds: string[], extra: string[] = []) => [
@@ -489,14 +496,14 @@ export async function POST(req: NextRequest) {
         const scan = scanOutput(raw, visitorText, { phones: ["5612288420"], emails: ["info@modernlivingre.com", "team@mlrecloud.com"] });
         const flags = captureFlags(scan.leaked, scan.kinds);
         logMilaTurn({ sessionId, tools: toolsUsed, outputLeaked: scan.leaked, flags, known: !!visitorFirstName });
-        const finalTranscript = buildTranscript(scan.clean);
-        captureConversation({
+        const finalTranscript = buildTranscript(scan.clean, cards);
+        // Await so the row is guaranteed written before the serverless function
+        // can terminate (fire-and-forget was losing turns on cold exits).
+        await captureConversation({
           sessionId, transcript: finalTranscript,
           toolsUsed, listingsShown, flags, knownVisitor: !!visitorFirstName,
           leadCaptured, userAgent: ua, referrer,
         });
-        // If MiLa captured a lead this conversation, send the agent-facing recap
-        // → CRM timeline + agent email. Fire-and-forget; never blocks the reply.
         if (leadCaptured && capturedLead) {
           void sendChatSummary({ apiKey, lead: capturedLead, transcript: finalTranscript, listingsShown });
         }
@@ -539,8 +546,8 @@ export async function POST(req: NextRequest) {
     }
     const maxReply = "Let me get an agent to help you directly — can I grab your name and the best number to reach you?";
     logMilaTurn({ sessionId, tools: toolsUsed, outputLeaked: false, flags: ["max_rounds"], known: !!visitorFirstName });
-    captureConversation({
-      sessionId, transcript: buildTranscript(maxReply),
+    await captureConversation({
+      sessionId, transcript: buildTranscript(maxReply, cards),
       toolsUsed, listingsShown, flags: captureFlags(false, [], ["max_rounds"]),
       knownVisitor: !!visitorFirstName, leadCaptured, userAgent: ua, referrer,
     });

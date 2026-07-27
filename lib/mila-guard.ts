@@ -145,7 +145,7 @@ export function looksSuspicious(text: string): boolean {
 
 type TranscriptTurn = { role: "user" | "assistant"; content: string; at?: string };
 
-export function captureConversation(entry: {
+export async function captureConversation(entry: {
   sessionId: string | null;
   siteSlug?: string;
   transcript: TranscriptTurn[];
@@ -156,28 +156,52 @@ export function captureConversation(entry: {
   leadCaptured: boolean;
   userAgent?: string | null;
   referrer?: string | null;
-}): void {
+}): Promise<void> {
   if (!SB_KEY || !entry.sessionId) return;
   const siteSlug = entry.siteSlug ?? "livemodern";
   const now = new Date().toISOString();
+
+  // ACCUMULATE across turns. PostgREST merge-duplicates does a full-column
+  // REPLACE on conflict, so per-call tools/listings/flags/lead would clobber
+  // what an earlier turn recorded (that's why a search turn's tools showed empty
+  // after a later no-tool turn). Read the existing row and UNION the rollups so
+  // the record reflects the whole conversation, not just the latest call.
+  let priorTools: string[] = [];
+  let priorListings: string[] = [];
+  let priorFlags: string[] = [];
+  let priorLead = false;
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/mila_conversations?session_id=eq.${encodeURIComponent(entry.sessionId)}&site_slug=eq.${encodeURIComponent(siteSlug)}&select=tools_used,listings_shown,flags,lead_captured&limit=1`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }, cache: "no-store" },
+    );
+    if (res.ok) {
+      const rows = (await res.json()) as any[];
+      if (rows[0]) {
+        priorTools = Array.isArray(rows[0].tools_used) ? rows[0].tools_used : [];
+        priorListings = Array.isArray(rows[0].listings_shown) ? rows[0].listings_shown : [];
+        priorFlags = Array.isArray(rows[0].flags) ? rows[0].flags : [];
+        priorLead = !!rows[0].lead_captured;
+      }
+    }
+  } catch { /* first turn or read failed — just use this call's values */ }
+
   const row = {
     session_id: entry.sessionId,
     site_slug: siteSlug,
     surface: "consumer",
-    transcript: entry.transcript,
+    transcript: entry.transcript,                    // client sends full history → always current
     message_count: entry.transcript.length,
-    tools_used: Array.from(new Set(entry.toolsUsed)),
-    listings_shown: Array.from(new Set(entry.listingsShown)),
-    flags: Array.from(new Set(entry.flags)),
+    tools_used: Array.from(new Set([...priorTools, ...entry.toolsUsed])),
+    listings_shown: Array.from(new Set([...priorListings, ...entry.listingsShown])),
+    flags: Array.from(new Set([...priorFlags, ...entry.flags])),
     known_visitor: entry.knownVisitor,
-    lead_captured: entry.leadCaptured,
+    lead_captured: priorLead || entry.leadCaptured,  // sticky once true
     user_agent: entry.userAgent ?? null,
     referrer: entry.referrer ?? null,
     updated_at: now,
   };
   try {
-    // Upsert on the (session_id, site_slug) unique index — merge-duplicates so
-    // each turn overwrites the growing transcript for this session.
     void fetch(`${SB_URL}/rest/v1/mila_conversations?on_conflict=session_id,site_slug`, {
       method: "POST",
       headers: {
