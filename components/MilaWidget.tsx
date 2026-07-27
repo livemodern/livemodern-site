@@ -3,36 +3,18 @@
 import { useState, useRef, useEffect } from "react";
 import MilaAvatar from "@/components/MilaAvatar";
 import { formatInline } from "@/lib/format-inline";
-
-type Card = {
-  mls_id: string; address: string; city: string | null; price: string;
-  beds: number | null; baths: number | null; sqft: number | null;
-  arch_style: string | null; image: string | null; href: string;
-};
-type Msg = { role: "user" | "assistant"; content: string; cards?: Card[] };
+import { useMilaConversation } from "@/lib/use-mila-conversation";
 
 const GREETING =
   "Hi, my name is MiLa — I'm an AI agent for Modern Living Group. I'm great at narrowing down your home hunt, or matching you with the right agent based on their experience and areas of expertise. What brings you to the site today?";
 
 export default function MilaWidget() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const { messages, setMessages, sessionId } = useMilaConversation(GREETING);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const sessionId = useRef<string>("");
-
-  useEffect(() => {
-    // Per-tab session id — used for rate limiting + audit log correlation. Not
-    // identity (never authenticates anyone), just a stable handle for this chat.
-    if (!sessionId.current) {
-      sessionId.current =
-        (typeof crypto !== "undefined" && "randomUUID" in crypto)
-          ? crypto.randomUUID()
-          : "s_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
-  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -45,15 +27,16 @@ export default function MilaWidget() {
   async function send() {
     const text = input.trim();
     if (!text || busy) return;
-    const next: Msg[] = [...messages, { role: "user", content: text }];
+    const next = [...messages, { role: "user" as const, content: text }];
     setMessages(next);
     setInput("");
     setBusy(true);
     try {
+      const apiMessages = next.map((m) => ({ role: m.role, content: m.content }));
       const res = await fetch("/api/mila", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, sessionId: sessionId.current }),
+        body: JSON.stringify({ messages: apiMessages, sessionId: sessionId.current }),
       });
       const data = await res.json();
       setMessages([...next, { role: "assistant", content: data.reply || data.error || "Sorry — try me again?", cards: data.cards?.length ? data.cards : undefined }]);
@@ -71,8 +54,10 @@ export default function MilaWidget() {
   // Hand the conversation off to the full /mila page so it continues seamlessly.
   function expandToPage() {
     try {
-      if (messages.length) {
-        sessionStorage.setItem("mila_handoff", JSON.stringify({ messages, sessionId: sessionId.current }));
+      // Strip the opener (messages[0]) — the page seeds its own.
+      const convo = messages.slice(1);
+      if (convo.length) {
+        sessionStorage.setItem("mila_handoff", JSON.stringify({ messages: convo, sessionId: sessionId.current }));
       }
     } catch { /* handoff is best-effort */ }
     window.location.href = "/mila";
@@ -111,7 +96,6 @@ export default function MilaWidget() {
         </header>
 
         <div className="mila-body" ref={scrollRef}>
-          <div className="mila-msg assistant"><p>{GREETING}</p></div>
           {messages.map((m, i) => (
             <div key={i}>
               <div className={`mila-msg ${m.role}`}>

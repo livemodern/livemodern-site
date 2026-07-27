@@ -12,13 +12,17 @@ const SB_URL = process.env.SUPABASE_URL ?? "https://ezcikavnfchqaenweygw.supabas
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 const CONDO_SUBTYPES = ["Condominium", "Apartment", "Co-Op", "Condo/Co-Op"];
-const HOME_SUBTYPES = ["Single Family Residence", "Single Family Detached", "Villa", "Townhouse"];
+// Single-family = detached homes ONLY. Townhouse and Villa are attached/semi-
+// attached and are NOT what someone means by "single-family home" — the MLS
+// spells it "SingleFamilyResidence" (no spaces), which the old list missed.
+const HOME_SUBTYPES = ["SingleFamilyResidence", "Single Family Residence", "Single Family Detached"];
+const TOWNHOME_SUBTYPES = ["Townhouse", "Villa"];
 
 export interface MilaSearchInput {
   lifestyles?: string[];
   attributes?: string[];
   archStyle?: string;
-  kind?: "condos" | "homes" | "any";
+  kind?: "condos" | "homes" | "townhomes" | "any";
   county?: string;
   city?: string;
   zip?: string;
@@ -97,7 +101,18 @@ export async function milaSearch(input: MilaSearchInput): Promise<MilaSearchResu
   try {
     let rows = await runQuery(SB_URL, SB_KEY, params, sel);
     if (input.kind === "condos") rows = rows.filter((r) => CONDO_SUBTYPES.includes(r.property_subtype ?? ""));
-    else if (input.kind === "homes") rows = rows.filter((r) => HOME_SUBTYPES.includes(r.property_subtype ?? ""));
+    else if (input.kind === "homes") {
+      // "home" / "single-family home" = detached only. Townhomes/villas are a
+      // different product — do NOT return them when someone asked for a house.
+      rows = rows.filter((r) => HOME_SUBTYPES.includes(r.property_subtype ?? ""));
+    } else if (input.kind === "townhomes") {
+      rows = rows.filter((r) => TOWNHOME_SUBTYPES.includes(r.property_subtype ?? ""));
+    }
+    // For "any", keep everything residential-ish; drop land/commercial noise.
+    if (!input.kind || input.kind === "any") {
+      const RESIDENTIAL = new Set([...CONDO_SUBTYPES, ...HOME_SUBTYPES, ...TOWNHOME_SUBTYPES]);
+      rows = rows.filter((r) => RESIDENTIAL.has(r.property_subtype ?? ""));
+    }
 
     const count = rows.length;
     const limit = Math.min(input.limit ?? 6, 12);

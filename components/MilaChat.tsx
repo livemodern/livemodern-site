@@ -7,13 +7,7 @@
 import { useState, useRef, useEffect } from "react";
 import MilaAvatar from "@/components/MilaAvatar";
 import { formatInline } from "@/lib/format-inline";
-
-type Card = {
-  mls_id: string; address: string; city: string | null; price: string;
-  beds: number | null; baths: number | null; sqft: number | null;
-  arch_style: string | null; image: string | null; href: string;
-};
-type Msg = { role: "user" | "assistant"; content: string; cards?: Card[] };
+import { useMilaConversation, MilaMsg as Msg } from "@/lib/use-mila-conversation";
 
 const OPENER =
   "Hi, my name is MiLa — I'm an AI agent for Modern Living Group. I'm great at narrowing down your home hunt, or matching you with the right agent based on their experience and areas of expertise. What brings you to the site today?";
@@ -26,32 +20,28 @@ const STARTERS = [
 ];
 
 export default function MilaChat() {
-  const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: OPENER }]);
+  const { messages, setMessages, sessionId, hydrated } = useMilaConversation(OPENER);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sessionId = useRef<string>("");
 
+  // One-time handoff from the floating widget (takes precedence over storage
+  // only if it has MORE than what's stored — otherwise persistence already has it).
   useEffect(() => {
-    if (!sessionId.current) {
-      sessionId.current =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : "s_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
-    // Continue a conversation handed off from the floating widget, if any.
+    if (!hydrated) return;
     try {
       const raw = sessionStorage.getItem("mila_handoff");
       if (raw) {
         sessionStorage.removeItem("mila_handoff");
         const h = JSON.parse(raw);
-        if (Array.isArray(h.messages) && h.messages.length) {
+        if (Array.isArray(h.messages) && h.messages.length > messages.length - 1) {
           setMessages([{ role: "assistant", content: OPENER }, ...h.messages]);
           if (h.sessionId) sessionId.current = h.sessionId;
         }
       }
     } catch { /* fresh start if handoff unreadable */ }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

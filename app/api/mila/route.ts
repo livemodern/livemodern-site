@@ -47,7 +47,7 @@ const TOOLS = [
         lifestyles: { type: "array", items: { type: "string", enum: LIFESTYLES as unknown as string[] }, description: "Lifestyle tags (a preference, not a hard filter). e.g. [\"Downtown & Urban\"]." },
         attributes: { type: "array", items: { type: "string", enum: ATTRIBUTES as unknown as string[] }, description: "gated, penthouse, walkable, pet-friendly, new-construction (preference, not hard filter — many real listings aren't tagged)." },
         arch_style: { type: "string", description: "Architectural style if they care, e.g. \"British West Indies\", \"Contemporary\"." },
-        kind: { type: "string", enum: ["condos", "homes", "any"] },
+        kind: { type: "string", enum: ["condos", "homes", "townhomes", "any"], description: "'homes' = detached single-family ONLY (not townhomes/villas). Use 'townhomes' for townhouse/villa, 'condos' for condo/apartment." },
         county: { type: "string", enum: COUNTIES as unknown as string[] },
         city: { type: "string", description: "City name, or 'downtown WPB' for downtown West Palm Beach." },
         zip: { type: "string", description: "ZIP if they name an area precisely (e.g. 33401 = downtown WPB)." },
