@@ -9,6 +9,10 @@ export type BuildingFacts = {
   stories?: number;
   completion?: number;
   price_from?: number;
+  /** Featured Buildings curation. Default (undefined): a building appears on
+   *  /featured-buildings once it graduates off the new-construction register.
+   *  true = force-feature; false = retire (hide from both indexes). */
+  featured?: boolean;
 };
 
 /** The two-pill classification the page shows. presale/pre_construction/
@@ -82,6 +86,18 @@ export function resolveLifecycle(
     default:
       return { phase: "unknown", pill: null, completedYear: null, graduated: false };
   }
+}
+
+/**
+ * Whether a building belongs on the Featured Buildings page. Graduated towers
+ * (completed > NEW_CONSTRUCTION_YEARS ago) feature by default — so a building
+ * flows from the new-construction register into Featured on its own as it ages,
+ * with no manual step. `featured:true` force-features; `featured:false` retires.
+ */
+export function isFeatured(f: BuildingFacts | undefined, lc: Lifecycle): boolean {
+  if (f?.featured === true) return true;
+  if (f?.featured === false) return false;
+  return lc.graduated;
 }
 
 export type Community = {

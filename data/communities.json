@@ -1329,7 +1329,8 @@
   "facts": {
    "status": "new_construction",
    "architect": "Antonio Citterio Patricia Viel",
-   "unit_count": 16
+   "unit_count": 16,
+   "completion": 2020
   }
  },
  {
@@ -6380,7 +6381,8 @@
   ],
   "facts": {
    "status": "new_construction",
-   "unit_count": 26
+   "unit_count": 26,
+   "completion": 2020
   }
  },
  {
@@ -6621,7 +6623,8 @@
   ],
   "facts": {
    "status": "new_construction",
-   "architect": "Piero Lissoni"
+   "architect": "Piero Lissoni",
+   "completion": 2019
   }
  },
  {
@@ -6734,7 +6737,8 @@
   "facts": {
    "status": "new_construction",
    "unit_count": 212,
-   "stories": 52
+   "stories": 52,
+   "completion": 2019
   }
  },
  {
@@ -6788,7 +6792,7 @@
    2000
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "under_construction",
    "unit_count": 18
   }
  },
@@ -7218,7 +7222,8 @@
   ],
   "facts": {
    "status": "new_construction",
-   "unit_count": 171
+   "unit_count": 171,
+   "completion": 2009
   }
  },
  {
