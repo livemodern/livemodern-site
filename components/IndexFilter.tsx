@@ -20,9 +20,11 @@ const HIDDEN = new Set(["New Construction", "Golf & Country Club"]);
 export default function IndexFilter({
   buildings,
   counties,
+  lifecycles,
 }: {
   buildings: Community[];
   counties: string[];
+  lifecycles?: Record<string, { pill: string | null; phase: string }>;
 }) {
   const [active, setActive] = useState<Set<string>>(new Set());
 
@@ -116,7 +118,7 @@ export default function IndexFilter({
             <div style={{ marginTop: 8 }}>
               {rows.map((c) => (
                 <div key={c.slug} style={{ display: rowMatches(c) ? undefined : "none" }}>
-                  <IndexRow c={c} />
+                  <IndexRow c={c} lifecycle={lifecycles?.[c.slug]} />
                 </div>
               ))}
             </div>

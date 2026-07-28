@@ -1171,7 +1171,8 @@
   "facts": {
    "status": "new_construction",
    "unit_count": 35,
-   "stories": 17
+   "stories": 17,
+   "completion": 2018
   }
  },
  {
@@ -5153,7 +5154,8 @@
    "developer": "Swire Properties",
    "architect": "Arquitectonica",
    "unit_count": 390,
-   "stories": 43
+   "stories": 43,
+   "completion": 2016
   }
  },
  {
@@ -5294,7 +5296,8 @@
    "developer": "Swire Properties",
    "architect": "Arquitectonica",
    "unit_count": 390,
-   "stories": 43
+   "stories": 43,
+   "completion": 2016
   }
  },
  {
@@ -5531,7 +5534,8 @@
   ],
   "facts": {
    "status": "new_construction",
-   "unit_count": 33
+   "unit_count": 33,
+   "completion": 2009
   }
  },
  {
@@ -5903,7 +5907,8 @@
    2000
   ],
   "facts": {
-   "status": "new_construction"
+   "status": "new_construction",
+   "completion": 2022
   }
  },
  {

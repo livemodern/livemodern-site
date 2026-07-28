@@ -9,7 +9,7 @@ import ReadMore from "@/components/ReadMore";
 import SubNav from "@/components/SubNav";
 import Floorplans from "@/components/Floorplans";
 import Gallery from "@/components/Gallery";
-import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife, cf } from "@/lib/communities";
+import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, areaAnchor, CITY_HUBS, statusPill, stageLabel, resolveLifecycle, collectionCounty, countyShort, collectionSiblings, hubForSpoke, LIFESTYLE_HUBS, hubBySlugLife, cf } from "@/lib/communities";
 import CityIndex from "@/components/CityIndex";
 import LifestyleHubPage from "@/components/LifestyleHubPage";
 import LifestyleListings from "@/components/LifestyleListings";
@@ -165,6 +165,15 @@ export default async function CommunityPage({
   // one — never a naive sentence split (". " breaks on "Mr. C", "St. Regis", etc).
   const standfirst = (c.metaDescription || c.body[0] || "").trim();
   const isBuilding = c.type === "building";
+  const liveBuiltYear = isBuilding
+    ? Math.max(
+        0,
+        ...[...inventory.forSale, ...inventory.forRent, ...inventory.recentSales].map(
+          (u) => u.year_built ?? 0,
+        ),
+      )
+    : 0;
+  const lifecycle = resolveLifecycle(c.facts, liveBuiltYear || null);
   const sib = !isBuilding && !hub ? collectionSiblings(c.slug) : null;
   const sibItems = sib ? (sib.siblings.map(getBySlug).filter(Boolean) as typeof related) : [];
   // Spoke pages (a lifestyle collection like palm-beach-boating-homes) surface
@@ -251,7 +260,7 @@ export default async function CommunityPage({
           <div className="wrap">
             <p className="eyebrow">
               {c.city ? `${c.city} · ` : ""}
-              {isBuilding ? statusPill(c.facts) : "Collection"}
+              {isBuilding ? (lifecycle.pill ?? statusPill(c.facts)) : "Collection"}
             </p>
             <h1 className="serif">{hub ? hub.label : c.name.replace(/ \/\/ LiveModern$/, "")}</h1>
           </div>
@@ -287,7 +296,7 @@ export default async function CommunityPage({
                 : spokeStats && spokeStats.count > 0
                   ? `${spokeStats.count} Available`
                   : isBuilding
-                    ? stageLabel(c.facts) ?? "Now Selling"
+                    ? lifecycle.pill ?? stageLabel(c.facts) ?? "Now Selling"
                     : "Curated"}
             </div>
           </div>
@@ -347,10 +356,10 @@ export default async function CommunityPage({
             <aside className="sheet">
               <h4>{isBuilding ? "The Facts" : "At a Glance"}</h4>
               <dl>
-                {isBuilding && stageLabel(c.facts) ? (
+                {isBuilding && (lifecycle.pill ?? stageLabel(c.facts)) ? (
                   <div className="f">
                     <dt>Stage</dt>
-                    <dd>{stageLabel(c.facts)}</dd>
+                    <dd>{lifecycle.pill ?? stageLabel(c.facts)}</dd>
                   </div>
                 ) : null}
                 {c.facts?.developer ? (
@@ -420,7 +429,7 @@ export default async function CommunityPage({
                 href={!isBuilding && spokeHub && spokeListings.length ? "#listings" : "#inquire"}
               >
                 {isBuilding
-                  ? statusPill(c.facts) === "Pre-Construction"
+                  ? lifecycle.phase !== "complete"
                     ? "Request the package"
                     : "Request pricing"
                   : spokeHub && spokeListings.length

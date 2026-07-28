@@ -90,6 +90,44 @@ const SAMPLE = sample as Listing[];
 const SB_URL = process.env.SUPABASE_URL ?? "https://ezcikavnfchqaenweygw.supabase.co";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+/**
+ * slug -> max year_built among that building's MLS listings, batched + paginated.
+ * Drives the self-maintaining lifecycle pill on /new-construction: a delivered
+ * building has resale/closed listings carrying a real year_built, which lets the
+ * register auto-flip it to "Completed {year}" and graduate it after N years —
+ * no manual status edits. Empty {} when the key is unset (baked build) so the
+ * caller falls back to stored facts.completion.
+ */
+export async function buildingBuiltYears(slugs: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (!SB_KEY || !slugs.length) return out;
+  try {
+    for (let i = 0; i < slugs.length; i += 60) {
+      const chunk = slugs.slice(i, i + 60).map(encodeURIComponent).join(",");
+      for (let offset = 0; ; offset += 1000) {
+        const url =
+          `${SB_URL}/rest/v1/properties?community_slug=in.(${chunk})` +
+          `&year_built=not.is.null&select=community_slug,year_built&limit=1000&offset=${offset}`;
+        const res = await fetch(url, {
+          headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+          next: { revalidate: 3600 },
+        });
+        if (!res.ok) break;
+        const rows = (await res.json()) as { community_slug: string; year_built: number | null }[];
+        for (const r of rows) {
+          const y = r.year_built ?? 0;
+          if (y >= 1900 && y <= 2035 && y > (out[r.community_slug] ?? 0)) out[r.community_slug] = y;
+        }
+        if (rows.length < 1000) break;
+      }
+    }
+  } catch {
+    /* fall back to stored facts.completion */
+  }
+  return out;
+}
+
+
 const COLS =
   "mls_id,listing_id,street_address,unit_number,city,state,zip,list_price,beds,baths,sqft,year_built,property_type,property_subtype,building_name,subdivision_name,image_urls,description,list_office_name,list_agent_email,view,waterfront_features,days_on_market,hoa_fee,tax_annual,garage_spaces,stories,lot_size_acres,has_pool,flooring,building_amenities,community_slug,status";
 

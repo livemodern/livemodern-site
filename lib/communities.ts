@@ -29,6 +29,61 @@ export function stageLabel(f?: BuildingFacts): string | null {
   }
 }
 
+
+export const NEW_CONSTRUCTION_YEARS = 5;
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+export type Lifecycle = {
+  phase: "selling" | "rising" | "complete" | "unknown";
+  /** Row/hero pill label, or null when we can't classify. */
+  pill: string | null;
+  completedYear: number | null;
+  /** Complete AND older than NEW_CONSTRUCTION_YEARS — drops off the register. */
+  graduated: boolean;
+};
+
+/**
+ * Resolve a building's lifecycle for display. `liveBuiltYear` is the max
+ * year_built among the building's current listings (from properties). When
+ * present it is AUTHORITATIVE and makes the pill self-maintaining: a tower
+ * flips rising -> complete the moment it has listings with a delivered build
+ * year, and graduates off the register once it's older than
+ * NEW_CONSTRUCTION_YEARS. Stored facts.completion is the fallback for
+ * pre-construction buildings that have no MLS listings yet.
+ */
+export function resolveLifecycle(
+  f?: BuildingFacts,
+  liveBuiltYear?: number | null,
+): Lifecycle {
+  const built =
+    liveBuiltYear && liveBuiltYear >= 1900 ? liveBuiltYear : (f?.completion ?? null);
+
+  // Delivered this year or earlier -> complete / occupied.
+  if (built && built <= CURRENT_YEAR) {
+    return {
+      phase: "complete",
+      pill: `Completed ${built}`,
+      completedYear: built,
+      graduated: CURRENT_YEAR - built > NEW_CONSTRUCTION_YEARS,
+    };
+  }
+
+  // Future delivery or no build year yet -> use the sales/construction stage.
+  switch (f?.status) {
+    case "under_construction":
+      return { phase: "rising", pill: "Now Rising", completedYear: built ?? null, graduated: false };
+    case "pre_construction":
+    case "presale":
+      return { phase: "selling", pill: "Now Selling", completedYear: built ?? null, graduated: false };
+    case "new_construction":
+      // Tagged new-construction but no delivered year -> recently delivered, occupied.
+      return { phase: "complete", pill: "Now Complete", completedYear: null, graduated: false };
+    default:
+      return { phase: "unknown", pill: null, completedYear: null, graduated: false };
+  }
+}
+
 export type Community = {
   slug: string;
   name: string;

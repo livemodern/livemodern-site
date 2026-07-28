@@ -3,7 +3,8 @@ import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
 import IndexFilter from "@/components/IndexFilter";
-import { getBuildings, COUNTIES } from "@/lib/communities";
+import { getBuildings, COUNTIES, resolveLifecycle } from "@/lib/communities";
+import { buildingBuiltYears } from "@/lib/listings";
 
 export const revalidate = 3600;
 
@@ -13,8 +14,15 @@ export const metadata: Metadata = {
     "Every new tower under development, now selling, or newly delivered from Palm Beach to Miami.",
 };
 
-export default function NewConstruction() {
-  const buildings = getBuildings();
+export default async function NewConstruction() {
+  const all = getBuildings();
+  const builtYears = await buildingBuiltYears(all.map((b) => b.slug));
+  const lifecycles: Record<string, { pill: string | null; phase: string }> = {};
+  const buildings = all.filter((b) => {
+    const lc = resolveLifecycle(b.facts, builtYears[b.slug] ?? null);
+    lifecycles[b.slug] = { pill: lc.pill, phase: lc.phase };
+    return !lc.graduated; // completed > NEW_CONSTRUCTION_YEARS ago drops off the register
+  });
 
   return (
     <>
@@ -32,7 +40,7 @@ export default function NewConstruction() {
           </p>
         </section>
 
-        <IndexFilter buildings={buildings} counties={[...COUNTIES]} />
+        <IndexFilter buildings={buildings} counties={[...COUNTIES]} lifecycles={lifecycles} />
 
         <div style={{ height: 80 }} />
       </div>
