@@ -57,7 +57,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
             <Link href="/journal" className={active === "journal" ? "on" : undefined}>
               Journal
             </Link>
-            <a href="#inquire">Contact</a>
+            <Link href="/contact" className={active === "contact" ? "on" : undefined}>Contact</Link>
           </nav>
 
           <div className="mast-right">
@@ -123,9 +123,9 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
           <Link href="/miami-luxury-condos" onClick={() => setOpen(false)}>
             Miami
           </Link>
-          <a href="#inquire" onClick={() => setOpen(false)}>
+          <Link href="/contact" onClick={() => setOpen(false)}>
             Contact
-          </a>
+          </Link>
         </nav>
 
         <div className="drawer-foot">

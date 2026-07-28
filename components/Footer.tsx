@@ -40,7 +40,7 @@ export default function Footer() {
               <li><Link href="/new-construction">Palm Beach</Link></li>
               <li><Link href="/new-construction">Fort Lauderdale</Link></li>
               <li><Link href="/new-construction">Miami</Link></li>
-              <li><a href="#inquire">Contact</a></li>
+              <li><Link href="/contact">Contact</Link></li>
             </ul>
           </div>
         </div>

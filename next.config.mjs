@@ -9,7 +9,6 @@ const nextConfig = {
       // By Design folded into Collections
       { source: "/design", destination: "/collections#theme-design", permanent: true },
       // Retired thin Broward spokes -> the real market for that lifestyle
-      { source: "/fort-lauderdale-beachfront-homes", destination: "/fort-lauderdale-beachfront-condos", permanent: true },
       { source: "/fort-lauderdale-golf-course-homes", destination: "/golf", permanent: true },
       { source: "/fort-lauderdale-equestrian-homes", destination: "/palm-beach-equestrian-homes", permanent: true },
     ];
