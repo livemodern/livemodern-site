@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const SB_URL = process.env.SUPABASE_URL ?? "https://ezcikavnfchqaenweygw.supabase.co";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-const SITE = "livemodern.com";
+const SITE = "livemodern"; // sites.slug FK (leads.source_site references sites.slug)
 
 // Notification recipients for a fresh LiveModern inquiry. Best-effort via Resend;
 // skipped silently if RESEND_API_KEY isn't set on the project.
