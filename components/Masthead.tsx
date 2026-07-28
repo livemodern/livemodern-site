@@ -49,7 +49,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
               New Construction
             </Link>
             <Link href="/featured-buildings" className={active === "featured" ? "on" : undefined}>
-              Featured Buildings
+              Modern Classics
             </Link>
             <Link href="/collections" className={active === "collections" ? "on" : undefined}>
               Collections
@@ -106,7 +106,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
             New Construction
           </Link>
           <Link href="/featured-buildings" onClick={() => setOpen(false)}>
-            Featured Buildings
+            Modern Classics
           </Link>
           <Link href="/collections" onClick={() => setOpen(false)}>
             Collections
