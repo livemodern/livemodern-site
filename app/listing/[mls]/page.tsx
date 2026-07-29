@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import ReadMore from "@/components/ReadMore";
 import { getBySlug } from "@/lib/communities";
 import ListingGallery from "@/components/ListingGallery";
+import TrackListingView from "@/components/TrackListingView";
 import {
   getListing,
   sampleListings,
@@ -118,6 +119,13 @@ export default async function ListingPage({
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* Identity-aware listing_view -> site_events -> the contact's CRM timeline. */}
+      <TrackListingView
+        mlsId={l.mls_id}
+        communitySlug={l.community_slug ?? null}
+        price={l.list_price ?? null}
+        city={l.city ?? null}
+      />
       <Masthead active={presale ? "nc" : undefined} loginBand />
 
       <div className="wrap">

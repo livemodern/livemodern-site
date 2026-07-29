@@ -45,6 +45,13 @@ export default function Footer() {
           </div>
         </div>
         <div className="legal">
+          <p className="legal-links">
+            <Link href="/privacy-policy">Privacy Policy</Link>
+            <span aria-hidden="true"> &middot; </span>
+            <Link href="/terms">Terms of Use</Link>
+            <span aria-hidden="true"> &middot; </span>
+            <Link href="/contact">Contact</Link>
+          </p>
           <p>
             All listings featuring the BMLS logo are provided by BeachesMLS, Inc. This information
             is not verified for authenticity or accuracy and is not guaranteed. Copyright &copy;

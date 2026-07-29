@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Poppins } from "next/font/google";
 import "./globals.css";
 import MilaWidget from "@/components/MilaWidget";
+import Analytics from "@/components/Analytics";
+import SiteTracker from "@/components/SiteTracker";
 
 const display = Playfair_Display({
   subsets: ["latin"],
@@ -40,7 +42,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
-      <body>{children}<MilaWidget /></body>
+      <body>
+        {children}
+        <MilaWidget />
+        {/* First-party event stream -> /api/track -> site_events (MLG Admin). */}
+        <SiteTracker />
+        {/* Ad-platform tags; all env-gated, see components/Analytics.tsx. */}
+        <Analytics />
+      </body>
     </html>
   );
 }
