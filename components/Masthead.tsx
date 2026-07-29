@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useUser, firstNameOf } from "@/lib/auth";
 import Link from "next/link";
 import Logo from "./Logo";
 import BuildingSearch from "./BuildingSearch";
@@ -11,6 +12,11 @@ type NavItem = { slug: string; name: string; city: string | null; county: string
 
 export default function Masthead({ active, user = null, loginBand }: { active?: string; user?: MastheadUser; loginBand?: boolean }) {
   const [open, setOpen] = useState(false);
+  // Resolve the session here rather than threading a `user` prop through every
+  // page: server components can't read it anyway (the session lives in
+  // localStorage under 'lm-auth'). An explicit prop still wins if passed.
+  const { user: authUser } = useUser();
+  const resolvedUser: MastheadUser = user ?? (authUser ? { firstName: firstNameOf(authUser) } : null);
   const buildings: NavItem[] = getBuildings().map((b) => ({
     slug: b.slug,
     name: b.name,
@@ -77,9 +83,9 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
           </div>
 
           {/* Desktop: Login sits BELOW the masthead rule — only on pages with a crumb band */}
-          {loginBand && user ? (
+          {loginBand && resolvedUser ? (
             <Link className="mast-login acct desk-only" href="/account">
-              {user.firstName ? `Hi, ${user.firstName}` : "My Account"}
+              {resolvedUser.firstName ? `Hi, ${resolvedUser.firstName}` : "My Account"}
             </Link>
           ) : loginBand ? (
             <Link className="mast-login acct desk-only" href="/login">
@@ -129,9 +135,9 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
         </nav>
 
         <div className="drawer-foot">
-          {user ? (
+          {resolvedUser ? (
             <Link href="/account" onClick={() => setOpen(false)}>
-              {user.firstName ? `Hi, ${user.firstName} — My Account` : "My Account"}
+              {resolvedUser.firstName ? `Hi, ${resolvedUser.firstName} — My Account` : "My Account"}
             </Link>
           ) : (
             <Link href="/login" onClick={() => setOpen(false)}>

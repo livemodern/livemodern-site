@@ -75,7 +75,7 @@ async function notify(fields: {
         from: RESEND_FROM,
         to: NOTIFY_TO,
         reply_to: fields.email || undefined,
-        subject: `New inquiry — ${fields.name || fields.email || "LiveModern"}`,
+        subject: `${fields.source === "Registration" ? "New registration" : "New inquiry"} — ${fields.name || fields.email || "LiveModern"}`,
         html,
       }),
       cache: "no-store",
@@ -106,12 +106,27 @@ export async function POST(req: NextRequest) {
     const interest = (body.interest ?? "").trim();
     const source = (body.source ?? "contact-form").trim();
 
+    // Account registration comes through this same pipeline so there is ONE
+    // path into the CRM. It differs in three ways: intent is implicit (so the
+    // bot heuristic is skipped — a signup with a password is not a scraper),
+    // the user_type becomes a routing input, and the gate that opened signup
+    // passes community/listing context so the router can resolve geography
+    // instead of falling through to the house default.
+    const isRegistration =
+      String(body.isRegistration ?? "") === "true" || (body.isRegistration as unknown) === true;
+    const userType = (body.userType ?? "").trim();
+    const smsConsent =
+      String(body.smsConsent ?? "") === "true" || (body.smsConsent as unknown) === true;
+    const communitySlug = (body.communitySlug ?? "").trim() || null;
+    const communityName = (body.communityName ?? "").trim() || null;
+    const mlsId = (body.mlsId ?? "").trim() || null;
+
     if (!email && !phone) {
       return NextResponse.json({ error: "Email or phone required" }, { status: 400 });
     }
     // A real inquiry has a name. Direct bot POSTs skip the browser's required attr.
     if (!firstName) return NextResponse.json({ success: true });
-    if (isBot({ firstName, lastName, email, phone, message })) {
+    if (!isRegistration && isBot({ firstName, lastName, email, phone, message })) {
       return NextResponse.json({ success: true }); // silent reject
     }
 
@@ -128,7 +143,7 @@ export async function POST(req: NextRequest) {
       phone: phone || null,
       message: composedMessage || null,
       source_site: SITE,
-      source_type: source || "contact-form",
+      source_type: isRegistration ? "registration" : source || "contact-form",
       landing_page: body.landingPage || null,
       referrer: body.referrer || null,
     });
@@ -143,9 +158,25 @@ export async function POST(req: NextRequest) {
           email: email || null,
           phone: phone || null,
         },
-        listing: { community_slug: null, city: null, price: null },
-        tags: [source || "contact-form"].filter(Boolean),
-        meta: { action: source || "contact-form", message: composedMessage || null, site_slug: SITE },
+        // Community/listing context is what lets the featured-agent pin and the
+        // geographic rules fire; without it every lead lands on the house
+        // default. The minis learned this the hard way.
+        listing: { community_slug: communitySlug, mls_id: mlsId, city: null, price: null },
+        tags: [
+          isRegistration ? "registration" : source || "contact-form",
+          // user_type is a routing input (Buyer/Seller/Renter/Landlord). The
+          // engine's rules require transaction guards alongside it — a bare
+          // landlord tag once routed a $7.995M sale buyer to the rental team.
+          userType || null,
+        ].filter(Boolean) as string[],
+        meta: {
+          action: isRegistration ? "registration" : source || "contact-form",
+          message: composedMessage || null,
+          site_slug: SITE,
+          user_type: userType || null,
+          sms_consent: smsConsent,
+          community_name: communityName,
+        },
       });
       await notify({
         name: [firstName, lastName].filter(Boolean).join(" "),
