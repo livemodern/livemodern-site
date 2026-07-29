@@ -49,7 +49,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
               New Construction
             </Link>
             <Link href="/featured-buildings" className={active === "featured" ? "on" : undefined}>
-              Modern Classics
+              The Icons
             </Link>
             <Link href="/collections" className={active === "collections" ? "on" : undefined}>
               Collections
@@ -57,7 +57,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
             <Link href="/journal" className={active === "journal" ? "on" : undefined}>
               Journal
             </Link>
-            <Link href="/contact" className={active === "contact" ? "on" : undefined}>Contact</Link>
+            <a href="#inquire">Contact</a>
           </nav>
 
           <div className="mast-right">
@@ -106,7 +106,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
             New Construction
           </Link>
           <Link href="/featured-buildings" onClick={() => setOpen(false)}>
-            Modern Classics
+            The Icons
           </Link>
           <Link href="/collections" onClick={() => setOpen(false)}>
             Collections
@@ -123,9 +123,9 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
           <Link href="/miami-luxury-condos" onClick={() => setOpen(false)}>
             Miami
           </Link>
-          <Link href="/contact" onClick={() => setOpen(false)}>
+          <a href="#inquire" onClick={() => setOpen(false)}>
             Contact
-          </Link>
+          </a>
         </nav>
 
         <div className="drawer-foot">

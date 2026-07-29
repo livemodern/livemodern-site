@@ -9,7 +9,7 @@ import { buildingBuiltYears } from "@/lib/listings";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Modern Classics — Signature Residences",
+  title: "The Icons — Signature Residences",
   description:
     "The signature luxury towers that defined modern living across Palm Beach, Fort Lauderdale, and Miami — completed, occupied, and still setting the standard.",
 };
@@ -31,7 +31,7 @@ export default async function FeaturedBuildings() {
         <section className="sec" style={{ paddingBottom: 0 }}>
           <p className="eyebrow">Signature Residences</p>
           <h1 className="serif" style={{ fontSize: "clamp(34px,6vw,64px)", marginTop: 16 }}>
-            Modern Classics
+            The Icons
           </h1>
           <p style={{ marginTop: 14, maxWidth: "56ch", color: "var(--muted)", fontSize: 15 }}>
             The towers that defined modern luxury from Palm Beach to Miami — delivered, occupied,
