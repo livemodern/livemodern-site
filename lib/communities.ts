@@ -1,13 +1,22 @@
 import raw from "@/data/communities.json";
 
 export type BuildingFacts = {
-  status?: "presale" | "pre_construction" | "under_construction" | "new_construction";
+  status?: "presale" | "pre_construction" | "under_construction" | "new_construction" | "completed";
   developer?: string;
   architect?: string;
   architect2?: string;
   unit_count?: number;
   stories?: number;
+  /** Delivery year. When completion_locked is true this is AUTHORITATIVE and
+   *  the MLS is never consulted again — see resolveLifecycle. */
   completion?: number;
+  /** Set true once the delivery year has been determined and reviewed. Locks
+   *  the value: no re-derivation from MLS year_built, ever. Editing the year
+   *  is a deliberate data change, not something the system does on its own. */
+  completion_locked?: boolean;
+  /** How the locked year was established, so a future reader can audit it
+   *  without redoing the work. */
+  completion_source?: string;
   price_from?: number;
   /** Featured Buildings curation. Default (undefined): a building appears on
    *  /featured-buildings once it graduates off the new-construction register.
@@ -18,7 +27,8 @@ export type BuildingFacts = {
 /** The two-pill classification the page shows. presale/pre_construction/
  *  under_construction all read "Pre-Construction"; new_construction reads
  *  "New Construction". */
-export function statusPill(f?: BuildingFacts): "Pre-Construction" | "New Construction" {
+export function statusPill(f?: BuildingFacts): "Pre-Construction" | "New Construction" | "Completed" {
+  if (f?.status === "completed") return "Completed";
   return f?.status === "new_construction" ? "New Construction" : "Pre-Construction";
 }
 
@@ -29,6 +39,7 @@ export function stageLabel(f?: BuildingFacts): string | null {
     case "pre_construction": return "Pre-Construction";
     case "under_construction": return "Under Construction";
     case "new_construction": return "New Construction";
+    case "completed": return "Completed";
     default: return null;
   }
 }
@@ -60,8 +71,26 @@ export function resolveLifecycle(
   f?: BuildingFacts,
   liveBuiltYear?: number | null,
 ): Lifecycle {
-  const built =
-    liveBuiltYear && liveBuiltYear >= 1900 ? liveBuiltYear : (f?.completion ?? null);
+  // LOCKED: the delivery year was determined once and reviewed. Ignore the MLS
+  // entirely — do not re-derive, do not let a stray listing move it.
+  //
+  // Why the lock exists (2026-07-29 audit): the old rule took max(year_built)
+  // across a building's listings, so a single mistyped record moved the whole
+  // building. Aston Martin Residences delivered 2024 — 90 listings say 2024 and
+  // 19 say 2028, so max() read 2028, a future year, and the building fell
+  // through to its sales status and rendered "Now Complete" instead of
+  // "Completed 2024". Worse, max() is polluted by mis-tagged neighbours and by
+  // the building that previously stood on the site: Auberge read 1971 (Point of
+  // Americas, a different street), Ocean Delray read 1979 (the demolished
+  // Esplanade at the same address), Ritz-Carlton WPB read 1958 (Lakeside
+  // Court). The year is now decided once, recorded with its source, and left
+  // alone until someone deliberately changes it.
+  const locked = f?.completion_locked === true;
+  const built = locked
+    ? (f?.completion ?? null)
+    : liveBuiltYear && liveBuiltYear >= 1900
+      ? liveBuiltYear
+      : (f?.completion ?? null);
 
   // Delivered this year or earlier -> complete / occupied.
   if (built && built <= CURRENT_YEAR) {
@@ -94,6 +123,15 @@ export function resolveLifecycle(
  * flows from the new-construction register into Featured on its own as it ages,
  * with no manual step. `featured:true` force-features; `featured:false` retires.
  */
+/**
+ * Whether a building still needs its build year looked up in the MLS. False
+ * once the year is locked — the lookup is then pure cost with no effect, so
+ * callers filter on this before hitting Supabase.
+ */
+export function needsBuiltYearLookup(c: { facts?: BuildingFacts }): boolean {
+  return c.facts?.completion_locked !== true;
+}
+
 export function isFeatured(f: BuildingFacts | undefined, lc: Lifecycle): boolean {
   if (f?.featured === true) return true;
   if (f?.featured === false) return false;

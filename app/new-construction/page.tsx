@@ -3,7 +3,7 @@ import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import LeadBand from "@/components/LeadBand";
 import IndexFilter from "@/components/IndexFilter";
-import { getBuildings, COUNTIES, resolveLifecycle } from "@/lib/communities";
+import { getBuildings, COUNTIES, resolveLifecycle, needsBuiltYearLookup } from "@/lib/communities";
 import { buildingBuiltYears } from "@/lib/listings";
 
 export const revalidate = 3600;
@@ -16,7 +16,12 @@ export const metadata: Metadata = {
 
 export default async function NewConstruction() {
   const all = getBuildings();
-  const builtYears = await buildingBuiltYears(all.map((b) => b.slug));
+  // Locked buildings never need the MLS lookup — their delivery year is
+  // settled. Skipping them keeps the query small and makes the lock real
+  // rather than advisory.
+  const builtYears = await buildingBuiltYears(
+    all.filter(needsBuiltYearLookup).map((b) => b.slug),
+  );
   const lifecycles: Record<string, { pill: string | null; phase: string }> = {};
   const buildings = all.filter((b) => {
     const lc = resolveLifecycle(b.facts, builtYears[b.slug] ?? null);

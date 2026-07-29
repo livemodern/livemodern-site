@@ -108,10 +108,12 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 113,
    "stories": 46,
-   "completion": 2020
+   "completion": 2020,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2020 (100% of 4)"
   }
  },
  {
@@ -154,12 +156,14 @@
    800
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "Key International",
    "architect": "Sieger Suarez Architects",
    "unit_count": 389,
    "stories": 50,
-   "completion": 2017
+   "completion": 2017,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2017 (100% of 5)"
   }
  },
  {
@@ -290,7 +294,10 @@
   "facts": {
    "status": "new_construction",
    "unit_count": 64,
-   "stories": 38
+   "stories": 38,
+   "completion": 2023,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2023 (60% of 5)"
   }
  },
  {
@@ -462,9 +469,12 @@
    764
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 30,
-   "stories": 7
+   "stories": 7,
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (86% of 44)"
   }
  },
  {
@@ -585,8 +595,11 @@
    1500
   ],
   "facts": {
-   "status": "new_construction",
-   "unit_count": 48
+   "status": "completed",
+   "unit_count": 48,
+   "completion": 2020,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2020 (70% of 47)"
   }
  },
  {
@@ -696,7 +709,9 @@
    "status": "new_construction",
    "architect": "Arquitectonica",
    "unit_count": 71,
-   "completion": 2022
+   "completion": 2021,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2021 (100% of 6)"
   }
  },
  {
@@ -848,8 +863,11 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
-   "stories": 10
+   "status": "completed",
+   "stories": 10,
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (87% of 61)"
   }
  },
  {
@@ -900,7 +918,10 @@
   "facts": {
    "status": "new_construction",
    "unit_count": 30,
-   "stories": 7
+   "stories": 7,
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (71% of 7)"
   }
  },
  {
@@ -954,7 +975,10 @@
   "facts": {
    "status": "under_construction",
    "unit_count": 55,
-   "stories": 22
+   "stories": 22,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (52% of 23)"
   }
  },
  {
@@ -1052,7 +1076,9 @@
   "facts": {
    "status": "under_construction",
    "unit_count": 22,
-   "completion": 2024
+   "completion": 2027,
+   "completion_locked": true,
+   "completion_source": "verified 2026-07-29: OKO Group + Suffolk — vertical construction Aug 2025, top-off early 2026, delivery 2027"
   }
  },
  {
@@ -1091,7 +1117,9 @@
   "facts": {
    "status": "new_construction",
    "unit_count": 363,
-   "completion": 2021
+   "completion": 2023,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2023 (77% of 164)"
   }
  },
  {
@@ -1166,10 +1194,12 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 35,
    "stories": 17,
-   "completion": 2018
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "facts-only (no MLS year data)"
   }
  },
  {
@@ -1218,7 +1248,10 @@
    2000
   ],
   "facts": {
-   "status": "new_construction"
+   "status": "new_construction",
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (100% of 7)"
   }
  },
  {
@@ -1273,7 +1306,10 @@
    "status": "under_construction",
    "developer": "The Melo Group",
    "unit_count": 782,
-   "stories": 62
+   "stories": 62,
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (100% of 41)"
   }
  },
  {
@@ -1386,7 +1422,9 @@
    "architect": "Revuelta Architecture",
    "unit_count": 391,
    "stories": 66,
-   "completion": 2023
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (80% of 112)"
   }
  },
  {
@@ -1453,8 +1491,11 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
-   "unit_count": 171
+   "status": "completed",
+   "unit_count": 171,
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS 2200 N Ocean cluster (2018); the 1971 cluster was Point of Americas at 2200 S Ocean LANE — mis-tag"
   }
  },
  {
@@ -1508,7 +1549,10 @@
   "facts": {
    "status": "under_construction",
    "architect": "Luis Revuelta",
-   "stories": 17
+   "stories": 17,
+   "completion": 2023,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2023 (93% of 14)"
   }
  },
  {
@@ -1685,7 +1729,12 @@
    750,
    890,
    600
-  ]
+  ],
+  "facts": {
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (97% of 74)"
+  }
  },
  {
   "slug": "caliza-townhouses-at-silver-grove",
@@ -1778,7 +1827,10 @@
   "facts": {
    "status": "under_construction",
    "developer": "JDL",
-   "unit_count": 95
+   "unit_count": 95,
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (96% of 52)"
   }
  },
  {
@@ -1835,7 +1887,10 @@
   "facts": {
    "status": "under_construction",
    "developer": "The Related Group",
-   "architect": "B&B Italia"
+   "architect": "B&B Italia",
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (90% of 10)"
   }
  },
  {
@@ -1883,7 +1938,12 @@
    3000,
    3000,
    9325
-  ]
+  ],
+  "facts": {
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (100% of 7)"
+  }
  },
  {
   "slug": "cipriani-miami",
@@ -2079,7 +2139,10 @@
    "status": "under_construction",
    "architect": "Sieger Suarez Architects",
    "unit_count": 400,
-   "stories": 65
+   "stories": 65,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (88% of 56)"
   }
  },
  {
@@ -2125,9 +2188,12 @@
    1280
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "architect": "Carlos Ott",
-   "unit_count": 180
+   "unit_count": 180,
+   "completion": 2017,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2017 (98% of 43)"
   }
  },
  {
@@ -2238,7 +2304,9 @@
    "architect2": "Jean-Louis Deniot",
    "unit_count": 100,
    "stories": 57,
-   "completion": 2022
+   "completion": 2021,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2021 (94% of 17)"
   }
  },
  {
@@ -2299,7 +2367,10 @@
    "status": "under_construction",
    "developer": "The Trump Group",
    "unit_count": 264,
-   "stories": 50
+   "stories": 50,
+   "completion": 2022,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2022 (88% of 24)"
   }
  },
  {
@@ -2360,7 +2431,10 @@
   ],
   "facts": {
    "status": "pre_construction",
-   "unit_count": 36
+   "unit_count": 36,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (100% of 22)"
   }
  },
  {
@@ -2414,7 +2488,10 @@
   "facts": {
    "status": "under_construction",
    "unit_count": 280,
-   "stories": 48
+   "stories": 48,
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (52% of 58)"
   }
  },
  {
@@ -2677,7 +2754,10 @@
   "facts": {
    "status": "pre_construction",
    "architect": "Alfonso Jurado",
-   "unit_count": 15
+   "unit_count": 15,
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (56% of 9)"
   }
  },
  {
@@ -2715,7 +2795,10 @@
   ],
   "facts": {
    "status": "under_construction",
-   "unit_count": 41
+   "unit_count": 41,
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (80% of 20)"
   }
  },
  {
@@ -2798,7 +2881,9 @@
    "status": "new_construction",
    "unit_count": 83,
    "stories": 22,
-   "completion": 2021
+   "completion": 2022,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2022 (60% of 5)"
   }
  },
  {
@@ -2986,9 +3071,12 @@
    997
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "architect": "Herzog & de Meuron",
-   "stories": 57
+   "stories": 57,
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2018 (96% of 26)"
   }
  },
  {
@@ -3088,7 +3176,10 @@
   ],
   "facts": {
    "status": "new_construction",
-   "unit_count": 68
+   "unit_count": 68,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (75% of 8)"
   }
  },
  {
@@ -3160,7 +3251,10 @@
   "facts": {
    "status": "new_construction",
    "unit_count": 83,
-   "stories": 25
+   "stories": 25,
+   "completion": 2023,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2023 (100% of 41)"
   }
  },
  {
@@ -3529,7 +3623,10 @@
    "status": "new_construction",
    "architect": "Asymptote Architecture",
    "unit_count": 249,
-   "stories": 57
+   "stories": 57,
+   "completion": 2023,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2023 (96% of 49)"
   }
  },
  {
@@ -3604,7 +3701,10 @@
    "status": "new_construction",
    "architect": "Piero Lissoni",
    "unit_count": 39,
-   "stories": 12
+   "stories": 12,
+   "completion": 2022,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2022 (100% of 6)"
   }
  },
  {
@@ -3660,7 +3760,10 @@
    "status": "new_construction",
    "architect": "Jean Nouvel",
    "unit_count": 59,
-   "stories": 14
+   "stories": 14,
+   "completion": 2021,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2021 (100% of 11)"
   }
  },
  {
@@ -3709,7 +3812,10 @@
   ],
   "facts": {
    "status": "new_construction",
-   "stories": 21
+   "stories": 21,
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (100% of 33)"
   }
  },
  {
@@ -3751,7 +3857,9 @@
    "architect": "Arquitectonica",
    "unit_count": 146,
    "stories": 27,
-   "completion": 2027
+   "completion": 2027,
+   "completion_locked": true,
+   "completion_source": "facts-only (no MLS year data)"
   }
  },
  {
@@ -3798,7 +3906,10 @@
    1672
   ],
   "facts": {
-   "status": "new_construction"
+   "status": "new_construction",
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (100% of 58)"
   }
  },
  {
@@ -3853,7 +3964,9 @@
    "status": "new_construction",
    "unit_count": 332,
    "stories": 24,
-   "completion": 2025
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (89% of 142)"
   }
  },
  {
@@ -3973,7 +4086,10 @@
   ],
   "facts": {
    "status": "new_construction",
-   "developer": "Related Group"
+   "developer": "Related Group",
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (78% of 18)"
   }
  },
  {
@@ -4038,7 +4154,10 @@
   "facts": {
    "status": "new_construction",
    "architect": "Randall Stofft",
-   "unit_count": 19
+   "unit_count": 19,
+   "completion": 2021,
+   "completion_locked": true,
+   "completion_source": "MLS 2021; the 1979 cluster is the demolished Esplanade at the same 1901 S Ocean address"
   }
  },
  {
@@ -4232,7 +4351,10 @@
   "facts": {
    "status": "under_construction",
    "unit_count": 275,
-   "stories": 26
+   "stories": 26,
+   "completion": 2027,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2027 (54% of 13)"
   }
  },
  {
@@ -4279,7 +4401,10 @@
   "facts": {
    "status": "new_construction",
    "architect": "Arquitectonica",
-   "stories": 8
+   "stories": 8,
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (92% of 12)"
   }
  },
  {
@@ -4415,11 +4540,13 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "architect": "Zaha Hadid Architects",
    "unit_count": 83,
    "stories": 62,
-   "completion": 2019
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (100% of 18)"
   }
  },
  {
@@ -4765,7 +4892,10 @@
   ],
   "facts": {
    "status": "under_construction",
-   "architect": "Max Strang"
+   "architect": "Max Strang",
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (50% of 8)"
   }
  },
  {
@@ -4892,9 +5022,11 @@
    900
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 513,
-   "completion": 2019
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (99% of 120)"
   }
  },
  {
@@ -4936,9 +5068,12 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "architect": "OMA / Rem Koolhaas",
-   "unit_count": 152
+   "unit_count": 152,
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2018 (100% of 11)"
   }
  },
  {
@@ -5036,10 +5171,12 @@
    1352
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 132,
    "stories": 60,
-   "completion": 2017
+   "completion": 2016,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2016 (97% of 36)"
   }
  },
  {
@@ -5098,9 +5235,12 @@
    786
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 160,
-   "stories": 16
+   "stories": 16,
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2018 (100% of 3)"
   }
  },
  {
@@ -5146,12 +5286,14 @@
    1968
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "Swire Properties",
    "architect": "Arquitectonica",
    "unit_count": 390,
    "stories": 43,
-   "completion": 2016
+   "completion": 2016,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2016 (100% of 6)"
   }
  },
  {
@@ -5243,12 +5385,14 @@
    1295
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "Dezer Development",
    "architect": "Cesar Pelli",
    "unit_count": 308,
    "stories": 56,
-   "completion": 2019
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (91% of 57)"
   }
  },
  {
@@ -5287,12 +5431,14 @@
    1920
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "Swire Properties",
    "architect": "Arquitectonica",
    "unit_count": 390,
    "stories": 43,
-   "completion": 2016
+   "completion": 2016,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2016 (100% of 69)"
   }
  },
  {
@@ -5334,7 +5480,10 @@
    3226
   ],
   "facts": {
-   "status": "under_construction"
+   "status": "under_construction",
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (100% of 22)"
   }
  },
  {
@@ -5391,7 +5540,10 @@
    600
   ],
   "facts": {
-   "status": "new_construction"
+   "status": "completed",
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2018 (100% of 8)"
   }
  },
  {
@@ -5441,7 +5593,10 @@
    1200
   ],
   "facts": {
-   "status": "pre_construction"
+   "status": "pre_construction",
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (57% of 33)"
   }
  },
  {
@@ -5528,9 +5683,11 @@
    1347
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 33,
-   "completion": 2009
+   "completion": 2009,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2009 (100% of 5)"
   }
  },
  {
@@ -5644,7 +5801,10 @@
   ],
   "facts": {
    "status": "new_construction",
-   "architect": "Kobi Karp"
+   "architect": "Kobi Karp",
+   "completion": 2025,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2025 (75% of 4)"
   }
  },
  {
@@ -5759,7 +5919,10 @@
   "facts": {
    "status": "pre_construction",
    "architect": "IDDI",
-   "unit_count": 100
+   "unit_count": 100,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (100% of 4)"
   }
  },
  {
@@ -5806,10 +5969,13 @@
    500
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "The Related Group",
    "architect": "Arquitectonica",
-   "architect2": "Philippe Starck"
+   "architect2": "Philippe Starck",
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2018 (100% of 8)"
   }
  },
  {
@@ -5851,10 +6017,13 @@
    1180
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "The Related Group",
    "unit_count": 450,
-   "stories": 57
+   "stories": 57,
+   "completion": 2018,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2018 (100% of 3)"
   }
  },
  {
@@ -5903,7 +6072,9 @@
   ],
   "facts": {
    "status": "new_construction",
-   "completion": 2022
+   "completion": 2022,
+   "completion_locked": true,
+   "completion_source": "facts-only (no MLS year data)"
   }
  },
  {
@@ -6049,7 +6220,10 @@
   ],
   "facts": {
    "status": "under_construction",
-   "unit_count": 194
+   "unit_count": 194,
+   "completion": 2029,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2029 (67% of 3)"
   }
  },
  {
@@ -6221,11 +6395,13 @@
    600
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "architect": "Solomon Cordwell Buenz",
    "unit_count": 68,
    "stories": 25,
-   "completion": 2019
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (50% of 101)"
   }
  },
  {
@@ -6323,7 +6499,9 @@
   ],
   "facts": {
    "status": "new_construction",
-   "completion": 2022
+   "completion": 2022,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2022 (99% of 74)"
   }
  },
  {
@@ -6374,9 +6552,11 @@
    2000
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 26,
-   "completion": 2020
+   "completion": 2020,
+   "completion_locked": true,
+   "completion_source": "facts-only (no MLS year data)"
   }
  },
  {
@@ -6502,7 +6682,10 @@
    "status": "under_construction",
    "architect": "OMA",
    "unit_count": 83,
-   "stories": 17
+   "stories": 17,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (80% of 5)"
   }
  },
  {
@@ -6614,9 +6797,11 @@
    746
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "architect": "Piero Lissoni",
-   "completion": 2019
+   "completion": 2019,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2019 (100% of 23)"
   }
  },
  {
@@ -6726,10 +6911,12 @@
    1590
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 212,
    "stories": 52,
-   "completion": 2019
+   "completion": 2020,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2020 (98% of 58)"
   }
  },
  {
@@ -6784,7 +6971,10 @@
   ],
   "facts": {
    "status": "under_construction",
-   "unit_count": 18
+   "unit_count": 18,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (100% of 3)"
   }
  },
  {
@@ -6851,9 +7041,12 @@
    1096
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "developer": "Fontainebleau Development",
-   "stories": 54
+   "stories": 54,
+   "completion": 2020,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2020 (88% of 34)"
   }
  },
  {
@@ -6971,7 +7164,10 @@
    "developer": "OKO Group & Cain International",
    "architect": "Adrian Smith + Gordon Gill",
    "unit_count": 135,
-   "stories": 47
+   "stories": 47,
+   "completion": 2026,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2026 (95% of 21)"
   }
  },
  {
@@ -7107,7 +7303,10 @@
   ],
   "facts": {
    "status": "pre_construction",
-   "unit_count": 6
+   "unit_count": 6,
+   "completion": 2027,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2027 (100% of 4)"
   }
  },
  {
@@ -7270,7 +7469,10 @@
    "developer": "PMG",
    "architect": "Sieger Suarez",
    "unit_count": 360,
-   "stories": 100
+   "stories": 100,
+   "completion": 2028,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2028 (100% of 3)"
   }
  },
  {
@@ -7323,10 +7525,12 @@
    1920
   ],
   "facts": {
-   "status": "new_construction",
+   "status": "completed",
    "unit_count": 30,
    "stories": 16,
-   "completion": 2020
+   "completion": 2016,
+   "completion_locked": true,
+   "completion_source": "verified 2026-07-29: Towers 1-2 + villas completed 2016; Encore tower 2020 (phased) — MLS modal 2016 (136 of 172)"
   }
  },
  {
@@ -7711,9 +7915,12 @@
    "Boutique Living"
   ],
   "facts": {
-   "status": "pre_construction",
+   "status": "under_construction",
    "unit_count": 27,
-   "architect": "Arquitectonica"
+   "architect": "Arquitectonica",
+   "completion": 2027,
+   "completion_locked": true,
+   "completion_source": "MLS 2027/2028 at 123 Ocean Ave; the 1969 cluster is Mayan Towers at 125 S Ocean — mis-tag"
   }
  },
  {
@@ -7744,7 +7951,10 @@
    "Intracoastal & Waterfront"
   ],
   "facts": {
-   "status": "pre_construction"
+   "status": "pre_construction",
+   "completion": 2029,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2029 (100% of 6)"
   }
  },
  {
@@ -7919,7 +8129,10 @@
    "Intracoastal & Waterfront"
   ],
   "facts": {
-   "status": "pre_construction"
+   "status": "pre_construction",
+   "completion": 2028,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2028 (88% of 17)"
   }
  },
  {
@@ -7999,7 +8212,10 @@
   "facts": {
    "status": "under_construction",
    "unit_count": 138,
-   "stories": 27
+   "stories": 27,
+   "completion": 2028,
+   "completion_locked": true,
+   "completion_source": "MLS 2028 dominant at 1717 N Flagler; the 1958 cluster is Lakeside Court, the prior building on the site"
   }
  },
  {
@@ -8085,7 +8301,10 @@
    "Oceanfront & Beach"
   ],
   "facts": {
-   "status": "new_construction"
+   "status": "new_construction",
+   "completion": 2024,
+   "completion_locked": true,
+   "completion_source": "MLS modal 2024 (100% of 5)"
   }
  }
 ]
