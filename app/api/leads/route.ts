@@ -199,6 +199,7 @@ export async function POST(req: NextRequest) {
         // geographic rules fire; without it every lead lands on the house
         // default. The minis learned this the hard way.
         listing: { community_slug: communitySlug, mls_id: mlsId, city: null, price: null },
+        userType: effectiveUserType || null,
         tags: [
           isRegistration ? "registration" : sourceType || "contact-form",
           // The building itself, so an agent can filter "everyone who asked

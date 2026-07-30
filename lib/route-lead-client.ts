@@ -21,6 +21,8 @@ export interface RouteLeadInput {
     price?: number | null;
   };
   tags?: string[];
+  /** Buyer / Seller / Renter / Landlord — drives contacts.client_type. */
+  userType?: string | null;
   meta?: Record<string, unknown>;
 }
 
