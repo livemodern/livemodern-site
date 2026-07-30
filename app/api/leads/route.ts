@@ -45,6 +45,7 @@ async function insertLead(row: Record<string, unknown>): Promise<string | null> 
 
 async function notify(fields: {
   name: string; email: string; phone: string; message: string; interest: string; source: string;
+  building?: string | null;
 }): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   if (!key || NOTIFY_TO.length === 0) return;
@@ -52,6 +53,7 @@ async function notify(fields: {
     ["Name", fields.name || "—"],
     ["Email", fields.email || "—"],
     ["Phone", fields.phone || "—"],
+    ["Building", fields.building || "—"],
     ["Interest", fields.interest || "—"],
     ["Message", fields.message || "—"],
     ["Source", fields.source || "—"],
@@ -126,15 +128,37 @@ export async function POST(req: NextRequest) {
     }
     // A real inquiry has a name. Direct bot POSTs skip the browser's required attr.
     if (!firstName) return NextResponse.json({ success: true });
+
+    // Server-side floor for inquiries: first + last + a reachable phone. The
+    // form validates client-side, so a 400 here only ever hits a direct POST or
+    // a stale cached bundle — a real person never sees it. Registrations keep
+    // their own gate (login page) and are exempt from the phone check only when
+    // they genuinely have no phone on file.
+    if (!isRegistration) {
+      const digits = phone.replace(/\D/g, "");
+      if (!lastName) {
+        return NextResponse.json({ error: "Last name required" }, { status: 400 });
+      }
+      if (digits.length < 10 || digits.length > 11) {
+        return NextResponse.json({ error: "A valid phone number is required" }, { status: 400 });
+      }
+    }
     if (!isRegistration && isBot({ firstName, lastName, email, phone, message })) {
       return NextResponse.json({ success: true }); // silent reject
     }
 
-    const composedMessage = interest && message
+    // Lead the message with the building the form sits on. The CRM timeline
+    // renders a dedicated `Building:` line from meta.community_name, but the
+    // message is what shows in the notification email and on the lead row, so
+    // an agent knows the context without opening anything.
+    const interestLine = interest && message
       ? `[Interest: ${interest}] ${message}`
       : interest
         ? `Interest: ${interest}`
         : message;
+    const composedMessage = communityName
+      ? [`Inquired on: ${communityName}`, interestLine].filter(Boolean).join(" — ")
+      : interestLine;
 
     const leadId = await insertLead({
       first_name: firstName || null,
@@ -142,6 +166,7 @@ export async function POST(req: NextRequest) {
       email: email || null,
       phone: phone || null,
       message: composedMessage || null,
+      building_interest: communityName,
       source_site: SITE,
       source_type: isRegistration ? "registration" : source || "contact-form",
       landing_page: body.landingPage || null,
@@ -181,6 +206,7 @@ export async function POST(req: NextRequest) {
       await notify({
         name: [firstName, lastName].filter(Boolean).join(" "),
         email, phone, message, interest, source,
+        building: communityName,
       });
     })();
 

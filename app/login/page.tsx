@@ -59,6 +59,13 @@ export default function LoginPage() {
     setOk(null);
     if (!firstName.trim() || !lastName.trim()) return setErr("Please enter your first and last name.");
     if (!email.trim()) return setErr("Please enter your email.");
+    {
+      // A registration with no phone lands on an agent's desk unworkable — the
+      // first thing they do is call. Same 10/11-digit floor the lead form uses.
+      const digits = phone.replace(/\D/g, "");
+      if (digits.length < 10 || digits.length > 11)
+        return setErr("Please enter a mobile phone number we can reach you on.");
+    }
     if (password.length < 8) return setErr("Please choose a password of at least 8 characters.");
     setBusy(true);
     const { error } = await signUp({
@@ -66,7 +73,7 @@ export default function LoginPage() {
       password,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      phone: phone.trim() || undefined,
+      phone: phone.trim(),
       userType: userType || undefined,
       smsConsent,
     });
@@ -197,6 +204,7 @@ export default function LoginPage() {
                       autoComplete="tel"
                       inputMode="tel"
                       placeholder="(561) 228-8420"
+                      required
                     />
                   </label>
                   <label className="auth-field">

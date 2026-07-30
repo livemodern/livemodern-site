@@ -655,6 +655,8 @@ export default async function CommunityPage({
         copy="Available lines, pricing, deposit schedule, and delivery timing — sent directly, not through a portal."
         cta="Send me availability"
         withInterest
+        communitySlug={c.slug}
+        communityName={displayName}
       />
 
       {sib && sibItems.length ? (

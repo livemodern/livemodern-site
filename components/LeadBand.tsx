@@ -8,6 +8,9 @@ type Props = {
   withInterest?: boolean;
   /** CRM source_type; defaults per placement. */
   source?: string;
+  /** Building / community context — see LeadForm. Pass both on community pages. */
+  communitySlug?: string;
+  communityName?: string;
 };
 
 export default function LeadBand({
@@ -17,6 +20,8 @@ export default function LeadBand({
   cta = "Request a call",
   withInterest,
   source = "hub-inquiry",
+  communitySlug,
+  communityName,
 }: Props) {
   return (
     <section className="lead" id="inquire">
@@ -26,7 +31,14 @@ export default function LeadBand({
           <h2 className="serif">{heading}</h2>
           <p>{copy}</p>
         </div>
-        <LeadForm source={source} cta={cta} withInterest={withInterest} variant="dark" />
+        <LeadForm
+          source={source}
+          cta={cta}
+          withInterest={withInterest}
+          variant="dark"
+          communitySlug={communitySlug}
+          communityName={communityName}
+        />
       </div>
     </section>
   );
