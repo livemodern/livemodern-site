@@ -156,9 +156,10 @@ export async function POST(req: NextRequest) {
       : interest
         ? `Interest: ${interest}`
         : message;
-    const composedMessage = communityName
-      ? [`Inquired on: ${communityName}`, interestLine].filter(Boolean).join(" — ")
-      : interestLine;
+    // The CRM timeline renders its own `Building:` line from meta.community_name
+    // and the notification email carries a Building row, so the message itself
+    // stays clean — repeating the building here just read as noise on the wall.
+    const composedMessage = interestLine;
 
     const leadId = await insertLead({
       first_name: firstName || null,
