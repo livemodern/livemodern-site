@@ -99,6 +99,12 @@ export function trackedEmail(): string | null {
   return identity.email;
 }
 
+/** The current session id, so a form submit can hand it to the server and let
+ *  it back-stitch this session's earlier anonymous events onto the contact. */
+export function trackedSessionId(): string {
+  return sessionId();
+}
+
 function sessionId(): string {
   if (typeof window === "undefined") return "";
   try {

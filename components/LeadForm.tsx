@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fire, setTrackerIdentity, trackedSessionId } from "@/lib/site-tracker";
 
 type Props = {
   /** Passed through to the CRM as source_type (e.g. "contact-page", "hub-inquiry"). */
@@ -65,6 +66,7 @@ export default function LeadForm({
     if (typeof window !== "undefined") {
       payload.landingPage = window.location.href;
       payload.referrer = document.referrer || "";
+      payload.sessionId = trackedSessionId();
     }
     setState("sending");
     try {
@@ -75,6 +77,12 @@ export default function LeadForm({
       });
       const data = (await res.json().catch(() => ({}))) as { success?: boolean };
       if (res.ok && data.success) {
+        // From here on this browser is a KNOWN visitor. Until now identity was
+        // only ever set at sign-in, so someone who handed us their email on a
+        // form kept browsing anonymously and none of it reached their CRM
+        // record. Everything they look at next now attaches.
+        setTrackerIdentity({ user_id: null, email });
+        fire("form_submit", { data: { form: source, interest: payload.interest ?? null }, immediate: true });
         setState("sent");
         form.reset();
       } else {

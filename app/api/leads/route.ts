@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     // Route + notify inline (Next 14 kills the instance after the response, so
     // un-awaited work dies silently — same lesson the minis learned).
     await (async () => {
-      await recordLeadRouting({
+      const routed = await recordLeadRouting({
         source: "livemodern",
         contact: {
           name: [firstName, lastName].filter(Boolean).join(" ") || null,
@@ -204,6 +204,34 @@ export async function POST(req: NextRequest) {
           community_name: communityName,
         },
       });
+      // Back-stitch: everything this session browsed BEFORE they filled the
+      // form is sitting in site_events with contact_id NULL. That pre-inquiry
+      // browsing is the most useful part — it's what they were looking at when
+      // they decided to raise their hand — so claim it now that we know who
+      // they are. Explicit no-store: a read-then-write in a Next 14 route can
+      // otherwise be served from the Data Cache and silently never land.
+      const sessionId = (body.sessionId ?? "").trim();
+      if (sessionId && routed?.contact_id && SB_KEY) {
+        try {
+          const r = await fetch(
+            `${SB_URL}/rest/v1/site_events?session_id=eq.${encodeURIComponent(sessionId)}&contact_id=is.null`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: SB_KEY,
+                Authorization: `Bearer ${SB_KEY}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ contact_id: routed.contact_id }),
+              cache: "no-store",
+            },
+          );
+          if (!r.ok) console.warn("[leads] session back-stitch failed:", r.status);
+        } catch (e) {
+          console.warn("[leads] session back-stitch error (non-fatal):", e);
+        }
+      }
       await notify({
         name: [firstName, lastName].filter(Boolean).join(" "),
         email, phone, message, interest, source,
