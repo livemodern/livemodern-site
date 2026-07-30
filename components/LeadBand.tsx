@@ -6,7 +6,9 @@ type Props = {
   copy: string;
   cta?: string;
   withInterest?: boolean;
-  /** CRM source_type; defaults per placement. */
+  /** CRM source_type; defaults per placement. Named for the building/community
+   *  page this band sits on — NOT the MiLa HUB, which is a different system
+   *  entirely (the old "hub-inquiry" name made that lead look like a chat). */
   source?: string;
   /** Building / community context — see LeadForm. Pass both on community pages. */
   communitySlug?: string;
@@ -19,7 +21,7 @@ export default function LeadBand({
   copy,
   cta = "Request a call",
   withInterest,
-  source = "hub-inquiry",
+  source = "building-inquiry",
   communitySlug,
   communityName,
 }: Props) {

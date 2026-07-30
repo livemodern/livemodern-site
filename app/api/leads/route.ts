@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
     const message = (body.message ?? "").trim();
     const interest = (body.interest ?? "").trim();
     const source = (body.source ?? "contact-form").trim();
+    // Legacy alias: anything still posting the old name lands as the new one so
+    // the CRM never sees two names for the same form.
+    const sourceType = source === "hub-inquiry" ? "building-inquiry" : source;
 
     // Account registration comes through this same pipeline so there is ONE
     // path into the CRM. It differs in three ways: intent is implicit (so the
@@ -121,6 +124,14 @@ export async function POST(req: NextRequest) {
       String(body.smsConsent ?? "") === "true" || (body.smsConsent as unknown) === true;
     const communitySlug = (body.communitySlug ?? "").trim() || null;
     const communityName = (body.communityName ?? "").trim() || null;
+
+    // A form on a building page is a sale-side buyer inquiry by definition —
+    // these are for-sale new-construction towers, there is no rental funnel on
+    // them. Stamping Buyer here is what puts "Buyer" in Client Type on the
+    // contact instead of leaving the agent to guess. Deliberately scoped to
+    // building inquiries: the generic contact page carries no such implication.
+    const isBuildingInquiry = !isRegistration && sourceType === "building-inquiry" && !!communityName;
+    const effectiveUserType = userType || (isBuildingInquiry ? "Buyer" : "");
     const mlsId = (body.mlsId ?? "").trim() || null;
 
     if (!email && !phone) {
@@ -169,7 +180,7 @@ export async function POST(req: NextRequest) {
       message: composedMessage || null,
       building_interest: communityName,
       source_site: SITE,
-      source_type: isRegistration ? "registration" : source || "contact-form",
+      source_type: isRegistration ? "registration" : sourceType || "contact-form",
       landing_page: body.landingPage || null,
       referrer: body.referrer || null,
     });
@@ -189,17 +200,20 @@ export async function POST(req: NextRequest) {
         // default. The minis learned this the hard way.
         listing: { community_slug: communitySlug, mls_id: mlsId, city: null, price: null },
         tags: [
-          isRegistration ? "registration" : source || "contact-form",
+          isRegistration ? "registration" : sourceType || "contact-form",
+          // The building itself, so an agent can filter "everyone who asked
+          // about Bennet" and the tag reads as something a human recognises.
+          isBuildingInquiry ? communityName : null,
           // user_type is a routing input (Buyer/Seller/Renter/Landlord). The
           // engine's rules require transaction guards alongside it — a bare
           // landlord tag once routed a $7.995M sale buyer to the rental team.
-          userType || null,
+          effectiveUserType || null,
         ].filter(Boolean) as string[],
         meta: {
-          action: isRegistration ? "registration" : source || "contact-form",
+          action: isRegistration ? "registration" : sourceType || "contact-form",
           message: composedMessage || null,
           site_slug: SITE,
-          user_type: userType || null,
+          user_type: effectiveUserType || null,
           sms_consent: smsConsent,
           community_name: communityName,
         },
