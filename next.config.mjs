@@ -14,13 +14,6 @@ const nextConfig = {
       // Community slug corrected to city-suffixed canonical (was a live indexed URL)
       { source: "/mr-c-residences", destination: "/mr-c-residences-coconut-grove", permanent: true },
 
-      // LiveModern adopts the MLG slug for these two buildings so both sites'
-      // pages are fed by the same community_slug — properties.community_slug is
-      // single-valued, so two slugs for one building means one page is always
-      // empty.
-      { source: "/alina-residences-boca-raton", destination: "/alina-boca-raton", permanent: true },
-      { source: "/residences-mandarin-oriental-boca-raton", destination: "/mandarin-oriental", permanent: true },
-
       // ---------------------------------------------------------------
       // REW livemodern.com URL parity (built from real site_events traffic).
       // Order matters: specific entries before their catch-alls.
