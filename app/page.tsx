@@ -17,7 +17,7 @@ export const revalidate = 3600;
 
 /** Curated lead of the index — the towers we want first-seen. */
 const FEATURED = [
-  "mr-c-residences",
+  "mr-c-residences-coconut-grove",
   "olara-west-palm-beach",
   "aria-reserve-miami",
   "alba-palm-beach",
@@ -59,7 +59,7 @@ function lifestyleHref(tag: string) {
 
 export default function Home() {
   const buildings = getBuildings();
-  const cover = getBySlug("mr-c-residences") ?? buildings.find((b) => b.hero);
+  const cover = getBySlug("mr-c-residences-coconut-grove") ?? buildings.find((b) => b.hero);
   const featured = FEATURED.map(getBySlug).filter(Boolean) as Community[];
   const counts = countyCounts();
   const lifeCounts = lifestyleCounts();

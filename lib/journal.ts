@@ -57,7 +57,7 @@ export const ARTICLES: Article[] = [
     author: "Modern Living Group",
     date: "2026-07-10",
     readMinutes: 6,
-    featuredBuildings: ["mr-c-residences"],
+    featuredBuildings: ["mr-c-residences-coconut-grove"],
     lead: true,
     body: [
       { type: "p", text: "There is a particular kind of restraint that money can't rush. It shows up in the width of a hallway, the weight of a door, the decision to leave a view uninterrupted rather than frame it with something clever. Mr. C Residences Coconut Grove has it — and in a market that too often confuses loud with luxurious, that restraint is the entire point." },
