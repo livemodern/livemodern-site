@@ -35,7 +35,19 @@ async function page(url: string): Promise<Row[]> {
   return (await res.json()) as Row[];
 }
 
-async function collect(filter: string, into: Map<string, string | null>): Promise<void> {
+/** The columns the slug needs, plus updated_at for lastmod. Previously this
+ *  map held just updated_at, because the sitemap emitted bare MLS ids. */
+type ListingRow = {
+  mls_id: string;
+  updated_at?: string | null;
+  street_address?: string | null;
+  unit_number?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+};
+
+async function collect(filter: string, into: Map<string, ListingRow>): Promise<void> {
   for (let offset = 0; offset < CAP; offset += 1000) {
     if (into.size >= CAP) return;
     const rows = await page(
@@ -44,13 +56,13 @@ async function collect(filter: string, into: Map<string, string | null>): Promis
     );
     // Store the whole row: the sitemap must emit the SEO slug, not the bare
     // id, or we'd be publishing the URLs we just made non-canonical.
-    for (const r of rows) if (r.mls_id) into.set(r.mls_id, r);
+    for (const r of rows) if (r.mls_id) into.set(r.mls_id, r as ListingRow);
     if (rows.length < 1000) return;
   }
 }
 
 export async function GET() {
-  const found = new Map<string, any>();
+  const found = new Map<string, ListingRow>();
 
   if (SB_KEY) {
     const slugs = (communities as { slug: string }[]).map((c) => c.slug);
