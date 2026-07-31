@@ -19,6 +19,8 @@ type Props = {
    */
   communitySlug?: string;
   communityName?: string;
+  /** City of the building — becomes the contact's Area of Interest. */
+  communityCity?: string;
 };
 
 /** Digits only — a US mobile is 10, or 11 with the leading 1. */
@@ -33,6 +35,7 @@ export default function LeadForm({
   variant = "dark",
   communitySlug,
   communityName,
+  communityCity,
 }: Props) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [invalid, setInvalid] = useState<string | null>(null);
@@ -63,6 +66,7 @@ export default function LeadForm({
     payload.name = `${firstName} ${lastName}`;
     if (communitySlug) payload.communitySlug = communitySlug;
     if (communityName) payload.communityName = communityName;
+    if (communityCity) payload.communityCity = communityCity;
     if (typeof window !== "undefined") {
       payload.landingPage = window.location.href;
       payload.referrer = document.referrer || "";

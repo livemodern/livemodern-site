@@ -19,32 +19,36 @@ export function splitName(name?: string | null): { first?: string; last?: string
   return { first: parts[0], last: parts.slice(1).join(" ") || undefined };
 }
 
-const CAPS = /[A-Z]/g;
-
-function botScore(c: LeadContact): number {
+/**
+ * Bot filter — a VERBATIM copy of mlg-site's `src/lib/lead-utils.ts` botScore.
+ * LiveModern had its own weaker variant, which is how a dotted-local-part
+ * throwaway (u.pen.ot.em.e.0.0.2@gmail.com) scored 30 against a 50 threshold
+ * and landed as a real lead. One filter, tuned in one place, on both sites.
+ *
+ * Weights: a name word over 12 chars +30; 3+ internal capitals in a name word
+ * +40; 3+ dots in the email local-part +30; a phone that isn't 10 or 11 digits
+ * +20; any non-printable-ASCII in the message +40. 50 is the reject line.
+ */
+export function botScore(data: LeadContact): number {
   let score = 0;
-  const name = `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim();
-  const email = (c.email ?? "").trim();
-  const phone = (c.phone ?? "").replace(/\D/g, "");
-  const msg = c.message ?? "";
-
-  // A long name crammed with internal capitals ("SMOKETEST DeLeTeMe") reads bot.
-  if (name.length > 24 && (name.match(CAPS) ?? []).length >= 3) score += 40;
-  // Email local-part stuffed with dots is a classic throwaway pattern.
-  const local = email.split("@")[0] ?? "";
-  if ((local.match(/\./g) ?? []).length >= 3) score += 30;
-  // Non-ASCII in a short inquiry (em-dashes, homoglyphs) trends spammy.
-  if (msg && /[^\u0000-\u007F]/.test(msg)) score += 25;
-  // Links in the body of a "contact us" note.
-  if (/https?:\/\//i.test(msg) || /<a\s/i.test(msg)) score += 40;
-  // No usable contact method at all.
-  if (!email && phone.length < 10) score += 50;
-  // Obviously fake phone (all same digit, or too short when present).
-  if (phone && (phone.length < 10 || /^(\d)\1+$/.test(phone))) score += 20;
-
+  const words = [data.firstName, data.lastName].filter(Boolean) as string[];
+  for (const word of words) {
+    if (word.length > 12) score += 30;
+    const internalUpper = (word.slice(1).match(/[A-Z]/g) || []).length;
+    if (internalUpper >= 3) score += 40;
+  }
+  if (data.email) {
+    const local = data.email.split("@")[0];
+    if ((local.match(/\./g) || []).length >= 3) score += 30;
+  }
+  if (data.phone) {
+    const digits = data.phone.replace(/\D/g, "");
+    if (digits.length !== 10 && digits.length !== 11) score += 20;
+  }
+  if (data.message && /[^\x20-\x7E]/.test(data.message)) score += 40;
   return score;
 }
 
-export function isBot(c: LeadContact): boolean {
-  return botScore(c) >= 50;
+export function isBot(data: LeadContact): boolean {
+  return botScore(data) >= 50;
 }

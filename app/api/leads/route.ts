@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isBot, splitName } from "@/lib/lead-utils";
+import { checkLeadSpam } from "@/lib/spam-check-client";
 import { recordLeadRouting } from "@/lib/route-lead-client";
 
 export const runtime = "nodejs";
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
       String(body.smsConsent ?? "") === "true" || (body.smsConsent as unknown) === true;
     const communitySlug = (body.communitySlug ?? "").trim() || null;
     const communityName = (body.communityName ?? "").trim() || null;
+    const communityCity = (body.communityCity ?? "").trim() || null;
 
     // A form on a building page is a sale-side buyer inquiry by definition —
     // these are for-sale new-construction towers, there is no rental funnel on
@@ -156,6 +158,18 @@ export async function POST(req: NextRequest) {
     }
     if (!isRegistration && isBot({ firstName, lastName, email, phone, message })) {
       return NextResponse.json({ success: true }); // silent reject
+    }
+
+    // Central classifier (mlg-admin: keyword filter + Claude). The local filter
+    // above only catches malformed junk; this is what stops coherent B2B
+    // solicitation. Same gate mlg-site runs. Skipped for registrations — an
+    // account signup with a password is intent by definition. Fail-open.
+    if (!isRegistration) {
+      const verdict = await checkLeadSpam({ firstName, lastName, email, phone, message });
+      if (verdict.spam) {
+        console.warn("[leads] spam rejected:", verdict.reason);
+        return NextResponse.json({ success: true }); // silent reject
+      }
     }
 
     // Lead the message with the building the form sits on. The CRM timeline
@@ -198,7 +212,7 @@ export async function POST(req: NextRequest) {
         // Community/listing context is what lets the featured-agent pin and the
         // geographic rules fire; without it every lead lands on the house
         // default. The minis learned this the hard way.
-        listing: { community_slug: communitySlug, mls_id: mlsId, city: null, price: null },
+        listing: { community_slug: communitySlug, mls_id: mlsId, city: communityCity, price: null },
         userType: effectiveUserType || null,
         tags: [
           isRegistration ? "registration" : sourceType || "contact-form",

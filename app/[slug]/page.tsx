@@ -657,6 +657,7 @@ export default async function CommunityPage({
         withInterest
         communitySlug={c.slug}
         communityName={displayName}
+        communityCity={c.city ?? undefined}
       />
 
       {sib && sibItems.length ? (

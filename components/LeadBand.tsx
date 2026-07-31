@@ -13,6 +13,7 @@ type Props = {
   /** Building / community context — see LeadForm. Pass both on community pages. */
   communitySlug?: string;
   communityName?: string;
+  communityCity?: string;
 };
 
 export default function LeadBand({
@@ -24,6 +25,7 @@ export default function LeadBand({
   source = "building-inquiry",
   communitySlug,
   communityName,
+  communityCity,
 }: Props) {
   return (
     <section className="lead" id="inquire">
@@ -40,6 +42,7 @@ export default function LeadBand({
           variant="dark"
           communitySlug={communitySlug}
           communityName={communityName}
+          communityCity={communityCity}
         />
       </div>
     </section>
