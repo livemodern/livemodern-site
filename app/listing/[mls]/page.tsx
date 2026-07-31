@@ -124,7 +124,15 @@ export default async function ListingPage({
   const { mls: rawParam } = await params;
   const decoded = decodeURIComponent(rawParam);
   const l = await getListing(mlsIdFromSlug(decoded));
-  if (!l) notFound();
+  if (!l) {
+    // Legacy REW URLs were /listing/{rew-mlsid}-{address-slug} and those ids
+    // aren't in our feed, so there's nothing to resolve 1:1 — send them to
+    // Collections rather than 404ing an indexed URL. Decided HERE and not as a
+    // next.config redirect: the old rule keyed off "contains a hyphen", which
+    // silently swallowed every SEO slug the moment we introduced them.
+    if (decoded.includes("-")) permanentRedirect("/collections");
+    notFound();
+  }
 
   // Non-SEO bare-MLS-id URLs are internal only — 308 them to the slug so there
   // is exactly one public URL per listing. Every existing link, share and MiLa

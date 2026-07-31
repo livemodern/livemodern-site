@@ -48,12 +48,14 @@ const nextConfig = {
       // REW served .php twins of every page — strip the extension.
       { source: "/:slug([^/]+)\\.php", destination: "/:slug", permanent: true },
 
-      // Old REW listing detail URLs were /listing/{mlsid}-{address-slug}
-      // (e.g. /listing/a12033838-11834-island-lakes-lane-boca-raton-fl-33498).
-      // Those MLS ids don't exist in our feed (ours are numeric), so they can't
-      // resolve 1:1. The dash pattern only matches the OLD shape — the live
-      // route /listing/{numeric mls_id} is never caught by this.
-      { source: "/listing/:slug(.*-.*)", destination: "/collections", permanent: true },
+      // Legacy REW listing URLs (/listing/{rew-mlsid}-{address-slug}) are handled
+      // in app/listing/[mls]/page.tsx, NOT here. The rule that used to live at
+      // this spot matched "/listing/:slug(.*-.*)" — any listing path containing
+      // a hyphen — on the assumption that our own URLs were always bare numeric
+      // ids. The moment listings moved to SEO slugs, that assumption inverted
+      // and every real listing 301'd to /collections. A redirect written around
+      // the shape of today's URLs is a trap for tomorrow's; the page can just
+      // look the id up and decide.
     ];
   },
 };
