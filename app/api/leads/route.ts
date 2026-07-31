@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isBot, splitName } from "@/lib/lead-utils";
-import { checkLeadSpam } from "@/lib/spam-check-client";
+import { checkLeadSpam, reportLocalReject } from "@/lib/spam-check-client";
 import { getBySlug } from "@/lib/communities";
 import { recordLeadRouting } from "@/lib/route-lead-client";
 
@@ -198,7 +198,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "A valid phone number is required" }, { status: 400 });
       }
     }
+    // Bot check (local identity heuristics — free, no network). Reported to
+    // the central classifier purely so the rejection lands in lead_spam_log:
+    // a silent reject that leaves no trace is indistinguishable from a lead
+    // that was never submitted, which is the first thing you need to rule out
+    // when someone says nobody called them back.
     if (!isRegistration && isBot({ firstName, lastName, email, phone, message })) {
+      await reportLocalReject({ firstName, lastName, email, phone, message, source: SITE });
       return NextResponse.json({ success: true }); // silent reject
     }
 
