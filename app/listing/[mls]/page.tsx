@@ -7,6 +7,8 @@ import ReadMore from "@/components/ReadMore";
 import { getBySlug } from "@/lib/communities";
 import ListingGallery from "@/components/ListingGallery";
 import TrackListingView from "@/components/TrackListingView";
+import ListingGate from "@/components/ListingGate";
+import { GATE_CSS } from "@/components/gate-css";
 import {
   getListing,
   sampleListings,
@@ -125,6 +127,16 @@ export default async function ListingPage({
         communitySlug={l.community_slug ?? null}
         price={l.list_price ?? null}
         city={l.city ?? null}
+      />
+      {/* Registration wall. Blocking once an anonymous visitor reaches
+          site_settings.listing_view_limit:livemodern (3). Community context
+          rides along so the account routes on real geography, not on whatever
+          page the wall happened to appear over. */}
+      <style dangerouslySetInnerHTML={{ __html: GATE_CSS }} />
+      <ListingGate
+        mlsId={String(l.mls_id)}
+        communitySlug={l.community_slug ?? null}
+        communityName={community?.name ?? null}
       />
       <Masthead active={presale ? "nc" : undefined} loginBand />
 
