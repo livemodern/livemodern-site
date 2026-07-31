@@ -23,6 +23,8 @@ export interface RouteLeadInput {
   tags?: string[];
   /** Buyer / Seller / Renter / Landlord — drives contacts.client_type. */
   userType?: string | null;
+  /** MLS ids the visitor has browsed — drives the whole lead profile. */
+  viewedMlsIds?: string[];
   meta?: Record<string, unknown>;
 }
 

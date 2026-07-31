@@ -20,6 +20,7 @@ const COOKIE_UID = "lm_uid";
 const COOKIE_UEM = "lm_uem";
 const COOKIE_ATTR = "lm_attr";
 const SESSION_KEY = "lm_sid";
+const VIEWED_KEY = "lm_viewed";
 const YEAR = 31_536_000;
 
 type SiteEventType =
@@ -103,6 +104,36 @@ export function trackedEmail(): string | null {
  *  it back-stitch this session's earlier anonymous events onto the contact. */
 export function trackedSessionId(): string {
   return sessionId();
+}
+
+/**
+ * MLS ids this browser has looked at, newest first. mlg-site sends this list
+ * with every lead so computeLeadProfile can derive price band, community, zip,
+ * city and sale-vs-lease from what the person ACTUALLY browsed rather than from
+ * the one page the form happened to sit on. LiveModern sent nothing, so every
+ * lead arrived with an empty profile. Capped at 40 — the profile only needs a
+ * representative sample, and this rides along in a form POST.
+ */
+export function viewedMlsIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(VIEWED_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberViewed(mlsId: string): void {
+  if (typeof window === "undefined" || !mlsId) return;
+  try {
+    const cur = viewedMlsIds().filter((x) => x !== mlsId);
+    cur.unshift(mlsId);
+    window.localStorage.setItem(VIEWED_KEY, JSON.stringify(cur.slice(0, 40)));
+  } catch {
+    /* storage disabled — the lead still routes, just without the profile */
+  }
 }
 
 function sessionId(): string {
@@ -235,6 +266,12 @@ export function fire(
   opts: { data?: Record<string, unknown>; immediate?: boolean } = {},
 ): void {
   if (typeof window === "undefined") return;
+  // Keep the browsing list in sync off the same call that reports the view, so
+  // there's no second thing to remember to wire up on a new page template.
+  if (eventType === "listing_view") {
+    const mls = opts.data?.mls_id;
+    if (typeof mls === "string" || typeof mls === "number") rememberViewed(String(mls));
+  }
   const attr = currentAttribution();
   queue.push({
     event_type: eventType,

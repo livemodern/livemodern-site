@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { fire, setTrackerIdentity, trackedSessionId } from "@/lib/site-tracker";
+import { fire, setTrackerIdentity, trackedSessionId, viewedMlsIds } from "@/lib/site-tracker";
 
 type Props = {
   /** Passed through to the CRM as source_type (e.g. "contact-page", "hub-inquiry"). */
@@ -71,6 +71,10 @@ export default function LeadForm({
       payload.landingPage = window.location.href;
       payload.referrer = document.referrer || "";
       payload.sessionId = trackedSessionId();
+      // Same signal mlg-site sends: what they actually looked at, which is what
+      // populates price / community / city / sale-vs-lease on the contact.
+      const viewed = viewedMlsIds();
+      if (viewed.length) payload.viewedMlsIds = viewed.join(",");
     }
     setState("sending");
     try {

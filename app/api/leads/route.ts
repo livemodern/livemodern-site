@@ -126,14 +126,48 @@ export async function POST(req: NextRequest) {
     const communitySlug = (body.communitySlug ?? "").trim() || null;
     const communityName = (body.communityName ?? "").trim() || null;
     const communityCity = (body.communityCity ?? "").trim() || null;
+    const viewedMlsIds = String(body.viewedMlsIds ?? "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .slice(0, 40);
 
     // A form on a building page is a sale-side buyer inquiry by definition —
     // these are for-sale new-construction towers, there is no rental funnel on
     // them. Stamping Buyer here is what puts "Buyer" in Client Type on the
     // contact instead of leaving the agent to guess. Deliberately scoped to
     // building inquiries: the generic contact page carries no such implication.
+    // Pre-construction adaptation. On mlg-site the profile is built from the
+    // listings the person browsed; on a building page there may be no browsing
+    // at all — they landed, read, and asked. Fall back to the building's own
+    // median active list price so the routing rules still have a price band and
+    // the contact still gets a Price, instead of both coming through blank.
+    async function communityMedianPrice(slug: string | null): Promise<number | null> {
+      if (!slug || !SB_KEY) return null;
+      try {
+        const res = await fetch(
+          `${SB_URL}/rest/v1/properties?community_slug=eq.${encodeURIComponent(slug)}` +
+            `&status=eq.Active&sale_or_lease=is.null&select=list_price&limit=200`,
+          { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }, cache: "no-store" },
+        );
+        if (!res.ok) return null;
+        const rows = (await res.json()) as Array<{ list_price: number | null }>;
+        const prices = rows
+          .map((r) => r.list_price)
+          .filter((n): n is number => typeof n === "number" && n > 0)
+          .sort((a, b) => a - b);
+        if (!prices.length) return null;
+        const m = Math.floor(prices.length / 2);
+        return prices.length % 2 ? prices[m] : Math.round((prices[m - 1] + prices[m]) / 2);
+      } catch {
+        return null;
+      }
+    }
+
     const isBuildingInquiry = !isRegistration && sourceType === "building-inquiry" && !!communityName;
     const effectiveUserType = userType || (isBuildingInquiry ? "Buyer" : "");
+    const communityPrice =
+      isBuildingInquiry && !viewedMlsIds.length ? await communityMedianPrice(communitySlug) : null;
     const mlsId = (body.mlsId ?? "").trim() || null;
 
     if (!email && !phone) {
@@ -212,8 +246,9 @@ export async function POST(req: NextRequest) {
         // Community/listing context is what lets the featured-agent pin and the
         // geographic rules fire; without it every lead lands on the house
         // default. The minis learned this the hard way.
-        listing: { community_slug: communitySlug, mls_id: mlsId, city: communityCity, price: null },
         userType: effectiveUserType || null,
+        viewedMlsIds: viewedMlsIds.length ? viewedMlsIds : undefined,
+        listing: { community_slug: communitySlug, mls_id: mlsId, city: communityCity, price: communityPrice },
         tags: [
           isRegistration ? "registration" : sourceType || "contact-form",
           // The building itself, so an agent can filter "everyone who asked
