@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { mls, mlsSrcSet, money } from "@/lib/listings";
 import type { LifestyleListing } from "@/lib/listings";
+import { listingHref } from "@/lib/listing-slug";
 
 const COUNTY_LABEL: Record<string, string> = {
   "Palm Beach": "Palm Beach",
@@ -251,7 +252,7 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
             const isCondo =
               l.property_subtype === "Condominium" || l.property_subtype === "Apartment";
             return (
-              <a className="unit" key={l.mls_id} href={`/listing/${l.mls_id}`}>
+              <a className="unit" key={l.mls_id} href={listingHref(l)}>
                 <div className="unit-im">
                   {photo ? (
                     <img

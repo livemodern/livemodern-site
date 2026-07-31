@@ -22,6 +22,7 @@ import { mlgTrackRecord } from "@/lib/mila-track-record";
 import { matchAgent } from "@/lib/mila-agents";
 import { resolveKnownVisitor } from "@/lib/mila-identity";
 import { scanOutput, rateLimit, logMilaTurn, looksSuspicious, captureConversation } from "@/lib/mila-guard";
+import { listingHref } from "@/lib/listing-slug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -170,7 +171,7 @@ function listingCard(l: MilaListing): MilaCard {
     sqft: l.sqft,
     arch_style: l.arch_style,
     image: l.image_url ? mlsImg(l.image_url, 600) : null,
-    href: `/listing/${l.mls_id}`,
+    href: listingHref(l),
   };
 }
 

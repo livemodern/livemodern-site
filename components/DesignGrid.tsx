@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { mls, mlsSrcSet, money } from "@/lib/listings";
 import type { DesignHome } from "@/lib/design";
+import { listingHref } from "@/lib/listing-slug";
 
 /**
  * By-Design grid with interactive style filter chips. The chips (British West
@@ -71,7 +72,7 @@ export default function DesignGrid({
         {shown.map((h) => {
           const photo = (h.image_urls ?? [])[0];
           return (
-            <a className="unit" key={h.mls_id} href={`/listing/${h.mls_id}`}>
+            <a className="unit" key={h.mls_id} href={listingHref(h)}>
               <div className="unit-im">
                 {photo ? (
                   <img

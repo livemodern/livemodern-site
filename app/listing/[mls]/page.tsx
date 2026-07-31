@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
@@ -8,6 +8,7 @@ import { getBySlug } from "@/lib/communities";
 import ListingGallery from "@/components/ListingGallery";
 import TrackListingView from "@/components/TrackListingView";
 import ListingGate from "@/components/ListingGate";
+import { mlsIdFromSlug, slugifyListing } from "@/lib/listing-slug";
 import { GATE_CSS } from "@/components/gate-css";
 import {
   getListing,
@@ -39,17 +40,61 @@ export async function generateMetadata({
 }: {
   params: Promise<{ mls: string }>;
 }): Promise<Metadata> {
-  const { mls: id } = await params;
-  const l = await getListing(id);
-  if (!l) return {};
-  const title = `${fullAddress(l)}, ${l.city} — ${money(l.list_price)}`;
+  const { mls: raw } = await params;
+  const l = await getListing(mlsIdFromSlug(decodeURIComponent(raw)));
+  if (!l) return { title: "Listing not found | LiveModern", robots: { index: false } };
+
+  // Same title shape as mlg-site (Patrick 2026-07-24): street address FIRST,
+  // then unit, place, what it is, and the price. The old shape here was
+  // "<full address>, <city> — <price>", which buried the spec and left the
+  // page unable to match the address query it was best placed to win.
+  const unitStr = String(l.unit_number || "").trim();
+  let streetOnly = (l.street_address || "").split(",")[0].trim();
+  // street_address usually already ends with the unit ("6530 Boca Del Mar
+  // Drive 337") — strip it so the title doesn't read "Drive 337 #337".
+  if (unitStr && streetOnly.toLowerCase().endsWith(unitStr.toLowerCase())) {
+    streetOnly = streetOnly.slice(0, streetOnly.length - unitStr.length).replace(/[\s#,-]+$/, "").trim();
+  }
+  const addrLine = [streetOnly || "Residence", unitStr ? `#${unitStr}` : null].filter(Boolean).join(" ");
+  const place = [l.city, l.zip ? `FL ${l.zip}` : "FL"].filter(Boolean).join(", ");
+  const subtype = l.property_subtype || "";
+  const kind = /condo|co-?op/i.test(subtype)
+    ? "Condo"
+    : /town/i.test(subtype)
+      ? "Townhome"
+      : /single|residence|home|villa/i.test(subtype)
+        ? "Home"
+        : l.building_name
+          ? "Condo"
+          : "Home";
+  const isLease = /lease|rent/i.test(String(l.property_type ?? ""));
+  const spec = [l.beds ? `${l.beds}-Bed` : null, kind, isLease ? "for Rent" : "for Sale"]
+    .filter(Boolean).join(" ");
+  const title = `${addrLine}, ${place} — ${spec} | ${money(l.list_price)}${isLease ? "/mo" : ""}`
+    .replace(/\s+/g, " ").trim();
+  const desc = (
+    l.description ||
+    `${l.beds ?? ""} bed ${l.baths ?? ""} bath ${kind.toLowerCase()} at ${l.building_name || l.city}, ${l.city}, FL.`
+  ).replace(/\s+/g, " ").slice(0, 180);
+
+  // Canonical points at the slug URL; the page also 308s bare-id URLs to it.
+  // Canonical alone isn't enough — Google indexes both variants and the
+  // bare-id links people actually share (cards, MiLa answers, CRM exports)
+  // end up competing with the slug URL as duplicate content.
+  const canonicalSlug = slugifyListing(l);
+  const ogImage = l.image_urls?.[0] ? mls(l.image_urls[0], 1200) : undefined;
   return {
     title,
-    description: (l.description ?? "").slice(0, 180),
+    description: desc,
+    alternates: { canonical: `/listing/${canonicalSlug}` },
     openGraph: {
       title: `${title} | LiveModern`,
-      images: l.image_urls?.[0] ? [mls(l.image_urls[0], 1200)] : undefined,
+      description: desc,
+      url: `/listing/${canonicalSlug}`,
+      type: "website",
+      images: ogImage ? [ogImage] : undefined,
     },
+    twitter: { card: "summary_large_image" as const, title, description: desc, images: ogImage ? [ogImage] : undefined },
   };
 }
 
@@ -76,9 +121,18 @@ export default async function ListingPage({
 }: {
   params: Promise<{ mls: string }>;
 }) {
-  const { mls: id } = await params;
-  const l = await getListing(id);
+  const { mls: rawParam } = await params;
+  const decoded = decodeURIComponent(rawParam);
+  const l = await getListing(mlsIdFromSlug(decoded));
   if (!l) notFound();
+
+  // Non-SEO bare-MLS-id URLs are internal only — 308 them to the slug so there
+  // is exactly one public URL per listing. Every existing link, share and MiLa
+  // answer keeps working; it just lands on the canonical form.
+  const canonicalSlug = slugifyListing(l);
+  if (/^\d+$/.test(decoded) && canonicalSlug && canonicalSlug !== decoded) {
+    permanentRedirect(`/listing/${canonicalSlug}`);
+  }
 
   const kind = listingKind(l);
   const presale = isPresale(l);

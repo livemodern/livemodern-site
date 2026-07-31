@@ -1,6 +1,7 @@
 import { SITE_URL } from "@/lib/site-url";
 import { buildUrlset, isoLastmod, XML_HEADERS, type SitemapEntry } from "@/lib/sitemap-xml";
 import communities from "@/data/communities.json";
+import { listingHref } from "@/lib/listing-slug";
 
 // Every live listing LiveModern actually surfaces, kept OUT of
 // sitemap-pages.xml so Search Console reports the two sets separately (the
@@ -39,15 +40,17 @@ async function collect(filter: string, into: Map<string, string | null>): Promis
     if (into.size >= CAP) return;
     const rows = await page(
       `${SB_URL}/rest/v1/properties?${filter}` +
-        `&select=mls_id,updated_at&order=mls_id.asc&limit=1000&offset=${offset}`,
+        `&select=mls_id,updated_at,street_address,unit_number,city,state,zip&order=mls_id.asc&limit=1000&offset=${offset}`,
     );
-    for (const r of rows) if (r.mls_id) into.set(r.mls_id, r.updated_at);
+    // Store the whole row: the sitemap must emit the SEO slug, not the bare
+    // id, or we'd be publishing the URLs we just made non-canonical.
+    for (const r of rows) if (r.mls_id) into.set(r.mls_id, r);
     if (rows.length < 1000) return;
   }
 }
 
 export async function GET() {
-  const found = new Map<string, string | null>();
+  const found = new Map<string, any>();
 
   if (SB_KEY) {
     const slugs = (communities as { slug: string }[]).map((c) => c.slug);
@@ -66,9 +69,9 @@ export async function GET() {
     );
   }
 
-  const out: SitemapEntry[] = [...found.entries()].map(([mls, updated]) => ({
-    loc: `${SITE_URL}/listing/${mls}`,
-    lastmod: isoLastmod(updated),
+  const out: SitemapEntry[] = [...found.values()].map((r) => ({
+    loc: `${SITE_URL}${listingHref(r)}`,
+    lastmod: isoLastmod(r.updated_at),
     changefreq: "daily",
     priority: 0.5,
   }));

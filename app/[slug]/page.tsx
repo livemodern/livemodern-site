@@ -17,6 +17,7 @@ import SpokeEnrichment from "@/components/SpokeEnrichment";
 import { contentForTheme } from "@/lib/spoke-content";
 import { spokeFacts } from "@/lib/spoke-facts";
 import UnitGrid from "@/components/UnitGrid";
+import { listingHref } from "@/lib/listing-slug";
 import {
   getBuildingInventory,
   getFloorplans,
@@ -82,7 +83,7 @@ function UnitCard({ u, rent, sold, fallback }: { u: Listing; rent?: boolean; sol
         ? "Under Contract"
         : "For Sale";
   return (
-    <a className="unit" href={`/listing/${u.mls_id}`}>
+    <a className="unit" href={listingHref(u)}>
       <div className="unit-im">
         {photo ? (
           <img
