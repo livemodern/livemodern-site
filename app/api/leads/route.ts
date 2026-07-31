@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isBot, splitName } from "@/lib/lead-utils";
 import { checkLeadSpam } from "@/lib/spam-check-client";
+import { getBySlug } from "@/lib/communities";
 import { recordLeadRouting } from "@/lib/route-lead-client";
 
 export const runtime = "nodejs";
@@ -166,8 +167,15 @@ export async function POST(req: NextRequest) {
 
     const isBuildingInquiry = !isRegistration && sourceType === "building-inquiry" && !!communityName;
     const effectiveUserType = userType || (isBuildingInquiry ? "Buyer" : "");
-    const communityPrice =
-      isBuildingInquiry && !viewedMlsIds.length ? await communityMedianPrice(communitySlug) : null;
+    // Order matters. Live MLS inventory is the truest signal, but a genuinely
+    // pre-construction tower has NONE — Bennet has zero active listings because
+    // it hasn't been filed yet — so the building's published "from" price is the
+    // only number that exists. Without this the whole pre-construction funnel
+    // routes with a null price and can't match a price-band rule at all.
+    const communityPrice = isBuildingInquiry && !viewedMlsIds.length
+      ? (await communityMedianPrice(communitySlug))
+        ?? (communitySlug ? getBySlug(communitySlug)?.facts?.price_from ?? null : null)
+      : null;
     const mlsId = (body.mlsId ?? "").trim() || null;
 
     if (!email && !phone) {
