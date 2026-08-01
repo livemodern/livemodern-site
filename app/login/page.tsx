@@ -8,10 +8,12 @@ import { AUTH_CSS } from "./auth-css";
 import {
   AUTH_CONFIGURED,
   SMS_CONSENT_TEXT,
+  rememberReturnTo,
   sendMagicLink,
   signIn,
   signInWithGoogle,
   signUp,
+  takeReturnTo,
   useUser,
 } from "@/lib/auth";
 import { fire } from "@/lib/site-tracker";
@@ -34,6 +36,13 @@ type Mode = "signup" | "signin";
 export default function LoginPage() {
   const { user, loading } = useUser();
   const [mode, setMode] = useState<Mode>("signup");
+  // A visitor sent here from a listing arrives with ?next=<path>; stash it so it
+  // survives the password / Google / magic-link round-trips.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const n = new URLSearchParams(window.location.search).get("next");
+    if (n) rememberReturnTo(n);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -47,7 +56,7 @@ export default function LoginPage() {
   const [smsConsent, setSmsConsent] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) window.location.replace("/account");
+    if (!loading && user) window.location.replace(takeReturnTo() ?? "/account");
   }, [loading, user]);
 
   useEffect(() => {

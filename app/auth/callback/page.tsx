@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabase, AUTH_CONFIGURED } from "@/lib/auth";
+import { getSupabase, AUTH_CONFIGURED, takeReturnTo } from "@/lib/auth";
 
 // OAuth + email-confirmation landing. Supabase's detectSessionInUrl handles the
 // hash/code exchange, so all this page does is wait for the session to resolve
@@ -23,15 +23,22 @@ export default function AuthCallback() {
       window.location.replace(to);
     };
 
+    // Prefer the ?next= that rode along on redirectTo; fall back to the path we
+    // stashed before leaving for Google; finally the account home.
+    const urlNext = new URLSearchParams(window.location.search).get("next");
+    const dest = (urlNext && urlNext.startsWith("/") && !urlNext.startsWith("//")
+      ? urlNext
+      : null) ?? takeReturnTo() ?? "/account";
+
     let unsub: (() => void) | null = null;
     void (async () => {
       const sb = await getSupabase();
       const {
         data: { session },
       } = await sb.auth.getSession();
-      if (session) go("/account");
+      if (session) go(dest);
       const { data: sub } = sb.auth.onAuthStateChange((_e, s2) => {
-        if (s2) go("/account");
+        if (s2) go(dest);
       });
       unsub = () => sub.subscription.unsubscribe();
     })();

@@ -13,6 +13,7 @@ import { getAll, getBuildings, getBySlug, getRelated, hubBySlug, hubForCounty, a
 import CityIndex from "@/components/CityIndex";
 import LifestyleHubPage from "@/components/LifestyleHubPage";
 import LifestyleListings from "@/components/LifestyleListings";
+import SaveSearchButton from "@/components/SaveSearchButton";
 import SpokeEnrichment from "@/components/SpokeEnrichment";
 import { contentForTheme } from "@/lib/spoke-content";
 import { spokeFacts } from "@/lib/spoke-facts";
@@ -636,6 +637,7 @@ export default async function CommunityPage({
                   {spokeHub.theme} in {spokeCountyShort ?? "South Florida"}.
                 </h2>
               </div>
+              <SaveSearchButton slug={c.slug} name={displayName} />
             </div>
             <LifestyleListings listings={spokeListings} />
           </section>

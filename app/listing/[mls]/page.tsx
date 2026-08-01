@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import ReadMore from "@/components/ReadMore";
 import { getBySlug } from "@/lib/communities";
 import ListingGallery from "@/components/ListingGallery";
+import SaveHeart from "@/components/SaveHeart";
 import TrackListingView from "@/components/TrackListingView";
 import ListingGate from "@/components/ListingGate";
 import { mlsIdFromSlug, slugifyListing } from "@/lib/listing-slug";
@@ -241,11 +242,14 @@ export default async function ListingPage({
               </Link>
             ) : null}
           </div>
-          <div className="keyspecs">
-            <Spec n={l.beds != null ? String(l.beds) : "—"} l="Beds" />
-            <Spec n={l.baths != null ? String(l.baths) : "—"} l="Baths" />
-            <Spec n={l.sqft ? l.sqft.toLocaleString() : "—"} l="Sq Ft" />
-            <Spec n={pricePerSqft(l)} l="/ Sq Ft" />
+          <div className="head-right">
+            <SaveHeart mlsId={String(l.mls_id)} />
+            <div className="keyspecs">
+              <Spec n={l.beds != null ? String(l.beds) : "—"} l="Beds" />
+              <Spec n={l.baths != null ? String(l.baths) : "—"} l="Baths" />
+              <Spec n={l.sqft ? l.sqft.toLocaleString() : "—"} l="Sq Ft" />
+              <Spec n={pricePerSqft(l)} l="/ Sq Ft" />
+            </div>
           </div>
         </div>
       </div>

@@ -31,6 +31,47 @@ const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
  *  this to show a "contact us" path instead of a broken form. */
 export const AUTH_CONFIGURED = Boolean(SB_ANON);
 
+// ── Return-to after auth ──────────────────────────────────────────────────
+// After Google/email sign-in we should land the visitor back on the page they
+// were on (the listing they registered from), not a generic /account. We stash
+// the path before leaving for the OAuth round-trip and read it in the callback.
+// localStorage survives the Google redirect (same origin); we also pass ?next=
+// on redirectTo as a belt-and-suspenders for magic links opened elsewhere.
+const RETURN_KEY = "lm-auth-next";
+
+/** Only same-origin absolute paths — never an off-site or protocol-relative URL. */
+function safePath(p: string | null | undefined): string | null {
+  if (!p) return null;
+  if (!p.startsWith("/") || p.startsWith("//")) return null;
+  // Don't bounce back onto an auth surface.
+  if (/^\/(login|account|auth)\b/.test(p)) return null;
+  return p;
+}
+
+export function rememberReturnTo(explicit?: string): string | null {
+  if (typeof window === "undefined") return null;
+  const path = safePath(explicit ?? window.location.pathname + window.location.search);
+  try {
+    if (path) window.localStorage.setItem(RETURN_KEY, path);
+    else window.localStorage.removeItem(RETURN_KEY);
+  } catch {
+    /* private mode */
+  }
+  return path;
+}
+
+/** Read + clear the stored destination. */
+export function takeReturnTo(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = safePath(window.localStorage.getItem(RETURN_KEY));
+    window.localStorage.removeItem(RETURN_KEY);
+    return v;
+  } catch {
+    return null;
+  }
+}
+
 const STORAGE_KEY = "lm-auth";
 
 let client: SupabaseClient | null = null;
@@ -305,9 +346,11 @@ export async function signIn(email: string, password: string): Promise<{ error?:
 export async function sendMagicLink(email: string): Promise<{ error?: AuthError }> {
   if (!AUTH_CONFIGURED) return { error: { code: "unconfigured", message: "Accounts aren't available yet." } };
   const sb = await getSupabase();
+  const next = rememberReturnTo();
+  const cb = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { error } = await sb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    options: { emailRedirectTo: cb },
   });
   if (error) return { error: { message: error.message } };
   return {};
@@ -316,9 +359,11 @@ export async function sendMagicLink(email: string): Promise<{ error?: AuthError 
 export async function signInWithGoogle(): Promise<{ error?: AuthError }> {
   if (!AUTH_CONFIGURED) return { error: { code: "unconfigured", message: "Accounts aren't available yet." } };
   const sb = await getSupabase();
+  const next = rememberReturnTo();
+  const cb = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { error } = await sb.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${window.location.origin}/auth/callback` },
+    options: { redirectTo: cb },
   });
   if (error) return { error: { message: error.message } };
   return {};
