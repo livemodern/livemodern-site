@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
@@ -9,12 +9,12 @@ import { ACCOUNT_CSS } from "./account-css";
 import { AUTH_CONFIGURED, firstNameOf, getSupabase, signOut, useUser } from "@/lib/auth";
 import { slugifyListing } from "@/lib/listing-slug";
 
-// Consumer account home. Three panels, all reading the same tables the rest of
-// the Modern Living ecosystem writes — saves follow the user across every site,
-// so reads are keyed on user_id only, not site_slug.
-//   1. Your details      — editable, writes back to registrations
-//   2. Saved homes       — saved_listings x properties, with unsave
-//   3. Saved searches    — saved_searches, re-run + delete
+// Consumer account. Layout mirrors mlg-site — a navy hero, then a two-column
+// grid (saved searches + saved homes in the main column, details + team card in
+// a sticky sidebar) — rendered in the LiveModern design language: Playfair
+// serif, hairline cards, generous white space. All saved data reads by user_id
+// only (not site-scoped) so it follows the visitor across every Modern Living
+// site.
 
 type Profile = {
   first_name: string | null;
@@ -169,6 +169,14 @@ export default function AccountPage() {
           sms_consent: draft.sms_consent ?? false,
         })
         .eq("user_id", user.id);
+      // Keep the hero greeting (Auth metadata) in step with the edit.
+      try {
+        await sb.auth.updateUser({
+          data: { first_name: draft.first_name, last_name: draft.last_name || null },
+        });
+      } catch {
+        /* non-fatal */
+      }
       await loadProfile();
       setEditing(false);
       setSavedMsg(true);
@@ -176,6 +184,14 @@ export default function AccountPage() {
       setSaving(false);
     }
   }
+
+  const memberSince = useMemo(() => {
+    const iso = (user as { created_at?: string } | null)?.created_at;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }, [user]);
 
   if (loading || !user) {
     return (
@@ -187,227 +203,289 @@ export default function AccountPage() {
 
   const name = firstNameOf(user);
   const p = profile;
+  const first = p?.first_name || name || "";
+  const last = p?.last_name || "";
+  const initials =
+    `${(first[0] || "").toUpperCase()}${(last[0] || "").toUpperCase()}` || (name?.[0] ?? "L").toUpperCase();
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: AUTH_CSS + ACCOUNT_CSS }} />
       <Masthead />
-      <div className="wrap">
-        <div className="auth-shell acct-wide">
-          <p className="eyebrow">Account</p>
-          <h1 className="serif">
-            Hello, <em>{name}</em>.
-          </h1>
-          <p className="auth-lede">
-            Your saved homes, searches, and details live here \u2014 and they follow you across every
-            Modern Living site. Anything to change, or a building you want watched, just{" "}
-            <Link href="/contact">tell us</Link>.
-          </p>
 
-          <div className="acct-card">
-            <div className="acct-card-head">
-              <h2>Your details</h2>
-              {!editing ? (
-                <button className="acct-link" onClick={startEdit}>
-                  Edit
-                </button>
-              ) : null}
-            </div>
-
-            {!editing ? (
-              <>
-                <div className="acct-row">
-                  <span>Name</span>
-                  <span>{[p?.first_name, p?.last_name].filter(Boolean).join(" ") || name || "\u2014"}</span>
-                </div>
-                <div className="acct-row">
-                  <span>Email</span>
-                  <span>{p?.email || user.email || "\u2014"}</span>
-                </div>
-                <div className="acct-row">
-                  <span>Phone</span>
-                  <span>{p?.phone || "\u2014"}</span>
-                </div>
-                <div className="acct-row">
-                  <span>Looking to</span>
-                  <span>{p?.user_type || "\u2014"}</span>
-                </div>
-                <div className="acct-row">
-                  <span>Text updates</span>
-                  <span>{p?.sms_consent ? "On" : "Off"}</span>
-                </div>
-                {savedMsg ? <p className="acct-saved">Saved.</p> : null}
-              </>
-            ) : (
-              <div className="acct-edit">
-                <label>
-                  <span>First name</span>
-                  <input
-                    value={draft?.first_name ?? ""}
-                    onChange={(e) => setDraft((d) => (d ? { ...d, first_name: e.target.value } : d))}
-                  />
-                </label>
-                <label>
-                  <span>Last name</span>
-                  <input
-                    value={draft?.last_name ?? ""}
-                    onChange={(e) => setDraft((d) => (d ? { ...d, last_name: e.target.value } : d))}
-                  />
-                </label>
-                <label>
-                  <span>Phone</span>
-                  <input
-                    inputMode="tel"
-                    value={draft?.phone ?? ""}
-                    onChange={(e) => setDraft((d) => (d ? { ...d, phone: e.target.value } : d))}
-                  />
-                </label>
-                <label>
-                  <span>Looking to</span>
-                  <select
-                    value={draft?.user_type ?? ""}
-                    onChange={(e) => setDraft((d) => (d ? { ...d, user_type: e.target.value } : d))}
-                  >
-                    <option value="">\u2014</option>
-                    {LOOKING.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="acct-check">
-                  <input
-                    type="checkbox"
-                    checked={draft?.sms_consent ?? false}
-                    onChange={(e) => setDraft((d) => (d ? { ...d, sms_consent: e.target.checked } : d))}
-                  />
-                  <span>Text me the occasional new-listing alert (opt-in, reply STOP anytime)</span>
-                </label>
-                <div className="acct-actions">
-                  <button className="auth-btn" onClick={saveDetails} disabled={saving}>
-                    {saving ? "Saving\u2026" : "Save changes"}
-                  </button>
-                  <button className="acct-link" onClick={() => setEditing(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* ── HERO ──────────────────────────────────────────────────── */}
+      <div className="acct-hero">
+        <div className="wrap acct-hero-in">
+          <div className="acct-avatar" aria-hidden="true">
+            {initials}
           </div>
-
-          <div className="acct-card">
-            <div className="acct-card-head">
-              <h2>
-                Saved homes{" "}
-                {homes && homes.length ? <em className="acct-count">{homes.length}</em> : null}
-              </h2>
-            </div>
-            {homes === null ? (
-              <p className="acct-empty">Loading\u2026</p>
-            ) : homes.length === 0 ? (
-              <p className="acct-empty">
-                No saved homes yet. Tap the heart on any residence and it&rsquo;ll wait for you here.{" "}
-                <Link href="/collections">Browse collections \u2192</Link>
-              </p>
-            ) : (
-              <div className="acct-homes">
-                {homes.map((h) => {
-                  const href = `/listing/${slugifyListing(h)}`;
-                  const img = h.image_urls?.[0];
-                  return (
-                    <div className="acct-home" key={h.mls_id}>
-                      <Link href={href} className="acct-home-img">
-                        {img ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={img} alt={h.street_address ?? "Saved home"} loading="lazy" />
-                        ) : (
-                          <div className="acct-home-noimg" />
-                        )}
-                      </Link>
-                      <div className="acct-home-body">
-                        <Link href={href} className="acct-home-price serif">
-                          {money(h.list_price)}
-                        </Link>
-                        <div className="acct-home-addr">{h.street_address}</div>
-                        <div className="acct-home-sub">
-                          {[h.city, h.state].filter(Boolean).join(", ")}
-                          {h.zip ? ` ${h.zip}` : ""}
-                        </div>
-                        <div className="acct-home-specs">
-                          {h.beds ?? "\u2014"} bd \u00b7 {h.baths ?? "\u2014"} ba \u00b7{" "}
-                          {h.sqft ? h.sqft.toLocaleString() : "\u2014"} sf
-                        </div>
-                      </div>
-                      <button
-                        className="acct-unsave"
-                        onClick={() => void unsaveHome(String(h.mls_id))}
-                        aria-label="Remove from saved"
-                        title="Remove"
-                      >
-                        \u00d7
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+          <div className="acct-hero-copy">
+            <p className="acct-hero-eyebrow">Your account</p>
+            <h1 className="serif acct-hero-h1">
+              Hello,{" "}
+              <em>{first || "there"}</em>
+              {last ? <> {last}</> : null}.
+            </h1>
+            <p className="acct-hero-sub">
+              {p?.email || user.email}
+              {memberSince ? <> &middot; with LiveModern since {memberSince}</> : null}
+            </p>
           </div>
-
-          <div className="acct-card">
-            <div className="acct-card-head">
-              <h2>
-                Saved searches{" "}
-                {searches && searches.length ? <em className="acct-count">{searches.length}</em> : null}
-              </h2>
-            </div>
-            {searches === null ? (
-              <p className="acct-empty">Loading\u2026</p>
-            ) : searches.length === 0 ? (
-              <p className="acct-empty">
-                No saved searches yet. Save one from any collection and we&rsquo;ll keep it fresh.{" "}
-                <Link href="/collections">Browse collections \u2192</Link>
-              </p>
-            ) : (
-              <div className="acct-searches">
-                {searches.map((s) => (
-                  <div className="acct-search" key={s.id}>
-                    <div>
-                      <div className="acct-search-name">{s.name || s.location || "Saved search"}</div>
-                      <div className="acct-search-sub">
-                        {[s.location, s.transaction].filter(Boolean).join(" \u00b7 ") || "Custom filters"}
-                        {s.alert_frequency && s.alert_frequency !== "none"
-                          ? ` \u00b7 alerts ${s.alert_frequency}`
-                          : ""}
-                      </div>
-                    </div>
-                    <div className="acct-search-actions">
-                      {s.location ? (
-                        <Link className="acct-link" href={`/${s.location}`}>
-                          View
-                        </Link>
-                      ) : null}
-                      <button className="acct-link acct-danger" onClick={() => void deleteSearch(s.id)}>
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button
-            className="auth-btn acct-signout"
-            onClick={async () => {
-              await signOut();
-              window.location.replace("/");
-            }}
-          >
-            Sign out
-          </button>
         </div>
       </div>
+
+      {/* ── BODY ──────────────────────────────────────────────────── */}
+      <div className="wrap">
+        <div className="acct-grid">
+          {/* MAIN */}
+          <div className="acct-main">
+            {/* Saved searches */}
+            <section className="acct-block">
+              <div className="acct-sec-head">
+                <h2 className="serif">Saved searches</h2>
+                {searches && searches.length ? (
+                  <span className="acct-count">{searches.length}</span>
+                ) : null}
+              </div>
+              {searches === null ? (
+                <p className="acct-empty">Loading\u2026</p>
+              ) : searches.length === 0 ? (
+                <div className="acct-empty-card">
+                  <p className="serif">Never miss a listing.</p>
+                  <p>
+                    Save a search from any collection and it&rsquo;ll wait for you here, ready to
+                    re-run.
+                  </p>
+                  <Link className="acct-cta" href="/collections">
+                    Browse collections &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <div className="acct-searches">
+                  {searches.map((s) => (
+                    <div className="acct-search" key={s.id}>
+                      <div className="acct-search-main">
+                        <div className="acct-search-name">
+                          {s.name || s.location || "Saved search"}
+                        </div>
+                        <div className="acct-search-sub">
+                          {[s.location, s.transaction].filter(Boolean).join(" \u00b7 ") ||
+                            "Custom filters"}
+                          {s.alert_frequency && s.alert_frequency !== "none"
+                            ? ` \u00b7 alerts ${s.alert_frequency}`
+                            : ""}
+                        </div>
+                      </div>
+                      <div className="acct-search-actions">
+                        {s.location ? (
+                          <Link className="acct-run" href={`/${s.location}`}>
+                            Run search
+                          </Link>
+                        ) : null}
+                        <button
+                          className="acct-x"
+                          onClick={() => void deleteSearch(s.id)}
+                          aria-label="Remove saved search"
+                          title="Remove"
+                        >
+                          \u00d7
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Saved homes */}
+            <section className="acct-block">
+              <div className="acct-sec-head">
+                <h2 className="serif">Saved homes</h2>
+                {homes && homes.length ? <span className="acct-count">{homes.length}</span> : null}
+              </div>
+              {homes === null ? (
+                <p className="acct-empty">Loading\u2026</p>
+              ) : homes.length === 0 ? (
+                <div className="acct-empty-card">
+                  <p className="serif">Nothing saved yet.</p>
+                  <p>Tap the heart on any residence and it&rsquo;ll collect here.</p>
+                  <Link className="acct-cta" href="/collections">
+                    Browse collections &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <div className="acct-homes">
+                  {homes.map((h) => {
+                    const href = `/listing/${slugifyListing(h)}`;
+                    const img = h.image_urls?.[0];
+                    return (
+                      <div className="acct-home" key={h.mls_id}>
+                        <Link href={href} className="acct-home-img">
+                          {img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={img} alt={h.street_address ?? "Saved home"} loading="lazy" />
+                          ) : (
+                            <div className="acct-home-noimg" />
+                          )}
+                        </Link>
+                        <div className="acct-home-body">
+                          <Link href={href} className="acct-home-price serif">
+                            {money(h.list_price)}
+                          </Link>
+                          <div className="acct-home-addr">{h.street_address}</div>
+                          <div className="acct-home-sub">
+                            {[h.city, h.state].filter(Boolean).join(", ")}
+                            {h.zip ? ` ${h.zip}` : ""}
+                          </div>
+                          <div className="acct-home-specs">
+                            {h.beds ?? "\u2014"} bd \u00b7 {h.baths ?? "\u2014"} ba \u00b7{" "}
+                            {h.sqft ? h.sqft.toLocaleString() : "\u2014"} sf
+                          </div>
+                        </div>
+                        <button
+                          className="acct-x acct-x-float"
+                          onClick={() => void unsaveHome(String(h.mls_id))}
+                          aria-label="Remove from saved"
+                          title="Remove"
+                        >
+                          \u00d7
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* SIDEBAR */}
+          <aside className="acct-side">
+            {/* Your details */}
+            <div className="acct-card">
+              <div className="acct-card-head">
+                <h3>Your details</h3>
+                {!editing ? (
+                  <button className="acct-link" onClick={startEdit}>
+                    Edit
+                  </button>
+                ) : null}
+              </div>
+
+              {!editing ? (
+                <>
+                  <div className="acct-row">
+                    <span>Name</span>
+                    <span>{[first, last].filter(Boolean).join(" ") || "\u2014"}</span>
+                  </div>
+                  <div className="acct-row">
+                    <span>Email</span>
+                    <span>{p?.email || user.email || "\u2014"}</span>
+                  </div>
+                  <div className="acct-row">
+                    <span>Phone</span>
+                    <span>{p?.phone || "\u2014"}</span>
+                  </div>
+                  <div className="acct-row">
+                    <span>Looking to</span>
+                    <span>{p?.user_type || "\u2014"}</span>
+                  </div>
+                  <div className="acct-row">
+                    <span>Text updates</span>
+                    <span>{p?.sms_consent ? "On" : "Off"}</span>
+                  </div>
+                  {savedMsg ? <p className="acct-saved">Saved.</p> : null}
+                </>
+              ) : (
+                <div className="acct-edit">
+                  <label>
+                    <span>First name</span>
+                    <input
+                      value={draft?.first_name ?? ""}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, first_name: e.target.value } : d))}
+                    />
+                  </label>
+                  <label>
+                    <span>Last name</span>
+                    <input
+                      value={draft?.last_name ?? ""}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, last_name: e.target.value } : d))}
+                    />
+                  </label>
+                  <label>
+                    <span>Phone</span>
+                    <input
+                      inputMode="tel"
+                      value={draft?.phone ?? ""}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, phone: e.target.value } : d))}
+                    />
+                  </label>
+                  <label>
+                    <span>Looking to</span>
+                    <select
+                      value={draft?.user_type ?? ""}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, user_type: e.target.value } : d))}
+                    >
+                      <option value="">\u2014</option>
+                      {LOOKING.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="acct-check">
+                    <input
+                      type="checkbox"
+                      checked={draft?.sms_consent ?? false}
+                      onChange={(e) =>
+                        setDraft((d) => (d ? { ...d, sms_consent: e.target.checked } : d))
+                      }
+                    />
+                    <span>Text me the occasional new-listing alert (opt-in, reply STOP anytime)</span>
+                  </label>
+                  <div className="acct-actions">
+                    <button className="auth-btn" onClick={saveDetails} disabled={saving}>
+                      {saving ? "Saving\u2026" : "Save changes"}
+                    </button>
+                    <button className="acct-link" onClick={() => setEditing(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Your team */}
+            <div className="acct-card acct-team">
+              <p className="acct-team-eyebrow">Your team</p>
+              <div className="acct-team-name serif">Modern Living Group</div>
+              <p className="acct-team-copy">
+                We&rsquo;ll pair you with the right specialist for your search \u2014 developer
+                previews, private tours, allocations. Call or message any time.
+              </p>
+              <div className="acct-team-actions">
+                <a className="auth-btn acct-team-call" href="tel:5612288420">
+                  Call 561 228 8420
+                </a>
+                <Link className="acct-link" href="/contact">
+                  Message us &rarr;
+                </Link>
+              </div>
+            </div>
+
+            <button
+              className="acct-signout"
+              onClick={async () => {
+                await signOut();
+                window.location.replace("/");
+              }}
+            >
+              Sign out
+            </button>
+          </aside>
+        </div>
+      </div>
+
       <Footer />
     </>
   );
