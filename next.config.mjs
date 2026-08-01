@@ -30,9 +30,11 @@ const nextConfig = {
       { source: "/idx", destination: "/new-construction", permanent: true },
       { source: "/idx/:path*", destination: "/new-construction", permanent: true },
 
-      // Old browse/search surfaces -> Collections
+      // Old browse/search surfaces -> Collections. NOTE: /search itself is now a
+      // real page (the full county-wide search), so it is intentionally NOT
+      // redirected here anymore. /search-by-lifestyle + /communities still go
+      // to Collections (the lifestyle front door).
       { source: "/search-by-lifestyle", destination: "/collections", permanent: true },
-      { source: "/search", destination: "/collections", permanent: true },
       { source: "/communities", destination: "/collections", permanent: true },
 
       // Old static pages with no new equivalent
