@@ -40,20 +40,82 @@ type SavedHome = {
   property_subtype: string | null;
 };
 
+type LocObj = { name?: string | null; type?: string | null; filter?: Record<string, unknown> | null };
 type SavedSearch = {
   id: string;
   name: string | null;
-  location: string | null;
+  // LiveModern saves store a slug string; MLG/mini-site saves store an object.
+  location: string | LocObj | null;
   transaction: string | null;
   filters: Record<string, unknown> | null;
   alert_frequency: string | null;
   created_at: string | null;
+  site_slug: string | null;
 };
+
+// site_slug -> where a saved search actually runs. All sites read one shared
+// property DB, so an off-site search reproduces the same listings; it just has
+// to run on the surface that can render it. LiveModern-origin searches run here.
+const SITE_META: Record<string, { label: string; origin: string; searchPath?: string }> = {
+  livemodern: { label: "LiveModern", origin: "" },
+  "mlg-site": { label: "modernlivingre.com", origin: "https://modernlivingre.com", searchPath: "/search" },
+  "mlg-search": { label: "our county search", origin: "https://search.mlrecloud.com", searchPath: "/" },
+  "one-city-plaza": { label: "onecityplazacondos.com", origin: "https://onecityplazacondos.com" },
+  twocityplaza: { label: "twocityplazacondos.com", origin: "https://twocityplazacondos.com" },
+  "city-palms": { label: "citypalms.com", origin: "https://citypalms.com" },
+  "bristol-palm-beach": { label: "bristolpalmbeach.com", origin: "https://bristolpalmbeach.com" },
+  "cityplace-south-tower": { label: "southtowercityplace.com", origin: "https://southtowercityplace.com" },
+  "5000-north-ocean": { label: "5000noceancondos.com", origin: "https://5000noceancondos.com" },
+  "nautilus-220": { label: "nautilus220condos.com", origin: "https://nautilus220condos.com" },
+  "esplanade-grande": { label: "esplanadegrande.com", origin: "https://esplanadegrande.com" },
+  "el-cid-homes": { label: "elcidhomes.com", origin: "https://elcidhomes.com" },
+  "rocky-point-stuart": { label: "rockypointstuartfl.com", origin: "https://rockypointstuartfl.com" },
+  "modern-living-palm-beach": { label: "modernlivingpalmbeach.com", origin: "https://modernlivingpalmbeach.com" },
+};
+
+function locName(loc: SavedSearch["location"]): string | null {
+  if (!loc) return null;
+  if (typeof loc === "string") return loc;
+  return loc.name ?? null;
+}
+
+// Reconstruct the origin site's search URL. Mirrors mlg-site's buildSavedSearchHref
+// param shape so an MLG/mlg-search "Run search" reproduces the real result set.
+// Building/mini-site saves have no search page — those just open the site.
+function runHref(s: SavedSearch): { href: string; external: boolean; label: string } {
+  const meta = SITE_META[s.site_slug ?? ""] ?? null;
+
+  // LiveModern-origin: a slug string runs locally.
+  if ((s.site_slug === "livemodern" || !s.site_slug) && typeof s.location === "string") {
+    return { href: `/${s.location}`, external: false, label: "Run search" };
+  }
+  if (!meta) {
+    return { href: "/collections", external: false, label: "Browse" };
+  }
+  // Sites with a real search page: serialize filters into their /search params.
+  if (meta.searchPath) {
+    const p = new URLSearchParams();
+    p.set("transaction", s.transaction === "rent" ? "rent" : "sale");
+    const loc = s.location;
+    if (loc) p.set("loc", typeof loc === "string" ? loc : JSON.stringify(loc));
+    const f = (s.filters ?? {}) as Record<string, unknown>;
+    const pass = ["priceMin","priceMax","sqftMin","sqftMax","domMax","hoaMax","subtype","yearBuiltMin","yearBuiltMax","keywords","statusesCsv","amenitiesCsv"];
+    for (const k of pass) if (f[k]) p.set(k, String(f[k]));
+    if (f.beds && f.beds !== "Any") p.set("beds", String(f.beds));
+    if (f.baths && f.baths !== "Any") p.set("baths", String(f.baths));
+    if (f.city && f.city !== "Any") p.set("city", String(f.city));
+    if (f.status && f.status !== "On Market") p.set("status", String(f.status));
+    const sep = meta.searchPath.includes("?") ? "&" : "?";
+    return { href: `${meta.origin}${meta.searchPath}${sep}${p.toString()}`, external: true, label: `Run on ${meta.label}` };
+  }
+  // Building / mini-site: no search page — open the site.
+  return { href: meta.origin || "/", external: true, label: `View on ${meta.label}` };
+}
 
 const LOOKING = ["Buyer", "Seller", "Renter", "Landlord", "Just browsing"];
 
 function money(v: number | null): string {
-  if (v == null) return "\u2014";
+  if (v == null) return "—";
   return `$${Math.round(v).toLocaleString()}`;
 }
 
@@ -118,7 +180,7 @@ export default function AccountPage() {
       const sb = await getSupabase();
       const { data } = await sb
         .from("saved_searches")
-        .select("id,name,location,transaction,filters,alert_frequency,created_at")
+        .select("id,name,location,transaction,filters,alert_frequency,created_at,site_slug")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setSearches((data as SavedSearch[]) ?? []);
@@ -196,7 +258,7 @@ export default function AccountPage() {
   if (loading || !user) {
     return (
       <main style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
-        <p style={{ fontSize: 14, color: "#667" }}>Loading\u2026</p>
+        <p style={{ fontSize: 14, color: "#667" }}>Loading…</p>
       </main>
     );
   }
@@ -248,7 +310,7 @@ export default function AccountPage() {
                 ) : null}
               </div>
               {searches === null ? (
-                <p className="acct-empty">Loading\u2026</p>
+                <p className="acct-empty">Loading…</p>
               ) : searches.length === 0 ? (
                 <div className="acct-empty-card">
                   <p className="serif">Never miss a listing.</p>
@@ -266,29 +328,42 @@ export default function AccountPage() {
                     <div className="acct-search" key={s.id}>
                       <div className="acct-search-main">
                         <div className="acct-search-name">
-                          {s.name || s.location || "Saved search"}
+                          {s.name || locName(s.location) || "Saved search"}
                         </div>
                         <div className="acct-search-sub">
-                          {[s.location, s.transaction].filter(Boolean).join(" \u00b7 ") ||
-                            "Custom filters"}
-                          {s.alert_frequency && s.alert_frequency !== "none"
-                            ? ` \u00b7 alerts ${s.alert_frequency}`
-                            : ""}
+                          {[
+                            SITE_META[s.site_slug ?? ""]?.label && s.site_slug !== "livemodern"
+                              ? `Saved on ${SITE_META[s.site_slug ?? ""]?.label}`
+                              : null,
+                            s.transaction === "rent" ? "For Rent" : s.transaction === "sale" ? "For Sale" : null,
+                            s.alert_frequency && s.alert_frequency !== "none"
+                              ? `alerts ${s.alert_frequency}`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "Custom filters"}
                         </div>
                       </div>
                       <div className="acct-search-actions">
-                        {s.location ? (
-                          <Link className="acct-run" href={`/${s.location}`}>
-                            Run search
-                          </Link>
-                        ) : null}
+                        {(() => {
+                          const r = runHref(s);
+                          return r.external ? (
+                            <a className="acct-run" href={r.href} target="_blank" rel="noopener noreferrer">
+                              {r.label} ↗
+                            </a>
+                          ) : (
+                            <Link className="acct-run" href={r.href}>
+                              {r.label}
+                            </Link>
+                          );
+                        })()}
                         <button
                           className="acct-x"
                           onClick={() => void deleteSearch(s.id)}
                           aria-label="Remove saved search"
                           title="Remove"
                         >
-                          \u00d7
+                          ×
                         </button>
                       </div>
                     </div>
@@ -304,7 +379,7 @@ export default function AccountPage() {
                 {homes && homes.length ? <span className="acct-count">{homes.length}</span> : null}
               </div>
               {homes === null ? (
-                <p className="acct-empty">Loading\u2026</p>
+                <p className="acct-empty">Loading…</p>
               ) : homes.length === 0 ? (
                 <div className="acct-empty-card">
                   <p className="serif">Nothing saved yet.</p>
@@ -338,8 +413,8 @@ export default function AccountPage() {
                             {h.zip ? ` ${h.zip}` : ""}
                           </div>
                           <div className="acct-home-specs">
-                            {h.beds ?? "\u2014"} bd \u00b7 {h.baths ?? "\u2014"} ba \u00b7{" "}
-                            {h.sqft ? h.sqft.toLocaleString() : "\u2014"} sf
+                            {h.beds ?? "—"} bd · {h.baths ?? "—"} ba ·{" "}
+                            {h.sqft ? h.sqft.toLocaleString() : "—"} sf
                           </div>
                         </div>
                         <button
@@ -348,7 +423,7 @@ export default function AccountPage() {
                           aria-label="Remove from saved"
                           title="Remove"
                         >
-                          \u00d7
+                          ×
                         </button>
                       </div>
                     );
@@ -375,19 +450,19 @@ export default function AccountPage() {
                 <>
                   <div className="acct-row">
                     <span>Name</span>
-                    <span>{[first, last].filter(Boolean).join(" ") || "\u2014"}</span>
+                    <span>{[first, last].filter(Boolean).join(" ") || "—"}</span>
                   </div>
                   <div className="acct-row">
                     <span>Email</span>
-                    <span>{p?.email || user.email || "\u2014"}</span>
+                    <span>{p?.email || user.email || "—"}</span>
                   </div>
                   <div className="acct-row">
                     <span>Phone</span>
-                    <span>{p?.phone || "\u2014"}</span>
+                    <span>{p?.phone || "—"}</span>
                   </div>
                   <div className="acct-row">
                     <span>Looking to</span>
-                    <span>{p?.user_type || "\u2014"}</span>
+                    <span>{p?.user_type || "—"}</span>
                   </div>
                   <div className="acct-row">
                     <span>Text updates</span>
@@ -425,7 +500,7 @@ export default function AccountPage() {
                       value={draft?.user_type ?? ""}
                       onChange={(e) => setDraft((d) => (d ? { ...d, user_type: e.target.value } : d))}
                     >
-                      <option value="">\u2014</option>
+                      <option value="">—</option>
                       {LOOKING.map((o) => (
                         <option key={o} value={o}>
                           {o}
@@ -445,7 +520,7 @@ export default function AccountPage() {
                   </label>
                   <div className="acct-actions">
                     <button className="auth-btn" onClick={saveDetails} disabled={saving}>
-                      {saving ? "Saving\u2026" : "Save changes"}
+                      {saving ? "Saving…" : "Save changes"}
                     </button>
                     <button className="acct-link" onClick={() => setEditing(false)}>
                       Cancel
@@ -460,7 +535,7 @@ export default function AccountPage() {
               <p className="acct-team-eyebrow">Your team</p>
               <div className="acct-team-name serif">Modern Living Group</div>
               <p className="acct-team-copy">
-                We&rsquo;ll pair you with the right specialist for your search \u2014 developer
+                We&rsquo;ll pair you with the right specialist for your search — developer
                 previews, private tours, allocations. Call or message any time.
               </p>
               <div className="acct-team-actions">
