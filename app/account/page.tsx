@@ -65,7 +65,7 @@ type SavedSearch = {
 // property DB, so an off-site search reproduces the same listings; it just has
 // to run on the surface that can render it. LiveModern-origin searches run here.
 const SITE_META: Record<string, { label: string; origin: string; searchPath?: string }> = {
-  livemodern: { label: "LiveModern", origin: "" },
+  livemodern: { label: "LiveModern", origin: "", searchPath: "/search" },
   "mlg-site": { label: "modernlivingre.com", origin: "https://modernlivingre.com", searchPath: "/search" },
   "mlg-search": { label: "our county search", origin: "https://search.mlrecloud.com", searchPath: "/" },
   "one-city-plaza": { label: "onecityplazacondos.com", origin: "https://onecityplazacondos.com" },
@@ -93,9 +93,32 @@ function locName(loc: SavedSearch["location"]): string | null {
 function runHref(s: SavedSearch): { href: string; external: boolean; label: string } {
   const meta = SITE_META[s.site_slug ?? ""] ?? null;
 
-  // LiveModern-origin: a slug string runs locally.
-  if ((s.site_slug === "livemodern" || !s.site_slug) && typeof s.location === "string") {
+  const isLive = s.site_slug === "livemodern" || !s.site_slug;
+  // LiveModern collection-page saves store a slug string → run at that page.
+  if (isLive && typeof s.location === "string" && s.location) {
     return { href: `/${s.location}`, external: false, label: "Run search" };
+  }
+  // LiveModern full-search saves (object location / filters) → run at /search.
+  if (isLive) {
+    const p = new URLSearchParams();
+    p.set("transaction", s.transaction === "rent" ? "rent" : "sale");
+    const f = (s.filters ?? {}) as Record<string, unknown>;
+    if (f.priceMin) p.set("priceMin", String(f.priceMin));
+    if (f.priceMax) p.set("priceMax", String(f.priceMax));
+    if (f.beds && f.beds !== "Any") p.set("beds_min", String(f.beds).replace(/\D/g, ""));
+    if (f.baths && f.baths !== "Any") p.set("baths_min", String(f.baths).replace(/\D/g, ""));
+    if (f.property_subtype) p.set("property_subtype", String(f.property_subtype));
+    if (f.sqftMin) p.set("sqft_min", String(f.sqftMin));
+    if (f.yearBuiltMin) p.set("year_built_min", String(f.yearBuiltMin));
+    if (f.keywords) p.set("keywords", String(f.keywords));
+    const loc = s.location;
+    if (loc && typeof loc === "object" && loc.filter) {
+      for (const [k, v] of Object.entries(loc.filter)) {
+        if (v == null) continue;
+        p.set(k, Array.isArray(v) ? JSON.stringify(v) : String(v));
+      }
+    }
+    return { href: `/search?${p.toString()}`, external: false, label: "Run search" };
   }
   if (!meta) {
     return { href: "/collections", external: false, label: "Browse" };

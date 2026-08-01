@@ -51,6 +51,9 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
           </Link>
 
           <nav className="nav">
+            <Link href="/search" className={active === "search" ? "on" : undefined}>
+              Search
+            </Link>
             <Link href="/new-construction" className={active === "nc" ? "on" : undefined}>
               New Construction
             </Link>
@@ -63,7 +66,7 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
             <Link href="/journal" className={active === "journal" ? "on" : undefined}>
               Journal
             </Link>
-            <a href="#inquire">Contact</a>
+            <Link href="/contact">Contact</Link>
           </nav>
 
           <div className="mast-right">
@@ -108,6 +111,9 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
         <BuildingSearch items={buildings} onNavigate={() => setOpen(false)} />
 
         <nav className="drawer-nav">
+          <Link href="/search" onClick={() => setOpen(false)}>
+            Search
+          </Link>
           <Link href="/new-construction" onClick={() => setOpen(false)}>
             New Construction
           </Link>
