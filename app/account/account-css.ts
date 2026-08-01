@@ -101,3 +101,11 @@ export const ACCOUNT_CSS = `
 .acct-signout{background:none;border:1px solid var(--line);border-radius:2px;padding:12px;font:inherit;font-size:13px;letter-spacing:.04em;color:var(--muted);cursor:pointer;text-transform:uppercase}
 .acct-signout:hover{border-color:#c9ccd1;color:#333}
 `;
+
+// appended: resolved-agent card head (photo + name + title)
+export const AGENT_CSS = `
+.acct-agent-head{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.acct-agent-photo{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:top center;flex-shrink:0}
+.acct-agent-ph{display:grid;place-items:center;background:var(--navy);color:#fff;font-family:var(--font-display),Georgia,serif;font-size:18px}
+.acct-agent-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+`;

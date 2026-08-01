@@ -5,7 +5,7 @@ import Link from "next/link";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import { AUTH_CSS } from "../login/auth-css";
-import { ACCOUNT_CSS } from "./account-css";
+import { ACCOUNT_CSS, AGENT_CSS } from "./account-css";
 import { AUTH_CONFIGURED, firstNameOf, getSupabase, signOut, useUser } from "@/lib/auth";
 import { slugifyListing } from "@/lib/listing-slug";
 
@@ -39,6 +39,14 @@ type SavedHome = {
   image_urls: string[] | null;
   property_subtype: string | null;
 };
+
+type Agent = {
+  name: string;
+  title: string | null;
+  photo_url: string | null;
+  phone: string | null;
+  email: string | null;
+} | null;
 
 type LocObj = { name?: string | null; type?: string | null; filter?: Record<string, unknown> | null };
 type SavedSearch = {
@@ -122,6 +130,7 @@ function money(v: number | null): string {
 export default function AccountPage() {
   const { user, loading } = useUser();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [agent, setAgent] = useState<Agent>(null);
   const [homes, setHomes] = useState<SavedHome[] | null>(null);
   const [searches, setSearches] = useState<SavedSearch[] | null>(null);
 
@@ -134,16 +143,33 @@ export default function AccountPage() {
     if (!loading && !user) window.location.replace("/login");
   }, [loading, user]);
 
+  // Profile + assigned agent resolve behind contacts/agents RLS, so we read them
+  // through the service-role route with the session token — same data mlg-site
+  // pulls, so LiveModern shows the same details and the same agent (e.g. Mariah).
+  const authedFetch = useCallback(async (init?: RequestInit) => {
+    const sb = await getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const token = session?.access_token;
+    return fetch("/api/me/account", {
+      ...init,
+      headers: { ...(init?.headers ?? {}), Authorization: `Bearer ${token ?? ""}` },
+    });
+  }, []);
+
   const loadProfile = useCallback(async () => {
     if (!user || !AUTH_CONFIGURED) return;
-    const sb = await getSupabase();
-    const { data } = await sb
-      .from("registrations")
-      .select("first_name,last_name,email,phone,user_type,sms_consent")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    setProfile((data as Profile) ?? null);
-  }, [user]);
+    try {
+      const res = await authedFetch();
+      if (!res.ok) return;
+      const data = (await res.json()) as { profile: Profile | null; agent: Agent };
+      setProfile(data.profile ?? null);
+      setAgent(data.agent ?? null);
+    } catch {
+      /* leave nulls */
+    }
+  }, [user, authedFetch]);
 
   useEffect(() => {
     void loadProfile();
@@ -220,19 +246,22 @@ export default function AccountPage() {
     if (!user || !draft) return;
     setSaving(true);
     try {
-      const sb = await getSupabase();
-      await sb
-        .from("registrations")
-        .update({
+      await authedFetch({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "profile",
           first_name: draft.first_name,
           last_name: draft.last_name,
           phone: draft.phone,
           user_type: draft.user_type,
           sms_consent: draft.sms_consent ?? false,
-        })
-        .eq("user_id", user.id);
-      // Keep the hero greeting (Auth metadata) in step with the edit.
+        }),
+      });
+      // Reflect the name in Auth metadata client-side too, so the hero greeting
+      // updates without a reload (fires USER_UPDATED for useUser()).
       try {
+        const sb = await getSupabase();
         await sb.auth.updateUser({
           data: { first_name: draft.first_name, last_name: draft.last_name || null },
         });
@@ -272,7 +301,7 @@ export default function AccountPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: AUTH_CSS + ACCOUNT_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: AUTH_CSS + ACCOUNT_CSS + AGENT_CSS }} />
       <Masthead />
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
@@ -530,22 +559,64 @@ export default function AccountPage() {
               )}
             </div>
 
-            {/* Your team */}
+            {/* Your agent (resolved from the CRM) — falls back to the house card */}
             <div className="acct-card acct-team">
-              <p className="acct-team-eyebrow">Your team</p>
-              <div className="acct-team-name serif">Modern Living Group</div>
-              <p className="acct-team-copy">
-                We&rsquo;ll pair you with the right specialist for your search — developer
-                previews, private tours, allocations. Call or message any time.
-              </p>
-              <div className="acct-team-actions">
-                <a className="auth-btn acct-team-call" href="tel:5612288420">
-                  Call 561 228 8420
-                </a>
-                <Link className="acct-link" href="/contact">
-                  Message us &rarr;
-                </Link>
-              </div>
+              {agent ? (
+                <>
+                  <p className="acct-team-eyebrow">Your specialist</p>
+                  <div className="acct-agent-head">
+                    {agent.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="acct-agent-photo" src={agent.photo_url} alt={agent.name} />
+                    ) : (
+                      <div className="acct-agent-photo acct-agent-ph" aria-hidden="true">
+                        {agent.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      </div>
+                    )}
+                    <div>
+                      <div className="acct-team-name serif">{agent.name}</div>
+                      {agent.title ? <div className="acct-agent-title">{agent.title}</div> : null}
+                    </div>
+                  </div>
+                  <p className="acct-team-copy">
+                    Your personal specialist at Modern Living — developer previews, private tours,
+                    allocations. Reach out any time.
+                  </p>
+                  <div className="acct-team-actions">
+                    {agent.phone ? (
+                      <a className="auth-btn acct-team-call" href={`tel:${agent.phone.replace(/[^\d+]/g, "")}`}>
+                        Call {agent.name.split(" ")[0]}
+                      </a>
+                    ) : null}
+                    {agent.email ? (
+                      <a className="acct-link" href={`mailto:${agent.email}`}>
+                        Email {agent.name.split(" ")[0]} &rarr;
+                      </a>
+                    ) : (
+                      <Link className="acct-link" href="/contact">
+                        Message us &rarr;
+                      </Link>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="acct-team-eyebrow">Your team</p>
+                  <div className="acct-team-name serif">Modern Living Group</div>
+                  <p className="acct-team-copy">
+                    We&rsquo;ll pair you with the right specialist for your search — developer
+                    previews, private tours, allocations. Call or message any time.
+                  </p>
+                  <div className="acct-team-actions">
+                    <a className="auth-btn acct-team-call" href="tel:5612288420">
+                      Call 561 228 8420
+                    </a>
+                    <Link className="acct-link" href="/contact">
+                      Message us &rarr;
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
 
             <button
