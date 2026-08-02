@@ -52,12 +52,25 @@ export function rememberReturnTo(explicit?: string): string | null {
   if (typeof window === "undefined") return null;
   const path = safePath(explicit ?? window.location.pathname + window.location.search);
   try {
+    // Only ever SET a valid destination — never wipe an existing one. This is
+    // the crux of the save→login→return flow: when Google sign-in is triggered
+    // from /login (an unusable path → null), the listing we stashed earlier must
+    // survive rather than being cleared.
     if (path) window.localStorage.setItem(RETURN_KEY, path);
-    else window.localStorage.removeItem(RETURN_KEY);
   } catch {
     /* private mode */
   }
-  return path;
+  return path ?? peekReturnTo();
+}
+
+/** Read the stored destination WITHOUT clearing it. */
+export function peekReturnTo(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return safePath(window.localStorage.getItem(RETURN_KEY));
+  } catch {
+    return null;
+  }
 }
 
 /** Read + clear the stored destination. */
@@ -346,7 +359,7 @@ export async function signIn(email: string, password: string): Promise<{ error?:
 export async function sendMagicLink(email: string): Promise<{ error?: AuthError }> {
   if (!AUTH_CONFIGURED) return { error: { code: "unconfigured", message: "Accounts aren't available yet." } };
   const sb = await getSupabase();
-  const next = rememberReturnTo();
+  const next = peekReturnTo();
   const cb = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { error } = await sb.auth.signInWithOtp({
     email,
@@ -359,7 +372,7 @@ export async function sendMagicLink(email: string): Promise<{ error?: AuthError 
 export async function signInWithGoogle(): Promise<{ error?: AuthError }> {
   if (!AUTH_CONFIGURED) return { error: { code: "unconfigured", message: "Accounts aren't available yet." } };
   const sb = await getSupabase();
-  const next = rememberReturnTo();
+  const next = peekReturnTo();
   const cb = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { error } = await sb.auth.signInWithOAuth({
     provider: "google",

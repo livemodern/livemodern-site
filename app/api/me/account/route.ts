@@ -103,6 +103,34 @@ async function resolveAgent(email: string | null): Promise<Agent | null> {
   return agent ?? houseDefault();
 }
 
+// Saved homes resolve behind the properties table, which the consumer anon
+// client can't read on LiveModern (listings are fetched server-side with the
+// service role) — so the account page never saw them. Resolve here instead.
+async function loadSavedHomes(userId: string) {
+  const slRes = await sb(
+    `saved_listings?user_id=eq.${userId}&select=mls_id,saved_at&order=saved_at.desc`,
+  );
+  if (!slRes.ok) return [];
+  const saved = (await slRes.json()) as Array<{ mls_id: string; saved_at: string | null }>;
+  const ids = saved.map((r) => r.mls_id).filter(Boolean);
+  if (ids.length === 0) return [];
+  const inList = ids.map((id) => `"${id}"`).join(",");
+  const pRes = await sb(
+    `properties?mls_id=in.(${inList})&select=mls_id,street_address,unit_number,city,state,zip,list_price,beds,baths,sqft,image_urls,property_subtype`,
+  );
+  if (!pRes.ok) return [];
+  const props = (await pRes.json()) as Array<Record<string, unknown>>;
+  const byId = new Map(props.map((pr) => [String(pr.mls_id), pr]));
+  // Preserve saved-at order; trim photos to keep the payload light.
+  return saved
+    .map((r) => byId.get(String(r.mls_id)))
+    .filter(Boolean)
+    .map((pr) => {
+      const o = pr as Record<string, unknown>;
+      return { ...o, image_urls: ((o.image_urls as string[]) ?? []).slice(0, 3) };
+    });
+}
+
 async function loadRegistration(userId: string) {
   const res = await sb(
     `registrations?user_id=eq.${userId}&select=first_name,last_name,phone,user_type,sms_consent,created_at,email&limit=1`,
@@ -149,9 +177,13 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const reg = (await loadRegistration(user.id)) as Record<string, unknown> | null;
-  const agent = await resolveAgent(user.email ?? (reg?.email as string) ?? null);
+  const [agent, homes] = await Promise.all([
+    resolveAgent(user.email ?? (reg?.email as string) ?? null),
+    loadSavedHomes(user.id),
+  ]);
 
   return NextResponse.json({
+    homes,
     profile: {
       first_name: (reg?.first_name as string) ?? null,
       last_name: (reg?.last_name as string) ?? null,

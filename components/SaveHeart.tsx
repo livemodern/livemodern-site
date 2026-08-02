@@ -27,7 +27,32 @@ export default function SaveHeart({ mlsId }: { mlsId: string }) {
         .eq("user_id", user.id)
         .eq("mls_id", mlsId)
         .maybeSingle();
-      if (alive) setSaved(Boolean(data));
+      if (!alive) return;
+      const already = Boolean(data);
+      // If the visitor tapped save while logged out, they were sent to login and
+      // back here — finish the save now, automatically.
+      let pending = false;
+      try {
+        pending = window.localStorage.getItem("lm-pending-save") === mlsId;
+      } catch {
+        /* ignore */
+      }
+      if (pending) {
+        try {
+          window.localStorage.removeItem("lm-pending-save");
+        } catch {
+          /* ignore */
+        }
+        if (!already) {
+          await sb.from("saved_listings").upsert(
+            { user_id: user.id, mls_id: mlsId, site_slug: "livemodern" },
+            { onConflict: "user_id,mls_id", ignoreDuplicates: true },
+          );
+        }
+        setSaved(true);
+        return;
+      }
+      setSaved(already);
     })();
     return () => {
       alive = false;
@@ -38,6 +63,11 @@ export default function SaveHeart({ mlsId }: { mlsId: string }) {
     if (loading || busy) return;
     if (!user) {
       rememberReturnTo();
+      try {
+        window.localStorage.setItem("lm-pending-save", mlsId);
+      } catch {
+        /* private mode */
+      }
       window.location.assign(
         `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
       );

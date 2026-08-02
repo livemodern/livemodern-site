@@ -201,27 +201,21 @@ export default function AccountPage() {
   useEffect(() => {
     if (!user || !AUTH_CONFIGURED) return;
     void (async () => {
-      const sb = await getSupabase();
-      const { data: rows } = await sb
-        .from("saved_listings")
-        .select("mls_id,saved_at")
-        .eq("user_id", user.id)
-        .order("saved_at", { ascending: false });
-      const ids = (rows ?? []).map((r: { mls_id: string }) => r.mls_id);
-      if (ids.length === 0) {
+      // Homes come from the service route — the anon client can't read the
+      // properties table on LiveModern, so a direct join returned nothing.
+      try {
+        const res = await authedFetch();
+        if (!res.ok) {
+          setHomes([]);
+          return;
+        }
+        const data = (await res.json()) as { homes?: SavedHome[] };
+        setHomes(data.homes ?? []);
+      } catch {
         setHomes([]);
-        return;
       }
-      const { data: props } = await sb
-        .from("properties")
-        .select(
-          "mls_id,street_address,unit_number,city,state,zip,list_price,beds,baths,sqft,image_urls,property_subtype",
-        )
-        .in("mls_id", ids);
-      const byId = new Map((props ?? []).map((pr: SavedHome) => [String(pr.mls_id), pr]));
-      setHomes(ids.map((id) => byId.get(String(id))).filter(Boolean) as SavedHome[]);
     })();
-  }, [user]);
+  }, [user, authedFetch]);
 
   useEffect(() => {
     if (!user || !AUTH_CONFIGURED) return;
