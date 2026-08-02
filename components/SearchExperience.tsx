@@ -78,7 +78,11 @@ export default function SearchExperience() {
   const [baths, setBaths] = useState("");
   const [subtype, setSubtype] = useState("");
   const [sqftMin, setSqftMin] = useState("");
+  const [sqftMax, setSqftMax] = useState("");
   const [yearMin, setYearMin] = useState("");
+  const [yearMax, setYearMax] = useState("");
+  const [hoaMax, setHoaMax] = useState("");
+  const [status, setStatus] = useState("OnMarket");
   const [keywords, setKeywords] = useState("");
   const [sort, setSort] = useState("dom_asc");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -102,26 +106,57 @@ export default function SearchExperience() {
   useEffect(() => {
     if (hydrated.current) return;
     hydrated.current = true;
-    const sp = new URLSearchParams(window.location.search);
-    if (sp.get("transaction") === "rent") setTransaction("rent");
-    if (sp.get("priceMin")) setPriceMin(Number(sp.get("priceMin")));
-    if (sp.get("priceMax")) setPriceMax(Number(sp.get("priceMax")));
-    if (sp.get("beds_min")) setBeds(sp.get("beds_min")!);
-    if (sp.get("baths_min")) setBaths(sp.get("baths_min")!);
-    if (sp.get("property_subtype")) setSubtype(sp.get("property_subtype")!);
-    if (sp.get("sqft_min")) setSqftMin(sp.get("sqft_min")!);
-    if (sp.get("year_built_min")) setYearMin(sp.get("year_built_min")!);
-    if (sp.get("keywords")) setKeywords(sp.get("keywords")!);
-    if (sp.get("sort")) setSort(sp.get("sort")!);
-    // Location: reconstruct from named filter params.
-    const city = sp.get("city");
-    const zip = sp.get("zip");
-    const bld = sp.get("building_name");
-    const sub = sp.get("subdivision_like");
-    if (bld) setLoc({ name: bld, type: "building", filter: { building_name: bld } });
-    else if (city) setLoc({ name: city, type: "city", filter: { city } });
-    else if (zip) setLoc({ name: zip, type: "zip", filter: { zip } });
-    else if (sub) setLoc({ name: sub.replace(/%/g, ""), type: "community", filter: { subdivision_like: sub } });
+    // Prefer the URL (a shared/saved link); otherwise restore the last search
+    // from sessionStorage so returning to /search keeps your filters (MLG parity).
+    const hasUrl = window.location.search.replace(/^\?/, "").length > 0;
+    if (hasUrl) {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("transaction") === "rent") setTransaction("rent");
+      if (sp.get("status")) setStatus(sp.get("status")!);
+      if (sp.get("priceMin")) setPriceMin(Number(sp.get("priceMin")));
+      if (sp.get("priceMax")) setPriceMax(Number(sp.get("priceMax")));
+      if (sp.get("beds_min")) setBeds(sp.get("beds_min")!);
+      if (sp.get("baths_min")) setBaths(sp.get("baths_min")!);
+      if (sp.get("property_subtype")) setSubtype(sp.get("property_subtype")!);
+      if (sp.get("sqft_min")) setSqftMin(sp.get("sqft_min")!);
+      if (sp.get("sqft_max")) setSqftMax(sp.get("sqft_max")!);
+      if (sp.get("year_built_min")) setYearMin(sp.get("year_built_min")!);
+      if (sp.get("year_built_max")) setYearMax(sp.get("year_built_max")!);
+      if (sp.get("hoa_max")) setHoaMax(sp.get("hoa_max")!);
+      if (sp.get("keywords")) setKeywords(sp.get("keywords")!);
+      if (sp.get("sort")) setSort(sp.get("sort")!);
+      const city = sp.get("city");
+      const zip = sp.get("zip");
+      const bld = sp.get("building_name");
+      const sub = sp.get("subdivision_like");
+      if (bld) setLoc({ name: bld, type: "building", filter: { building_name: bld } });
+      else if (city) setLoc({ name: city, type: "city", filter: { city } });
+      else if (zip) setLoc({ name: zip, type: "zip", filter: { zip } });
+      else if (sub) setLoc({ name: sub.replace(/%/g, ""), type: "community", filter: { subdivision_like: sub } });
+    } else {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem("livemodern_search") || "null");
+        if (saved && typeof saved === "object") {
+          if (saved.transaction) setTransaction(saved.transaction);
+          if (saved.status) setStatus(saved.status);
+          if (saved.priceMin) setPriceMin(Number(saved.priceMin));
+          if (saved.priceMax) setPriceMax(Number(saved.priceMax));
+          if (saved.beds) setBeds(saved.beds);
+          if (saved.baths) setBaths(saved.baths);
+          if (saved.subtype) setSubtype(saved.subtype);
+          if (saved.sqftMin) setSqftMin(saved.sqftMin);
+          if (saved.sqftMax) setSqftMax(saved.sqftMax);
+          if (saved.yearMin) setYearMin(saved.yearMin);
+          if (saved.yearMax) setYearMax(saved.yearMax);
+          if (saved.hoaMax) setHoaMax(saved.hoaMax);
+          if (saved.keywords) setKeywords(saved.keywords);
+          if (saved.sort) setSort(saved.sort);
+          if (saved.loc) setLoc(saved.loc);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     setReady(true);
   }, []);
   const [ready, setReady] = useState(false);
@@ -130,14 +165,17 @@ export default function SearchExperience() {
   const params = useMemo(() => {
     const p = new URLSearchParams();
     p.set("transaction", transaction);
-    p.set("status", "OnMarket");
+    p.set("status", status);
     if (priceMin) p.set("priceMin", String(priceMin));
     if (priceMax) p.set("priceMax", String(priceMax));
     if (beds) p.set("beds_min", beds);
     if (baths) p.set("baths_min", baths);
     if (subtype) p.set("property_subtype", subtype);
     if (sqftMin) p.set("sqft_min", sqftMin);
+    if (sqftMax) p.set("sqft_max", sqftMax);
     if (yearMin) p.set("year_built_min", yearMin);
+    if (yearMax) p.set("year_built_max", yearMax);
+    if (hoaMax) p.set("hoa_max", hoaMax);
     if (keywords.trim()) p.set("keywords", keywords.trim());
     if (sort) p.set("sort", sort);
     if (bounds) p.set("bounds", bounds);
@@ -148,7 +186,7 @@ export default function SearchExperience() {
       }
     }
     return p;
-  }, [transaction, priceMin, priceMax, beds, baths, subtype, sqftMin, yearMin, keywords, sort, loc, bounds]);
+  }, [transaction, status, priceMin, priceMax, beds, baths, subtype, sqftMin, sqftMax, yearMin, yearMax, hoaMax, keywords, sort, loc, bounds]);
 
   // Reflect state into the URL (shareable + what a saved search captures).
   useEffect(() => {
@@ -156,7 +194,16 @@ export default function SearchExperience() {
     const url = `/search?${params.toString()}`;
     window.history.replaceState(null, "", url);
     setSavedSearch(false); // filters changed → allow re-save
-  }, [params, ready]);
+    // Persist the full state so returning to /search restores it (MLG parity).
+    try {
+      sessionStorage.setItem(
+        "livemodern_search",
+        JSON.stringify({ transaction, status, priceMin, priceMax, beds, baths, subtype, sqftMin, sqftMax, yearMin, yearMax, hoaMax, keywords, sort, loc }),
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [params, ready, transaction, status, priceMin, priceMax, beds, baths, subtype, sqftMin, sqftMax, yearMin, yearMax, hoaMax, keywords, sort, loc]);
 
   // Fetch results whenever filters change.
   const run = useCallback(
@@ -301,7 +348,7 @@ export default function SearchExperience() {
     <>
       {/* ── Filter bar ─────────────────────────────────────────────── */}
       <div className="srch-bar">
-        <div className="srch-bar-in wrap">
+        <div className="srch-bar-in">
           <div className="srch-toggle">
             <button className={transaction === "sale" ? "on" : ""} onClick={() => setTransaction("sale")}>
               For Sale
@@ -379,7 +426,7 @@ export default function SearchExperience() {
         </div>
 
         {moreOpen ? (
-          <div className="srch-more-panel wrap">
+          <div className="srch-more-panel">
             <label>
               <span>Baths</span>
               <select value={baths} onChange={(e) => setBaths(e.target.value)}>
@@ -391,12 +438,35 @@ export default function SearchExperience() {
               </select>
             </label>
             <label>
+              <span>Status</span>
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="OnMarket">On market</option>
+                <option value="Active">Active only</option>
+                <option value="ComingSoon">Coming soon</option>
+                <option value="Pending">Under contract</option>
+                <option value="Closed">Sold</option>
+                <option value="All">All</option>
+              </select>
+            </label>
+            <label>
               <span>Min sq ft</span>
               <input inputMode="numeric" value={sqftMin} onChange={(e) => setSqftMin(e.target.value.replace(/\D/g, ""))} placeholder="Any" />
             </label>
             <label>
+              <span>Max sq ft</span>
+              <input inputMode="numeric" value={sqftMax} onChange={(e) => setSqftMax(e.target.value.replace(/\D/g, ""))} placeholder="Any" />
+            </label>
+            <label>
               <span>Built after</span>
               <input inputMode="numeric" value={yearMin} onChange={(e) => setYearMin(e.target.value.replace(/\D/g, ""))} placeholder="Any" />
+            </label>
+            <label>
+              <span>Built before</span>
+              <input inputMode="numeric" value={yearMax} onChange={(e) => setYearMax(e.target.value.replace(/\D/g, ""))} placeholder="Any" />
+            </label>
+            <label>
+              <span>Max HOA / mo</span>
+              <input inputMode="numeric" value={hoaMax} onChange={(e) => setHoaMax(e.target.value.replace(/\D/g, ""))} placeholder="Any" />
             </label>
             <label className="srch-kw">
               <span>Keywords</span>
@@ -406,33 +476,32 @@ export default function SearchExperience() {
         ) : null}
       </div>
 
-      {/* ── Results header ─────────────────────────────────────────── */}
-      <div className="wrap srch-head">
-        <p className="srch-count">
-          {loading && !rows ? "Searching…" : `${count.toLocaleString()} ${transaction === "rent" ? "rentals" : "homes"}`}
-          {loc ? <> in <strong>{loc.name}</strong></> : " across South Florida"}
-        </p>
-        <div className="srch-head-right">
-          <button className={`srch-save${savedSearch ? " is-saved" : ""}`} onClick={saveSearch}>
-            {savedSearch ? "Search saved ✓" : "Save this search"}
-          </button>
-          <select className="srch-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
-            {SORTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* ── Split: results (left) + map (right) ───────────────────── */}
-      <div className={`srch-split${HAS_MAP ? "" : " no-map"} mv-${mobileView}`}>
+      {/* ── Body: results (left, scrolls) + map (right, pinned) ───── */}
+      <div className={`srch-body${HAS_MAP ? "" : " no-map"} mv-${mobileView}`}>
         <div className="srch-results">
+          <div className="srch-results-head">
+            <p className="srch-count">
+              {loading && !rows ? "Searching…" : `${count.toLocaleString()} ${transaction === "rent" ? "rentals" : "homes"}`}
+              {loc ? <> in <strong>{loc.name}</strong></> : " · South Florida"}
+            </p>
+            <div className="srch-head-right">
+              <button className={`srch-save${savedSearch ? " is-saved" : ""}`} onClick={saveSearch}>
+                {savedSearch ? "Saved ✓" : "Save search"}
+              </button>
+              <select className="srch-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
+                {SORTS.map((so) => (
+                  <option key={so.value} value={so.value}>
+                    {so.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="srch-scroll">
         {rows === null ? (
-          <p className="srch-empty wrap">Loading…</p>
+          <p className="srch-empty">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="srch-empty wrap">Nothing matches those filters — try widening the price or beds.</p>
+          <p className="srch-empty">Nothing matches those filters — try widening the price or beds.</p>
         ) : (
           <>
             <div className="srch-grid">
@@ -499,6 +568,7 @@ export default function SearchExperience() {
             ) : null}
           </>
         )}
+          </div>
         </div>
 
         {HAS_MAP ? (
