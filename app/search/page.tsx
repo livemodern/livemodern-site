@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import SearchExperience from "@/components/SearchExperience";
-import { SEARCH_CSS } from "./search-css";
+import { SEARCH_CSS, SEARCH_MAP_CSS } from "./search-css";
 
 export const metadata: Metadata = {
   title: "Search — LiveModern",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function SearchPage() {
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: SEARCH_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: SEARCH_CSS + SEARCH_MAP_CSS }} />
       <Masthead active="search" />
       <div className="srch-top wrap">
         <p className="eyebrow">Search</p>

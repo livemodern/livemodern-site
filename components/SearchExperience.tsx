@@ -1,9 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { mls, mlsSrcSet, money } from "@/lib/listings";
 import { listingHref } from "@/lib/listing-slug";
 import { AUTH_CONFIGURED, getSupabase, rememberReturnTo, useUser } from "@/lib/auth";
+import type { MapPoint } from "@/components/SearchMap";
+
+// Map is client-only (mapbox-gl touches window); ssr:false keeps it out of the
+// server render. If the token is unset the component renders null and the
+// layout falls back to full-width results.
+const SearchMap = dynamic(() => import("@/components/SearchMap"), { ssr: false });
+const HAS_MAP = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 
 // The county-wide search, LiveModern skin. Location autocomplete + full filter
 // set feed the shared /api/search engine; results render as LiveModern cards.
@@ -25,6 +33,8 @@ type Row = {
   zip: string | null;
   image_urls: string[] | null;
   year_built: number | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type Suggestion = { type: string; name: string; count: number; filter: Record<string, unknown> };
@@ -79,6 +89,11 @@ export default function SearchExperience() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [savedSearch, setSavedSearch] = useState(false);
+  // map state
+  const [bounds, setBounds] = useState<string | null>(null);
+  const [fitToken, setFitToken] = useState(0);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
   const hydrated = useRef(false);
   const PAGE = 60;
@@ -125,6 +140,7 @@ export default function SearchExperience() {
     if (yearMin) p.set("year_built_min", yearMin);
     if (keywords.trim()) p.set("keywords", keywords.trim());
     if (sort) p.set("sort", sort);
+    if (bounds) p.set("bounds", bounds);
     if (loc?.filter) {
       for (const [k, v] of Object.entries(loc.filter)) {
         if (v == null) continue;
@@ -132,7 +148,7 @@ export default function SearchExperience() {
       }
     }
     return p;
-  }, [transaction, priceMin, priceMax, beds, baths, subtype, sqftMin, yearMin, keywords, sort, loc]);
+  }, [transaction, priceMin, priceMax, beds, baths, subtype, sqftMin, yearMin, keywords, sort, loc, bounds]);
 
   // Reflect state into the URL (shareable + what a saved search captures).
   useEffect(() => {
@@ -196,6 +212,32 @@ export default function SearchExperience() {
     setQ("");
     setSuggestions([]);
     setShowSug(false);
+    // Load the full set for this place first (drop stale viewport bounds), then
+    // the map flies to fit it and its own bounds take over from there.
+    setBounds(null);
+    setFitToken((t) => t + 1);
+  }
+
+  // Map moved: refine to the viewport. A user pan/zoom over a city/zip chip
+  // turns the search into a free map-area search (clear that chip); a building
+  // or community chip is an explicit "show all of X", so it's kept (the server
+  // ignores bounds for those anyway).
+  const handleBounds = useCallback(
+    (b: string, userMove: boolean) => {
+      setBounds(b);
+      if (userMove) {
+        setLoc((cur) => (cur && (cur.type === "city" || cur.type === "zip") ? null : cur));
+      }
+    },
+    [],
+  );
+
+  function focusCard(id: string) {
+    setActiveId(id);
+    setMobileView("list");
+    requestAnimationFrame(() => {
+      document.getElementById(`card-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function clearLocation() {
@@ -204,6 +246,17 @@ export default function SearchExperience() {
   }
 
   const prices = transaction === "rent" ? PRICES_RENT : PRICES_SALE;
+
+  const mapPoints: MapPoint[] = useMemo(
+    () =>
+      (rows ?? []).map((l) => ({
+        mls_id: l.mls_id,
+        latitude: l.latitude,
+        longitude: l.longitude,
+        list_price: l.list_price,
+      })),
+    [rows],
+  );
 
   async function saveSearch() {
     if (!AUTH_CONFIGURED) return;
@@ -370,12 +423,13 @@ export default function SearchExperience() {
         </div>
       </div>
 
-      {/* ── Results grid ───────────────────────────────────────────── */}
-      <div className="wrap">
+      {/* ── Split: results (left) + map (right) ───────────────────── */}
+      <div className={`srch-split${HAS_MAP ? "" : " no-map"} mv-${mobileView}`}>
+        <div className="srch-results">
         {rows === null ? (
-          <p className="srch-empty">Loading…</p>
+          <p className="srch-empty wrap">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="srch-empty">Nothing matches those filters — try widening the price or beds.</p>
+          <p className="srch-empty wrap">Nothing matches those filters — try widening the price or beds.</p>
         ) : (
           <>
             <div className="srch-grid">
@@ -383,7 +437,13 @@ export default function SearchExperience() {
                 const photo = (l.image_urls ?? [])[0];
                 const isCondo = l.property_subtype === "Condominium" || l.property_subtype === "Apartment";
                 return (
-                  <a className="srch-card" key={l.mls_id} href={listingHref(l)}>
+                  <a
+                    className={`srch-card${activeId === l.mls_id ? " is-active" : ""}`}
+                    id={`card-${l.mls_id}`}
+                    key={l.mls_id}
+                    href={listingHref(l)}
+                    onMouseEnter={() => setActiveId(l.mls_id)}
+                  >
                     <div className="srch-card-im">
                       {photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -431,7 +491,29 @@ export default function SearchExperience() {
             ) : null}
           </>
         )}
+        </div>
+
+        {HAS_MAP ? (
+          <div className="srch-map">
+            <SearchMap
+              points={mapPoints}
+              fitToken={fitToken}
+              activeId={activeId}
+              onBounds={handleBounds}
+              onMarkerClick={focusCard}
+            />
+          </div>
+        ) : null}
       </div>
+
+      {HAS_MAP ? (
+        <button
+          className="srch-mobile-toggle"
+          onClick={() => setMobileView((v) => (v === "list" ? "map" : "list"))}
+        >
+          {mobileView === "list" ? "Map" : "List"}
+        </button>
+      ) : null}
     </>
   );
 }

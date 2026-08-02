@@ -66,3 +66,37 @@ export const SEARCH_CSS = `
 .srch-loadmore:hover{background:var(--navy);color:#fff}
 .srch-loadmore:disabled{opacity:.5;cursor:default}
 `;
+
+// appended: split map/results layout, markers, mobile toggle
+export const SEARCH_MAP_CSS = `
+.srch-split{display:flex;align-items:flex-start;gap:0;max-width:1640px;margin:0 auto}
+.srch-results{flex:1 1 56%;min-width:0;padding:0 var(--pad) 48px}
+.srch-split.no-map .srch-results{flex-basis:100%}
+.srch-map{flex:0 0 44%;position:sticky;top:66px;height:calc(100vh - 66px);align-self:flex-start;background:#eef0f2}
+.srch-map-canvas{width:100%;height:100%}
+.srch-split.no-map .srch-map{display:none}
+/* narrower results column → 2-up cards, 3-up only when very wide */
+.srch-split .srch-grid{grid-template-columns:1fr 1fr}
+@media(min-width:1400px){.srch-split .srch-grid{grid-template-columns:1fr 1fr 1fr}}
+.srch-split.no-map .srch-grid{grid-template-columns:1fr 1fr 1fr}
+
+.srch-card.is-active{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+
+/* price-pill markers */
+.srch-mk{background:var(--navy);color:#fff;font-family:system-ui,sans-serif;font-weight:600;font-size:12px;line-height:1;padding:5px 9px;border-radius:999px;border:1.5px solid #fff;box-shadow:0 2px 8px rgba(13,23,59,.35);cursor:pointer;white-space:nowrap}
+.srch-mk:hover,.srch-mk-on{background:var(--accent);color:#08202a;z-index:6}
+.mapboxgl-ctrl-group{border-radius:2px;box-shadow:0 1px 6px rgba(13,23,59,.18)}
+
+/* mobile: stack + list/map toggle */
+.srch-mobile-toggle{display:none}
+@media(max-width:959px){
+  .srch-split{display:block}
+  .srch-results{flex-basis:auto;padding-bottom:96px}
+  .srch-map{position:fixed;left:0;right:0;top:110px;bottom:0;height:auto;z-index:30;display:none}
+  .srch-split.mv-map .srch-map{display:block}
+  .srch-split.mv-map .srch-results{display:none}
+  .srch-split .srch-grid{grid-template-columns:1fr}
+  .srch-mobile-toggle{display:inline-flex;align-items:center;gap:8px;position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:60;background:var(--navy);color:#fff;border:none;border-radius:999px;padding:12px 26px;font:inherit;font-size:14px;letter-spacing:.04em;box-shadow:0 6px 22px rgba(13,23,59,.4);cursor:pointer}
+}
+@media(min-width:560px) and (max-width:959px){.srch-split .srch-grid{grid-template-columns:1fr 1fr}}
+`;

@@ -9,11 +9,15 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL ?? "https://ezcikavnfchqaenweygw.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
-  { auth: { persistSession: false } },
-);
+// Lazy: creating the client at module scope throws at build time ("supabaseKey
+// is required") during page-data collection when the key isn't a build env.
+function getClient() {
+  return createClient(
+    process.env.SUPABASE_URL ?? "https://ezcikavnfchqaenweygw.supabase.co",
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    { auth: { persistSession: false } },
+  );
+}
 
 const TYPE_RANK: Record<string, number> = { address: 0, building: 1, community: 2, city: 3, zip: 4 };
 
@@ -42,6 +46,7 @@ export async function GET(req: NextRequest) {
   if (!q || q.length < 2) return NextResponse.json({ results: [] });
 
   const search = q.toLowerCase();
+  const supabase = getClient();
 
   const [{ data: priority }, { data: communities }] = await Promise.all([
     supabase
