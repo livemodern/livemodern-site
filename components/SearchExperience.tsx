@@ -182,7 +182,10 @@ export default function SearchExperience() {
 
   useEffect(() => {
     if (!ready) return;
-    void run(0, false);
+    // Debounce: map pan/zoom changes `bounds` rapidly; without this every frame
+    // of a drag would refetch and swap the list out, which reads as scroll jank.
+    const t = setTimeout(() => void run(0, false), 320);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, ready]);
 
@@ -436,6 +439,8 @@ export default function SearchExperience() {
               {rows.map((l) => {
                 const photo = (l.image_urls ?? [])[0];
                 const isCondo = l.property_subtype === "Condominium" || l.property_subtype === "Apartment";
+                const full = l.street_address ?? "";
+                const includesCity = Boolean(l.city && full.toLowerCase().includes(l.city.toLowerCase()));
                 return (
                   <a
                     className={`srch-card${activeId === l.mls_id ? " is-active" : ""}`}
@@ -464,13 +469,16 @@ export default function SearchExperience() {
                         {transaction === "rent" ? <span className="srch-mo">/mo</span> : null}
                       </div>
                       <div className="srch-card-a">
-                        {l.street_address}
-                        {isCondo && l.unit_number ? ` ${l.unit_number}` : ""}
+                        {includesCity
+                          ? full
+                          : `${full}${isCondo && l.unit_number ? ` #${l.unit_number}` : ""}`}
                       </div>
-                      <div className="srch-card-sub">
-                        {[l.city, l.state].filter(Boolean).join(", ")}
-                        {l.zip ? ` ${l.zip}` : ""}
-                      </div>
+                      {includesCity ? null : (
+                        <div className="srch-card-sub">
+                          {[l.city, l.state].filter(Boolean).join(", ")}
+                          {l.zip ? ` ${l.zip}` : ""}
+                        </div>
+                      )}
                       <div className="srch-card-s">
                         <span>{l.beds ?? "—"} bd</span>
                         <span>{l.baths ?? "—"} ba</span>

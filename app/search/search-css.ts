@@ -76,8 +76,10 @@ export const SEARCH_MAP_CSS = `
 .srch-map-canvas{width:100%;height:100%}
 .srch-split.no-map .srch-map{display:none}
 /* narrower results column → 2-up cards, 3-up only when very wide */
+/* In split (map) mode, keep results to 2 columns so cards stay large and the
+   third never gets cramped/cut under the map. 3-up only when the map is off. */
 .srch-split .srch-grid{grid-template-columns:1fr 1fr}
-@media(min-width:1400px){.srch-split .srch-grid{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:1100px){.srch-split .srch-grid{grid-template-columns:1fr}}
 .srch-split.no-map .srch-grid{grid-template-columns:1fr 1fr 1fr}
 
 .srch-card.is-active{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
