@@ -45,10 +45,9 @@ const SUBTYPES: { label: string; value: string }[] = [
   { label: "Condo", value: "Condominium,Apartment" },
   { label: "House", value: "SingleFamilyResidence,Villa" },
   { label: "Townhouse", value: "Townhouse" },
-  { label: "Land", value: "UnimprovedLand,Agriculture" },
 ];
-const PRICES_SALE = [0, 500_000, 1_000_000, 2_000_000, 3_000_000, 5_000_000, 10_000_000, 20_000_000];
-const PRICES_RENT = [0, 2_000, 3_500, 5_000, 7_500, 10_000, 20_000, 50_000];
+const PRICES_SALE = [0, 1_000_000, 2_000_000, 3_000_000, 5_000_000, 10_000_000, 20_000_000, 50_000_000];
+const PRICES_RENT = [0, 5_000, 7_500, 10_000, 15_000, 25_000, 50_000, 100_000];
 const BEDS = ["", "1", "2", "3", "4", "5"];
 const SORTS = [
   { label: "Newest", value: "dom_asc" },

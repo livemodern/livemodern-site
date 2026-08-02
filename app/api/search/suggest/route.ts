@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { LUX_SALE_FLOOR, LUX_RENT_FLOOR, LUX_SUBTYPES } from "@/lib/lux";
 
 // LiveModern /api/search/suggest — typeahead for the search box. Ported from
 // mlg-search: buildings → communities → cities → zips → addresses, ranked, with
@@ -132,7 +133,15 @@ export async function GET(req: NextRequest) {
     ranked.map(async (r) => {
       try {
         let cq = supabase.from("properties").select("id", { count: "exact", head: true }).eq("status", "Active");
-        if (transaction === "rent") cq = cq.eq("property_type", "ResidentialLease");
+        // Counts must match what the luxury-curated search actually shows.
+        if (transaction === "rent") {
+          cq = cq.eq("property_type", "ResidentialLease").gte("list_price", LUX_RENT_FLOOR);
+        } else {
+          cq = cq.neq("property_type", "ResidentialLease").gte("list_price", LUX_SALE_FLOOR);
+        }
+        cq = cq
+          .in("property_subtype", LUX_SUBTYPES as unknown as string[])
+          .or("trestle_raw->>SeniorCommunityYN.is.null,trestle_raw->>SeniorCommunityYN.neq.true");
         const f = r.filter as Record<string, string | string[]>;
         if (f.building_name) cq = cq.eq("building_name", f.building_name as string);
         else if (f.city) cq = cq.ilike("city", `%${f.city}%`);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { LUX_SALE_FLOOR, LUX_RENT_FLOOR, LUX_SUBTYPES } from "@/lib/lux";
 
 // LiveModern /api/search — the county-wide query engine, ported from mlg-search.
 // Same shared `properties_search` view, same filter contract, so a saved search
@@ -127,9 +128,23 @@ export async function GET(req: NextRequest) {
     query = query.eq("property_type", "ResidentialLease");
   }
 
-  if (!forRent) {
-    if (transaction !== "rent") query = query.gte("list_price", 50000);
-  } else {
+  // ── LiveModern luxury curation ──────────────────────────────────────────
+  // Apply the floors + residential-only + no-55+ filters to every real search,
+  // but NOT to a direct listing lookup (mls_id) — a client opening a lower-priced
+  // listing they saved elsewhere must still resolve.
+  if (!mls_id_exact) {
+    if (transaction === "rent") {
+      query = query.gte("list_price", LUX_RENT_FLOOR).lt("list_price", 50000);
+    } else {
+      query = query.gte("list_price", LUX_SALE_FLOOR);
+    }
+    // Residential dwellings only (no mobile/manufactured/commercial/land).
+    query = query.in("property_subtype", LUX_SUBTYPES as unknown as string[]);
+    // Exclude 55+ / age-restricted; keep rows where the flag is false or unset.
+    query = query.or(
+      "trestle_raw->>SeniorCommunityYN.is.null,trestle_raw->>SeniorCommunityYN.neq.true",
+    );
+  } else if (forRent) {
     query = query.lt("list_price", 50000);
   }
 
