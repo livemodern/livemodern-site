@@ -11,6 +11,12 @@ export function mlsSrcSet(url: string, widths: number[], q = 80): string {
   return url ? widths.map((w) => `${mls(url, w, q)} ${w}w`).join(", ") : "";
 }
 
+// Listing hero (LCP) responsive config — SHARED by the gallery <img> and the
+// server-rendered preload so they request the SAME variant (mismatched
+// imagesrcset/imagesizes makes the browser download the hero twice on mobile).
+export const HERO_WIDTHS = [640, 960, 1400];
+export const HERO_SIZES = "(max-width:900px) 100vw, 66vw";
+
 /**
  * THE FEATURED AGENT — this is a lead-gen site.
  *

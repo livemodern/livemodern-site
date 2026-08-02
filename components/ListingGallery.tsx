@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { mls, mlsSrcSet } from "@/lib/listings";
+import { mls, mlsSrcSet, HERO_WIDTHS, HERO_SIZES } from "@/lib/listings";
 
 /**
  * Listing gallery. Keeps the existing hero + 2×2 mosaic layout untouched.
@@ -64,10 +64,12 @@ export default function ListingGallery({
           <button type="button" className="l-hero" onClick={() => setIdx(0)}>
             <span className="status-tag">{statusLabel}</span>
             <img
-              src={mls(hero, 1400)}
-              srcSet={mlsSrcSet(hero, [640, 960, 1400])}
-              sizes="(max-width:900px) 100vw, 66vw"
+              src={mls(hero, HERO_WIDTHS[HERO_WIDTHS.length - 1])}
+              srcSet={mlsSrcSet(hero, HERO_WIDTHS)}
+              sizes={HERO_SIZES}
               alt={address}
+              fetchPriority="high"
+              decoding="async"
             />
           </button>
         ) : null}
@@ -84,6 +86,7 @@ export default function ListingGallery({
               sizes="(max-width:900px) 50vw, 25vw"
               alt=""
               loading="lazy"
+              decoding="async"
             />
             {/* "View all" control:
                  desktop → opens popup (browse there);
@@ -132,6 +135,7 @@ export default function ListingGallery({
                   sizes="(max-width:900px) 50vw, 33vw"
                   alt={`${address} — photo ${i + 1}`}
                   loading="lazy"
+                  decoding="async"
                 />
               </button>
             ))}
@@ -162,6 +166,7 @@ export default function ListingGallery({
               srcSet={mlsSrcSet(active, [900, 1400, 1600, 2000], 86)}
               sizes="92vw"
               alt={`${address} — photo ${(idx ?? 0) + 1}`}
+              decoding="async"
             />
             <figcaption>
               <span className="serif">{address}</span>

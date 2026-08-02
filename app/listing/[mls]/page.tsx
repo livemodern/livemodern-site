@@ -26,6 +26,8 @@ import {
   mls,
   mlsSrcSet,
   type Listing,
+  HERO_WIDTHS,
+  HERO_SIZES,
 } from "@/lib/listings";
 
 export const revalidate = 900;
@@ -183,6 +185,20 @@ export default async function ListingPage({
 
   return (
     <>
+      {/* Preload the hero (LCP) so mobile starts fetching it before hydration.
+          imageSrcSet/imageSizes MUST match ListingGallery's hero <img> exactly,
+          or the browser downloads the hero twice. */}
+      {hero ? (
+        <link
+          rel="preload"
+          as="image"
+          // eslint-disable-next-line react/no-unknown-property
+          imageSrcSet={mlsSrcSet(hero, HERO_WIDTHS)}
+          // eslint-disable-next-line react/no-unknown-property
+          imageSizes={HERO_SIZES}
+          fetchPriority="high"
+        />
+      ) : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Identity-aware listing_view -> site_events -> the contact's CRM timeline. */}
       <TrackListingView

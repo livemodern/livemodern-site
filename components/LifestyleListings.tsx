@@ -261,6 +261,7 @@ export default function LifestyleListings({ listings }: { listings: LifestyleLis
                       sizes="(max-width:640px) 100vw, 33vw"
                       alt={l.street_address}
                       loading="lazy"
+                          decoding="async"
                     />
                   ) : null}
                 </div>

@@ -526,6 +526,7 @@ export default function SearchExperience() {
                           sizes="(max-width:640px) 100vw, 33vw"
                           alt={l.street_address ?? ""}
                           loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="srch-card-noim" />
