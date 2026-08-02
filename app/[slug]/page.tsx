@@ -187,7 +187,7 @@ export default async function CommunityPage({
   const spokeKind = kindFromSlug(c.slug);
   // Geo / criteria spokes (islands, estates) resolve through the same page but
   // query by place or acreage instead of by lifestyle tag.
-  const spokeQuery = spokeHub ? SPOKE_QUERIES[c.slug] : undefined;
+  const spokeQuery = !isBuilding ? SPOKE_QUERIES[c.slug] : undefined;
   const geoRows = spokeQuery ? await rowsByQuery(spokeQuery) : [];
   const spokeFloor = spokeHub ? SPOKE_PRICE_FLOOR[c.slug] : undefined;
   const spokeListings = spokeQuery
@@ -337,7 +337,7 @@ export default async function CommunityPage({
               : [
                 { href: "#story", label: "The Story" },
                 ...(showGallery ? [{ href: "#gallery", label: "Gallery" }] : []),
-                ...(spokeHub && spokeListings.length ? [{ href: "#listings", label: "Listings" }] : []),
+                ...(spokeListings.length ? [{ href: "#listings", label: "Listings" }] : []),
                 { href: "#inquire", label: "Inquire" },
               ]
         }
@@ -428,13 +428,13 @@ export default async function CommunityPage({
               ) : null}
               <a
                 className="btn btn-dark"
-                href={!isBuilding && spokeHub && spokeListings.length ? "#listings" : "#inquire"}
+                href={!isBuilding && spokeListings.length ? "#listings" : "#inquire"}
               >
                 {isBuilding
                   ? lifecycle.phase !== "complete"
                     ? "Request the package"
                     : "Request pricing"
-                  : spokeHub && spokeListings.length
+                  : spokeListings.length
                     ? "Browse listings"
                     : "Request pricing"}
               </a>
@@ -627,14 +627,14 @@ export default async function CommunityPage({
       </div>
       ) : null}
 
-      {spokeHub && spokeListings.length ? (
+      {spokeListings.length ? (
         <div className="wrap">
           <section className="sec" id="listings">
             <div className="sec-head">
               <div>
                 <p className="eyebrow">On the market &middot; {spokeListings.length}</p>
                 <h2 className="serif" style={{ fontSize: "clamp(22px,3vw,34px)" }}>
-                  {spokeHub.theme} in {spokeCountyShort ?? "South Florida"}.
+                  {spokeHub ? `${spokeHub.theme} in ${spokeCountyShort ?? "South Florida"}.` : `${displayName}.`}
                 </h2>
               </div>
               <SaveSearchButton slug={c.slug} name={displayName} />

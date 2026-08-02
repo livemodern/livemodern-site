@@ -612,7 +612,27 @@ export type SpokeQuery = {
    *  cores across South Florida — condos + townhomes + homes close enough to
    *  live on foot. */
   centers?: { lat: number; lng: number; radiusMi: number }[];
+  /** New construction: built within the last NEW_CONSTRUCTION_LOOKBACK years OR
+   *  future-dated (pre-construction). */
+  newConstruction?: boolean;
+  /** Architecture/design filter — arch_style in this set (the modern family). */
+  archStyles?: string[];
 };
+
+// "New construction" = built in the last 3 years or dated in the future
+// (pre-construction). A single year floor captures both.
+const NEW_CONSTRUCTION_LOOKBACK = 3;
+
+// The broad modern design family (arch_style), with its sub-dialects under it.
+export const MODERN_STYLES = [
+  "Modern",
+  "Contemporary",
+  "Tropical Modern",
+  "Mid-Century Modern",
+  "MiMo",
+  "Streamline Moderne",
+  "Art Deco",
+];
 
 export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
   // ── Islands (geography) ──
@@ -665,6 +685,17 @@ export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
   // Clematis/WPB, Atlantic Ave/Delray, Mizner/Boca, Las Olas/Fort Lauderdale,
   // Brickell + downtown Miami, South Beach, Coconut Grove, Coral Gables, and
   // downtown Stuart. The radius IS the qualifier — walk to shops + restaurants.
+  // ── New construction (last 3 yrs or pre-construction) ──
+  "new-construction-homes-south-florida": {
+    newConstruction: true, minPrice: LUX_SALE_FLOOR, subtypes: [...LUX_SUBTYPES],
+  },
+  "miami-new-construction-homes": {
+    county: "Miami-Dade", newConstruction: true, minPrice: LUX_SALE_FLOOR, subtypes: [...LUX_SUBTYPES],
+  },
+  // ── Modern design (the broad modern family + its sub-dialects) ──
+  "modern-homes-south-florida": {
+    archStyles: MODERN_STYLES, minPrice: LUX_SALE_FLOOR, subtypes: [...LUX_SUBTYPES],
+  },
   "walkable-living": {
     minPrice: LUX_SALE_FLOOR,
     subtypes: [...LUX_SUBTYPES],
@@ -727,6 +758,12 @@ export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
   if (q.kind === "homes") parts.push(`property_subtype=in.(${HOME_SUBTYPES.join(",")})`);
   if (q.kind === "condos") parts.push(`property_subtype=in.(${CONDO_SUBTYPES.join(",")})`);
   if (q.subtypes?.length) parts.push(`property_subtype=in.(${q.subtypes.join(",")})`);
+  if (q.newConstruction) {
+    const floorYear = new Date().getFullYear() - NEW_CONSTRUCTION_LOOKBACK;
+    parts.push(`year_built=gte.${floorYear}`);
+  }
+  if (q.archStyles?.length)
+    parts.push(`arch_style=in.(${q.archStyles.map((a) => encodeURIComponent(a)).join(",")})`);
   // Walkable: pre-filter to the union of each center's bounding box (cheap,
   // index-friendly); the precise circle gate runs in JS below.
   if (q.centers?.length) {

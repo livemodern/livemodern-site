@@ -37,6 +37,7 @@ const nextConfig = {
       { source: "/search-by-lifestyle", destination: "/collections", permanent: true },
       { source: "/communities", destination: "/collections", permanent: true },
       { source: "/downtown-palm-beach-county-condos", destination: "/walkable-living", permanent: true },
+      { source: "/modern-waterfront-homes-south-florida", destination: "/modern-homes-south-florida", permanent: true },
 
       // Old static pages with no new equivalent
       { source: "/about", destination: "/", permanent: true },

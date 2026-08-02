@@ -317,7 +317,7 @@ export const LIFESTYLE_HUBS: LifestyleHub[] = [
 export const CURATED_SEARCHES: string[] = [
   "new-construction-homes-south-florida",
   "miami-new-construction-homes",
-  "modern-waterfront-homes-south-florida",
+  "modern-homes-south-florida",
   "walkable-living",
 ];
 
