@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
+import type { Map as MbMap, Marker as MbMarker } from "mapbox-gl";
+import * as mapboxglNS from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+
+// ESM/CJS interop: under Next 15 the default can arrive as the namespace or
+// nested under .default. Resolve the object that actually has .Map.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapboxgl: any =
+  (mapboxglNS as any).Map ? mapboxglNS : (mapboxglNS as any).default ?? mapboxglNS;
 
 // The right-hand map for /search. Renders a price-pill marker per result, emits
 // the viewport bounds when the user pans/zooms (parent refetches with ?bounds=),
@@ -47,8 +54,8 @@ export default function SearchMap({
   onMarkerClick: (id: string) => void;
 }) {
   const elRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const mapRef = useRef<MbMap | null>(null);
+  const markersRef = useRef<Map<string, MbMarker>>(new Map());
   const pendingFit = useRef(false);
   const onBoundsRef = useRef(onBounds);
   const onClickRef = useRef(onMarkerClick);
@@ -58,16 +65,38 @@ export default function SearchMap({
   // init once
   useEffect(() => {
     if (!TOKEN || !elRef.current || mapRef.current) return;
+    if (!mapboxgl?.Map) {
+      // interop failed — nothing we can do but avoid throwing
+      // eslint-disable-next-line no-console
+      console.error("[map] mapbox-gl did not load a Map constructor");
+      return;
+    }
     mapboxgl.accessToken = TOKEN;
-    const map = new mapboxgl.Map({
-      container: elRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      bounds: SOFLO,
-      fitBoundsOptions: { padding: 0 },
-      attributionControl: false,
-    });
+    let map: MbMap;
+    try {
+      map = new mapboxgl.Map({
+        container: elRef.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        bounds: SOFLO,
+        fitBoundsOptions: { padding: 0 },
+        attributionControl: false,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[map] init failed", err);
+      return;
+    }
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new mapboxgl.AttributionControl({ compact: true }));
+    // eslint-disable-next-line no-console
+    map.on("error", (e: { error?: { message?: string } }) => console.error("[map]", e?.error?.message || e));
+    // The canvas sizes off the container at init; if the sticky column hadn't
+    // laid out yet the canvas can come up 0px (blank). Force a resize on load,
+    // next frame, and whenever the container resizes.
+    map.on("load", () => map.resize());
+    requestAnimationFrame(() => map.resize());
+    const ro = new ResizeObserver(() => map.resize());
+    if (elRef.current) ro.observe(elRef.current);
     mapRef.current = map;
 
     const emit = (userMove: boolean) => {
@@ -82,6 +111,7 @@ export default function SearchMap({
     map.on("moveend", (e) => emit(Boolean((e as unknown as { originalEvent?: unknown }).originalEvent)));
 
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
     };
@@ -108,22 +138,22 @@ export default function SearchMap({
     // add/update
     for (const p of points) {
       if (p.latitude == null || p.longitude == null) continue;
-      let mk = markersRef.current.get(p.mls_id);
-      if (!mk) {
-        const el = document.createElement("button");
-        el.type = "button";
-        el.className = "srch-mk";
-        el.textContent = pill(p.list_price);
-        el.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          onClickRef.current(p.mls_id);
-        });
-        mk = new mapboxgl.Marker({ element: el }).setLngLat([p.longitude, p.latitude]);
-        mk.addTo(map);
-        markersRef.current.set(p.mls_id, mk);
-      } else {
-        mk.setLngLat([p.longitude, p.latitude]);
+      const existing = markersRef.current.get(p.mls_id);
+      if (existing) {
+        existing.setLngLat([p.longitude, p.latitude]);
+        continue;
       }
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "srch-mk";
+      el.textContent = pill(p.list_price);
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        onClickRef.current(p.mls_id);
+      });
+      const mk = new mapboxgl.Marker({ element: el }).setLngLat([p.longitude, p.latitude]);
+      mk.addTo(map);
+      markersRef.current.set(p.mls_id, mk);
     }
 
     if (pendingFit.current && points.length) {
