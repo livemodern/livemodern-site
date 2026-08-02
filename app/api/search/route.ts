@@ -191,9 +191,12 @@ export async function GET(req: NextRequest) {
   } else if (sortParam === "price_desc") {
     query = query.order("list_price", { ascending: false });
   } else {
-    query = query
-      .order("office_priority", { ascending: true })
-      .order("days_on_market", { ascending: true, nullsFirst: false });
+    // LiveModern is a South-Florida-wide luxury brand (Palm Beach → Miami →
+    // Treasure Coast). Unlike mlg-site, we do NOT lead with office_priority —
+    // that tier forces all MLG (Palm Beach) office listings to the top and
+    // buries every other county, so Miami/Fort Lauderdale never surface on
+    // page one. Newest-first gives a genuine region-wide mix.
+    query = query.order("days_on_market", { ascending: true, nullsFirst: false });
   }
   query = query.range(offset, offset + limit - 1);
 
