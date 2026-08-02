@@ -200,7 +200,8 @@ export async function GET(req: NextRequest) {
   if (yearMin) query = query.gte("year_built", yearMin);
   if (yearMax) query = query.lte("year_built", yearMax);
 
-  const sortParam = p.get("sort") || "dom_asc";
+  // LiveModern opens with the marquee estates first (price high → low).
+  const sortParam = p.get("sort") || "price_desc";
   if (sortParam === "price_asc") {
     query = query.order("list_price", { ascending: true });
   } else if (sortParam === "price_desc") {

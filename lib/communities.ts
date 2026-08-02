@@ -302,7 +302,7 @@ export const LIFESTYLE_HUBS: LifestyleHub[] = [
   { theme: "Beach & Oceanfront", slug: "beach", blurb: "Directly on the sand, from Palm Beach to Miami.",
     spokes: ["palm-beach-beachfront-homes","fort-lauderdale-beachfront-homes","miami-beachfront-homes","palm-beach-beachfront-condos","fort-lauderdale-beachfront-condos","miami-beachfront-condos"] },
   { theme: "Downtown & Urban", slug: "downtown", blurb: "Walkable high-rise living in the city core.",
-    spokes: ["palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos"] },
+    spokes: ["walkable-living","palm-beach-condos-for-sale","fort-lauderdale-condos-for-sale","miami-luxury-condos"] },
   { theme: "Golf & Club", slug: "golf", blurb: "Country-club living on South Florida's best courses.",
     spokes: ["palm-beach-golf-course-homes","martin-county-golf-course-homes","miami-golf-course-homes"] },
   { theme: "Island", slug: "island", blurb: "Barrier-island exclusivity and seclusion.",
@@ -318,7 +318,7 @@ export const CURATED_SEARCHES: string[] = [
   "new-construction-homes-south-florida",
   "miami-new-construction-homes",
   "modern-waterfront-homes-south-florida",
-  "downtown-palm-beach-county-condos",
+  "walkable-living",
 ];
 
 export function hubBySlugLife(slug: string): LifestyleHub | undefined {

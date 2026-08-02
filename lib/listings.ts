@@ -378,6 +378,8 @@ export function planSpecs(details: string | null): { beds?: string; baths?: stri
 
 
 /** LiveModern inventory floors for lifestyle queries. */
+import { LUX_SALE_FLOOR, LUX_SUBTYPES } from "@/lib/lux";
+
 const LIFESTYLE_CONDO_FLOOR = 2000000;
 const LIFESTYLE_HOME_FLOOR = 3000000;
 
@@ -604,6 +606,12 @@ export type SpokeQuery = {
   kind?: PropertyKind;
   /** array-contains match on lifestyle_attributes, e.g. "equestrian". */
   attribute?: string;
+  /** Explicit property_subtype whitelist (overrides `kind`). */
+  subtypes?: string[];
+  /** Walkable geography: keep listings within radiusMi of ANY center. Downtown
+   *  cores across South Florida — condos + townhomes + homes close enough to
+   *  live on foot. */
+  centers?: { lat: number; lng: number; radiusMi: number }[];
 };
 
 export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
@@ -652,18 +660,51 @@ export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
   "palm-beach-equestrian-homes": {
     county: "Palm Beach", attribute: "equestrian", minPrice: 2_000_000, kind: "homes",
   },
+  // ── Walkable Living (urban cores across South Florida) ──
+  // Condos, townhomes, and homes within ~2 miles of a genuine walkable downtown:
+  // Clematis/WPB, Atlantic Ave/Delray, Mizner/Boca, Las Olas/Fort Lauderdale,
+  // Brickell + downtown Miami, South Beach, Coconut Grove, Coral Gables, and
+  // downtown Stuart. The radius IS the qualifier — walk to shops + restaurants.
+  "walkable-living": {
+    minPrice: LUX_SALE_FLOOR,
+    subtypes: [...LUX_SUBTYPES],
+    centers: [
+      { lat: 26.7128, lng: -80.0553, radiusMi: 2 }, // Downtown West Palm Beach (Clematis/Rosemary)
+      { lat: 26.4615, lng: -80.0728, radiusMi: 2 }, // Downtown Delray Beach (Atlantic Ave)
+      { lat: 26.3547, lng: -80.0838, radiusMi: 2 }, // Downtown Boca Raton (Mizner Park)
+      { lat: 26.1201, lng: -80.1373, radiusMi: 2 }, // Las Olas / Downtown Fort Lauderdale
+      { lat: 25.7651, lng: -80.1936, radiusMi: 2 }, // Brickell / Downtown Miami
+      { lat: 25.7825, lng: -80.134, radiusMi: 1.6 }, // South Beach (Miami Beach)
+      { lat: 25.7284, lng: -80.2436, radiusMi: 1.6 }, // Coconut Grove
+      { lat: 25.7215, lng: -80.2684, radiusMi: 1.6 }, // Coral Gables (Miracle Mile)
+      { lat: 27.1969, lng: -80.2528, radiusMi: 1.5 }, // Downtown Stuart
+    ],
+  },
 };
 
 const GEO_SELECT =
   "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft," +
   "image_urls,property_subtype,arch_style,community_slug,lot_size_acres," +
-  "subdivision_name,lifestyle_attributes,waterfront_features";
+  "subdivision_name,lifestyle_attributes,waterfront_features,latitude,longitude";
 
 type GeoRow = LifestyleListing & {
   subdivision_name: string | null;
   lifestyle_attributes: string[] | null;
   waterfront_features: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
+
+// Great-circle distance in miles (walkable-radius gate).
+function milesBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 /** Fetch every row matching a geo/criteria spoke. PostgREST caps a response at
  *  1,000 rows, so page until a short page comes back. */
@@ -685,6 +726,17 @@ export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
     parts.push(`lifestyle_attributes=cs.${encodeURIComponent(`{${q.attribute}}`)}`);
   if (q.kind === "homes") parts.push(`property_subtype=in.(${HOME_SUBTYPES.join(",")})`);
   if (q.kind === "condos") parts.push(`property_subtype=in.(${CONDO_SUBTYPES.join(",")})`);
+  if (q.subtypes?.length) parts.push(`property_subtype=in.(${q.subtypes.join(",")})`);
+  // Walkable: pre-filter to the union of each center's bounding box (cheap,
+  // index-friendly); the precise circle gate runs in JS below.
+  if (q.centers?.length) {
+    const boxes = q.centers.map((c) => {
+      const dLat = c.radiusMi / 69;
+      const dLng = c.radiusMi / (69 * Math.cos((c.lat * Math.PI) / 180));
+      return `and(latitude.gte.${(c.lat - dLat).toFixed(4)},latitude.lte.${(c.lat + dLat).toFixed(4)},longitude.gte.${(c.lng - dLng).toFixed(4)},longitude.lte.${(c.lng + dLng).toFixed(4)})`;
+    });
+    parts.push(`or=${encodeURIComponent(`(${boxes.join(",")})`)}`);
+  }
 
   const out: GeoRow[] = [];
   try {
@@ -707,6 +759,13 @@ export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
   // records and only in the street address on others.
   const up = (s: string | null) => (s ?? "").toUpperCase();
   return out.filter((r) => {
+    // Walkable circle gate: within radiusMi of ANY downtown center.
+    if (q.centers?.length) {
+      if (r.latitude == null || r.longitude == null) return false;
+      return q.centers.some(
+        (c) => milesBetween(c.lat, c.lng, r.latitude as number, r.longitude as number) <= c.radiusMi,
+      );
+    }
     if (q.subdivisionLike?.length && q.streetLike?.length) {
       return (
         q.subdivisionLike.some((p) => up(r.subdivision_name).includes(p)) ||

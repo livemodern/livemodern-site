@@ -50,9 +50,9 @@ const PRICES_SALE = [0, 1_000_000, 2_000_000, 3_000_000, 5_000_000, 10_000_000, 
 const PRICES_RENT = [0, 5_000, 7_500, 10_000, 15_000, 25_000, 50_000, 100_000];
 const BEDS = ["", "1", "2", "3", "4", "5"];
 const SORTS = [
-  { label: "Newest", value: "dom_asc" },
-  { label: "Price ↑", value: "price_asc" },
   { label: "Price ↓", value: "price_desc" },
+  { label: "Price ↑", value: "price_asc" },
+  { label: "Newest", value: "dom_asc" },
 ];
 
 function priceLabel(v: number, rent: boolean) {
@@ -83,7 +83,7 @@ export default function SearchExperience() {
   const [hoaMax, setHoaMax] = useState("");
   const [status, setStatus] = useState("OnMarket");
   const [keywords, setKeywords] = useState("");
-  const [sort, setSort] = useState("dom_asc");
+  const [sort, setSort] = useState("price_desc");
   const [moreOpen, setMoreOpen] = useState(false);
 
   // ── results ──
