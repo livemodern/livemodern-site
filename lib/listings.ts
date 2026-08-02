@@ -700,15 +700,15 @@ export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
     minPrice: LUX_SALE_FLOOR,
     subtypes: [...LUX_SUBTYPES],
     centers: [
-      { lat: 26.7128, lng: -80.0553, radiusMi: 2 }, // Downtown West Palm Beach (Clematis/Rosemary)
-      { lat: 26.4615, lng: -80.0728, radiusMi: 2 }, // Downtown Delray Beach (Atlantic Ave)
-      { lat: 26.3547, lng: -80.0838, radiusMi: 2 }, // Downtown Boca Raton (Mizner Park)
-      { lat: 26.1201, lng: -80.1373, radiusMi: 2 }, // Las Olas / Downtown Fort Lauderdale
-      { lat: 25.7651, lng: -80.1936, radiusMi: 2 }, // Brickell / Downtown Miami
-      { lat: 25.7825, lng: -80.134, radiusMi: 1.6 }, // South Beach (Miami Beach)
-      { lat: 25.7284, lng: -80.2436, radiusMi: 1.6 }, // Coconut Grove
-      { lat: 25.7215, lng: -80.2684, radiusMi: 1.6 }, // Coral Gables (Miracle Mile)
-      { lat: 27.1969, lng: -80.2528, radiusMi: 1.5 }, // Downtown Stuart
+      { lat: 26.7128, lng: -80.0553, radiusMi: 1 }, // Downtown West Palm Beach (Clematis/Rosemary)
+      { lat: 26.4615, lng: -80.0728, radiusMi: 1 }, // Downtown Delray Beach (Atlantic Ave)
+      { lat: 26.3547, lng: -80.0838, radiusMi: 1 }, // Downtown Boca Raton (Mizner Park)
+      { lat: 26.1201, lng: -80.1373, radiusMi: 1 }, // Las Olas / Downtown Fort Lauderdale
+      { lat: 25.7651, lng: -80.1936, radiusMi: 1 }, // Brickell / Downtown Miami
+      { lat: 25.7825, lng: -80.134, radiusMi: 1 }, // South Beach (Miami Beach)
+      { lat: 25.7284, lng: -80.2436, radiusMi: 1 }, // Coconut Grove
+      { lat: 25.7215, lng: -80.2684, radiusMi: 1 }, // Coral Gables (Miracle Mile)
+      { lat: 27.1969, lng: -80.2528, radiusMi: 1 }, // Downtown Stuart
     ],
   },
 };
