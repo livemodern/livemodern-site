@@ -8,7 +8,10 @@
 // (mls_id) bypasses them, so a client who saved a lower-priced listing on
 // modernlivingre.com can still open it from their account here.
 
-export const LUX_SALE_FLOOR = 1_000_000; // no for-sale listing under $1M
+export const LUX_SALE_FLOOR = 2_000_000; // no for-sale listing under $2M (matches
+// the Miami / Fort Lauderdale load floor so every market reads consistently).
+// NOTE: this is a SEARCH FILTER only — the $1M–$2M Palm Beach inventory stays in
+// the DB (the MLG main site still shows it); LiveModern just doesn't surface it.
 export const LUX_RENT_FLOOR = 5_000; // no rental under $5,000 / month
 
 // Residential dwellings only — excludes ManufacturedHome, MobileHome, land,
