@@ -86,6 +86,18 @@ export async function generateMetadata({
   // end up competing with the slug URL as duplicate content.
   const canonicalSlug = slugifyListing(l);
   const ogImage = l.image_urls?.[0] ? mls(l.image_urls[0], 1200) : undefined;
+
+  // Off-market listings drop out of the index so they stop competing with live
+  // inventory. follow stays on so the on-page links still get crawled.
+  if (l.status === "Withdrawn") {
+    return {
+      title: `${title} — No Longer Available`,
+      description: desc,
+      alternates: { canonical: `/listing/${canonicalSlug}` },
+      robots: { index: false, follow: true },
+    };
+  }
+
   return {
     title,
     description: desc,
@@ -145,6 +157,19 @@ export default async function ListingPage({
     permanentRedirect(`/listing/${canonicalSlug}`);
   }
 
+  // `status === 'Withdrawn'` is OUR sentinel for "left the on-market feed", not
+  // an MLS status — the feed carries no off-market statuses, so cancelled /
+  // withdrawn / expired / temporarily-off-market are indistinguishable here.
+  // Claim only that it's gone, never why.
+  const offMarket = l.status === "Withdrawn";
+  const offMarketDate = (() => {
+    const iso = (l as any).off_market_detected_at as string | null | undefined;
+    if (!iso) return null;
+    const d = new Date(iso);
+    return Number.isFinite(d.getTime())
+      ? d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })
+      : null;
+  })();
   const kind = listingKind(l);
   const presale = isPresale(l);
   const agent = featuredAgentFor(l);
@@ -237,10 +262,27 @@ export default async function ListingPage({
       <ListingGallery
         photos={photos}
         statusLabel={
-          presale ? "For Sale · Pre-Construction" : kind === "home" ? "For Sale · Home" : "For Sale · Condo"
+          offMarket
+            ? "No Longer Available"
+            : presale ? "For Sale · Pre-Construction" : kind === "home" ? "For Sale · Home" : "For Sale · Condo"
         }
         address={fullAddress(l)}
       />
+
+      {offMarket && (
+        <div className="wrap">
+          <div style={{
+            margin: "18px 0 0", padding: "14px 18px", borderRadius: 10,
+            background: "#fef3c7", border: "1px solid #f59e0b", color: "#78350f",
+            fontSize: 15, lineHeight: 1.5,
+          }}>
+            <strong>This listing is no longer available.</strong>{" "}
+            It was removed from the MLS{offMarketDate ? ` on ${offMarketDate}` : ""}. The price
+            shown is the last one we recorded and may be out of date.{" "}
+            <a href="/collections" style={{ color: "#78350f", fontWeight: 600 }}>Explore current collections</a>.
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="wrap">
