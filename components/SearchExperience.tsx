@@ -47,7 +47,7 @@ const SUBTYPES: { label: string; value: string }[] = [
   { label: "Townhouse", value: "Townhouse" },
 ];
 const PRICES_SALE = [0, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000, 20_000_000, 50_000_000];
-const PRICES_RENT = [0, 5_000, 7_500, 10_000, 15_000, 25_000, 50_000, 100_000];
+const PRICES_RENT = [0, 10_000, 15_000, 20_000, 25_000, 50_000, 75_000, 100_000];
 const BEDS = ["", "1", "2", "3", "4", "5"];
 const SORTS = [
   { label: "Price ↓", value: "price_desc" },
