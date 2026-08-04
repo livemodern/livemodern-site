@@ -38,6 +38,24 @@ export function generateStaticParams() {
 }
 export const dynamicParams = true;
 
+/**
+ * Every status meaning "not on the market".
+ *
+ * `Withdrawn` is the sentinel our reconcile writes when a listing disappears
+ * from the feed. The rest will rarely or never appear — we are licensed for
+ * five statuses only (see TRAPS.md) — but they DO turn up via legacy imports,
+ * manual edits, and would arrive wholesale if we ever get a VOW/back-office
+ * feed. Matching the category rather than the one string means none of them can
+ * render as a live listing.
+ */
+const OFF_MARKET_STATUSES = new Set([
+  "Withdrawn", "Expired", "Canceled", "Cancelled", "Hold",
+  "Terminated", "CanceledRelisted", "Delete", "Incomplete",
+  "Temporarily Off Market", "TempOffMarket", "Withheld",
+])
+
+const isOffMarket = (s: string | null | undefined) => !!s && OFF_MARKET_STATUSES.has(s);
+
 export async function generateMetadata({
   params,
 }: {
@@ -89,7 +107,7 @@ export async function generateMetadata({
 
   // Off-market listings drop out of the index so they stop competing with live
   // inventory. follow stays on so the on-page links still get crawled.
-  if (l.status === "Withdrawn") {
+  if (isOffMarket(l.status)) {
     return {
       title: `${title} — No Longer Available`,
       description: desc,
@@ -161,7 +179,7 @@ export default async function ListingPage({
   // an MLS status — the feed carries no off-market statuses, so cancelled /
   // withdrawn / expired / temporarily-off-market are indistinguishable here.
   // Claim only that it's gone, never why.
-  const offMarket = l.status === "Withdrawn";
+  const offMarket = isOffMarket(l.status);
   const offMarketDate = (() => {
     const iso = (l as any).off_market_detected_at as string | null | undefined;
     if (!iso) return null;
