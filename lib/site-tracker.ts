@@ -20,6 +20,7 @@ const COOKIE_UID = "lm_uid";
 const COOKIE_UEM = "lm_uem";
 const COOKIE_ATTR = "lm_attr";
 const SESSION_KEY = "lm_sid";
+const SESSION_COOKIE = "lm_sid";
 const VIEWED_KEY = "lm_viewed";
 const YEAR = 31_536_000;
 
@@ -136,6 +137,13 @@ function rememberViewed(mlsId: string): void {
   }
 }
 
+function writeSessionCookie(sid: string): void {
+  if (typeof document === "undefined" || !sid) return;
+  try {
+    document.cookie = `${SESSION_COOKIE}=${encodeURIComponent(sid)}; path=/; SameSite=Lax`;
+  } catch { /* cookies disabled */ }
+}
+
 function sessionId(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -146,7 +154,14 @@ function sessionId(): string {
           ? crypto.randomUUID()
           : String(Date.now()) + Math.random().toString(36).slice(2);
       window.sessionStorage.setItem(SESSION_KEY, sid);
+      // Mirror to a cookie so /api/leads can read the session SERVER-side —
+      // every form is then covered without having to send it, including ones
+      // added later.
+      writeSessionCookie(sid);
     }
+    // Re-assert each read: the cookie can be cleared independently of
+    // sessionStorage, and losing it silently costs the browsing bridge.
+    writeSessionCookie(sid);
     return sid;
   } catch {
     return "";

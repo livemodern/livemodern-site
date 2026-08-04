@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { isBot, splitName } from "@/lib/lead-utils";
 import { checkLeadSpam, reportLocalReject } from "@/lib/spam-check-client";
 import { getBySlug } from "@/lib/communities";
@@ -127,6 +128,16 @@ export async function POST(req: NextRequest) {
     const communitySlug = (body.communitySlug ?? "").trim() || null;
     const communityName = (body.communityName ?? "").trim() || null;
     const communityCity = (body.communityCity ?? "").trim() || null;
+
+    // The visitor's tracking session — persisted on the lead because it is the
+    // ONLY bridge from anonymous pre-form browsing to a person (logged-out
+    // events carry no user_id). The hourly backfill-site-events cron adopts
+    // them off exactly this column. Cookie fallback means a form that doesn't
+    // send it explicitly is still covered, including forms added later.
+    let sessionId = (body.sessionId ?? "").trim();
+    if (!sessionId) {
+      try { sessionId = cookies().get("lm_sid")?.value?.trim() ?? ""; } catch { /* no request scope */ }
+    }
     const viewedMlsIds = String(body.viewedMlsIds ?? "")
       .split(",")
       .map((x) => x.trim())
@@ -240,6 +251,7 @@ export async function POST(req: NextRequest) {
       email: email || null,
       phone: phone || null,
       message: composedMessage || null,
+      session_id: sessionId || null,
       building_interest: communityName,
       source_site: SITE,
       source_type: isRegistration ? "registration" : sourceType || "contact-form",
@@ -288,8 +300,7 @@ export async function POST(req: NextRequest) {
       // they decided to raise their hand — so claim it now that we know who
       // they are. Explicit no-store: a read-then-write in a Next 14 route can
       // otherwise be served from the Data Cache and silently never land.
-      const sessionId = (body.sessionId ?? "").trim();
-      if (sessionId && routed?.contact_id && SB_KEY) {
+        if (sessionId && routed?.contact_id && SB_KEY) {
         try {
           const r = await fetch(
             `${SB_URL}/rest/v1/site_events?session_id=eq.${encodeURIComponent(sessionId)}&contact_id=is.null`,
