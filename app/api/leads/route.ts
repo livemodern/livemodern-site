@@ -136,7 +136,14 @@ export async function POST(req: NextRequest) {
     // send it explicitly is still covered, including forms added later.
     let sessionId = (body.sessionId ?? "").trim();
     if (!sessionId) {
-      try { sessionId = cookies().get("lm_sid")?.value?.trim() ?? ""; } catch { /* no request scope */ }
+      // NOTE: this site is on Next 15, where cookies() is ASYNC. Calling
+      // .get() on the returned Promise throws, and the catch below swallowed it
+      // — the read silently produced nothing and leads.session_id stayed null.
+      // The Next 14 sites (minis, MLPB) keep the synchronous form.
+      try {
+        const jar = await cookies();
+        sessionId = jar.get("lm_sid")?.value?.trim() ?? "";
+      } catch { /* no request scope */ }
     }
     const viewedMlsIds = String(body.viewedMlsIds ?? "")
       .split(",")
