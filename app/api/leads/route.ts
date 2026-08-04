@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
       // they decided to raise their hand — so claim it now that we know who
       // they are. Explicit no-store: a read-then-write in a Next 14 route can
       // otherwise be served from the Data Cache and silently never land.
-        if (sessionId && routed?.contact_id && SB_KEY) {
+      if (sessionId && routed?.contact_id && SB_KEY) {
         try {
           const r = await fetch(
             `${SB_URL}/rest/v1/site_events?session_id=eq.${encodeURIComponent(sessionId)}&contact_id=is.null`,
