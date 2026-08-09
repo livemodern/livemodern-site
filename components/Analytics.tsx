@@ -21,7 +21,11 @@ import Script from "next/script";
  */
 export default function Analytics() {
   const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
-  const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  // Canonical name is NEXT_PUBLIC_GA_MEASUREMENT_ID (matches mlg-site).
+  // NEXT_PUBLIC_GA_ID is accepted as an alias so a mis-named env var
+  // on Vercel still works instead of silently loading nothing.
+  const GA_ID =
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA_ID;
   const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
   return (
