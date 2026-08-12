@@ -28,7 +28,7 @@ const GATE_ONLY = `
 .lmgate-google{width:100%;padding:13px 18px;border:1px solid var(--line);border-radius:2px;
   background:#fff;font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink);cursor:pointer;transition:border-color .18s;
-  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
 .lmgate-google:hover{border-color:var(--ink)}
 .lmgate-google:disabled{opacity:.5;cursor:default}
 
@@ -37,7 +37,7 @@ const GATE_ONLY = `
 .lmgate-magic-btn{width:100%;padding:13px 18px;border:1px solid var(--line);border-radius:2px;
   background:#fff;font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink);cursor:pointer;transition:border-color .18s;
-  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
 .lmgate-magic-btn:hover{border-color:var(--ink)}
 .lmgate-magic-btn:disabled{opacity:.5;cursor:default}
 .lmgate-magic-btn .lmgate-envelope{font-size:15px;line-height:1}
