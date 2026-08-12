@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { Floorplan } from "@/lib/listings";
+import { useUser } from "@/lib/auth";
+import { gateCount, useGateConfig } from "@/lib/view-tracker";
+import { recordPlanView, hasSeenPlan } from "@/lib/floorplan-tracker";
+import { AuthModal } from "@/components/AuthModal";
 
 const CF = "https://images.livemodern.com/cdn-cgi/image";
 const cf = (u: string, w: number, q = 82) =>
@@ -27,8 +31,39 @@ export default function Floorplans({
   plans: Floorplan[];
   buildingName: string;
 }) {
+  const { user, loading: userLoading } = useUser();
+  const { limit, enabled: gateEnabled, loading: cfgLoading } = useGateConfig();
   const [idx, setIdx] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [justSignedIn, setJustSignedIn] = useState(false);
+  const pendingIdx = useRef<number | null>(null);
+  const signedIn = !!user || justSignedIn;
+
+  // Gate-aware click handler. Signed-in users always through. Plans the
+  // visitor has already opened are free re-opens (bristol/mini-site
+  // parity). Otherwise we check the SHARED gateCount() against the site
+  // limit BEFORE recording, so opening the Nth thing pops the wall
+  // instead of the N+1th.
+  const tryOpen = useCallback((i: number) => {
+    const name = plans[i]?.name ?? String(i);
+    if (signedIn || userLoading || cfgLoading || !gateEnabled) {
+      recordPlanView(name);
+      setIdx(i);
+      return;
+    }
+    if (hasSeenPlan(name)) {
+      setIdx(i);
+      return;
+    }
+    if (limit > 0 && gateCount() >= limit) {
+      pendingIdx.current = i;
+      setAuthOpen(true);
+      return;
+    }
+    recordPlanView(name);
+    setIdx(i);
+  }, [plans, signedIn, userLoading, cfgLoading, gateEnabled, limit]);
 
   const open = idx != null;
   const close = useCallback(() => setIdx(null), []);
@@ -69,7 +104,7 @@ export default function Floorplans({
         {visible.map((p, i) => {
           const s = specs(p.details);
           return (
-            <button key={i} className="fp-card" onClick={() => setIdx(i)} type="button">
+            <button key={i} className="fp-card" onClick={() => tryOpen(i)} type="button">
               <div className="fp-im">
                 <img
                   src={cf(p.image_url, 600)}
@@ -145,6 +180,26 @@ export default function Floorplans({
           </button>
         </div>
       ) : null}
+
+      <AuthModal
+        open={authOpen}
+        blocking
+        defaultMode="signup"
+        message={`Create a free account to see every floor plan${buildingName ? ` at ${buildingName}` : ''} — your saved homes and searches follow you across every Modern Living site.`}
+        onClose={(result) => {
+          setAuthOpen(false);
+          if (result === 'signed-in') {
+            setJustSignedIn(true);
+            const i = pendingIdx.current;
+            if (i != null) {
+              const name = plans[i]?.name ?? String(i);
+              recordPlanView(name);
+              setIdx(i);
+            }
+          }
+          pendingIdx.current = null;
+        }}
+      />
     </>
   );
 }

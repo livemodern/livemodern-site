@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from 'react';
 import { getSupabase } from '@/lib/auth';
+import { readPlansViewed } from '@/lib/floorplan-tracker';
 
 const STORAGE_KEY = 'lm.viewed_listings';
 
@@ -52,6 +53,13 @@ export function recordView(mlsId: string): number {
 
 export function getViewCount(): number {
   return readViewed().length;
+}
+
+/** Combined gate counter: listings AND floor plans each count as ONE
+ *  toward the SAME allowance. Two listings + one floor plan = 3 things.
+ *  Wall pops on the Nth thing regardless of type. Patrick 2026-07-30. */
+export function gateCount(): number {
+  return readViewed().length + readPlansViewed().length;
 }
 
 /** Everything they've looked at — handed to the routing engine at signup so a
@@ -100,11 +108,13 @@ async function fetchConfig(): Promise<ViewLimitConfig> {
 }
 
 /** Returns { shouldShow, limit, viewCount }. Goes true once an anonymous
- *  visitor reaches the limit and the feature is enabled. */
+ *  visitor reaches the limit and the feature is enabled. Uses the combined
+ *  gateCount so that floor-plan opens count toward the same allowance as
+ *  listing views. */
 export function useViewPaywall(opts: { isSignedIn: boolean; currentMlsId?: string | null }) {
   const { isSignedIn, currentMlsId } = opts;
   const [config, setConfig] = useState<ViewLimitConfig | null>(null);
-  const [viewCount, setViewCount] = useState(0);
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -117,13 +127,34 @@ export function useViewPaywall(opts: { isSignedIn: boolean; currentMlsId?: strin
   }, []);
 
   useEffect(() => {
-    if (!currentMlsId) return;
-    setViewCount(recordView(String(currentMlsId)));
+    if (currentMlsId) recordView(String(currentMlsId));
+    setCount(gateCount());
   }, [currentMlsId]);
 
   const limit = config?.limit ?? DEFAULT_CONFIG.limit;
   const enabled = config?.enabled ?? DEFAULT_CONFIG.enabled;
-  const shouldShow = enabled && !isSignedIn && limit > 0 && viewCount >= limit;
+  const shouldShow = enabled && !isSignedIn && limit > 0 && count >= limit;
 
-  return { shouldShow, limit, viewCount };
+  return { shouldShow, limit, viewCount: count };
+}
+
+/** Load just the gate config — for callers that decide when to record
+ *  their own view (like Floorplans, which checks the wall BEFORE opening
+ *  a plan). Returns { limit, enabled, loading }. */
+export function useGateConfig(): { limit: number; enabled: boolean; loading: boolean } {
+  const [config, setConfig] = useState<ViewLimitConfig | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    void fetchConfig().then((cfg) => {
+      if (mounted) setConfig(cfg);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return {
+    limit: config?.limit ?? DEFAULT_CONFIG.limit,
+    enabled: config?.enabled ?? DEFAULT_CONFIG.enabled,
+    loading: config == null,
+  };
 }
