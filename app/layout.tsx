@@ -4,6 +4,7 @@ import "./globals.css";
 import MilaWidget from "@/components/MilaWidget";
 import Analytics from "@/components/Analytics";
 import SiteTracker from "@/components/SiteTracker";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 
 const display = Playfair_Display({
   subsets: ["latin"],
@@ -49,6 +50,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteTracker />
         {/* Ad-platform tags; all env-gated, see components/Analytics.tsx. */}
         <Analytics />
+        {/* Vercel Analytics — pageviews + web vitals to the Vercel dashboard. */}
+        <VercelAnalytics />
       </body>
     </html>
   );
