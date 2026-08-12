@@ -392,11 +392,29 @@ export function AuthModal({
           {busy ? 'One moment\u2026' : mode === 'signup' ? 'Create account' : 'Sign in'}
         </button>
 
-        {/* Google OAuth is SIGN-IN ONLY. Supabase's signInWithOAuth
-            auto-creates the user when the email is unknown, so putting
-            this button on the Sign Up tab bypasses our phone-required +
-            user-type + SMS-consent gate and produces incomplete
-            accounts. Sign-in-only narrows the hole. (Patrick 2026-08-12) */}
+        {/* Sign-in alternatives — magic link first (prominent, explanatory)
+            then Google OAuth. Both SIGN-IN ONLY. Patrick 2026-08-12 asked
+            to promote magic link from the small text link to a first-class
+            card so returning visitors don't default to guessing passwords. */}
+        {mode === 'signin' && !existingEmailHint && (
+          <div className="lmgate-magic-card" role="group" aria-label="Sign in without a password">
+            <div className="lmgate-magic-title">
+              Skip the <em>password</em>.
+            </div>
+            <div className="lmgate-magic-lede">
+              We&rsquo;ll email you a one-tap sign-in link. Tap it and you&rsquo;re back in &mdash; nothing to remember.
+            </div>
+            <button
+              type="button"
+              className="lmgate-magic-btn"
+              onClick={() => void handleMagicLink()}
+              disabled={busy}
+            >
+              Email me a sign-in link
+            </button>
+          </div>
+        )}
+
         {mode === 'signin' && (
           <>
             <div className="lmgate-or">
@@ -412,14 +430,6 @@ export function AuthModal({
               Continue with Google
             </button>
           </>
-        )}
-
-        {mode === 'signin' && (
-          <p className="auth-alt">
-            <button type="button" onClick={() => void handleMagicLink()}>
-              Email me a sign-in link instead
-            </button>
-          </p>
         )}
 
         {!blocking && (
