@@ -52,7 +52,18 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("");
+  // Defaults to Buyer, visibly selected so it can be changed.
+  //
+  // It used to start blank and was never validated, so registrations sailed
+  // through with no client_type at all: 37% captured on this site against 74%
+  // on modernlivingre.com, where the field is required. That matters more than
+  // it used to, because MILA picks her template from client_type - a landlord
+  // with none gets an email about buying.
+  //
+  // Defaulting rather than requiring keeps registration frictionless. Most
+  // people here are buying, and the ones who are not can see the answer sitting
+  // there and change it.
+  const [userType, setUserType] = useState("Buyer");
   const [smsConsent, setSmsConsent] = useState(false);
 
   useEffect(() => {
@@ -83,7 +94,7 @@ export default function LoginPage() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       phone: phone.trim(),
-      userType: userType || undefined,
+      userType: userType || "Buyer",
       smsConsent,
     });
     setBusy(false);
@@ -219,7 +230,6 @@ export default function LoginPage() {
                   <label className="auth-field">
                     <span>What best describes you?</span>
                     <select value={userType} onChange={(e) => setUserType(e.target.value)}>
-                      <option value="">Select one</option>
                       <option value="Buyer">Buying</option>
                       <option value="Seller">Selling</option>
                       <option value="Renter">Renting</option>
