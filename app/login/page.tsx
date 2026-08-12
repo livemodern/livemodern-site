@@ -230,12 +230,21 @@ export default function LoginPage() {
                   <label className="auth-field">
                     <span>What best describes you?</span>
                     <select value={userType} onChange={(e) => setUserType(e.target.value)}>
+                      {/* Values match mlg-site exactly (Buyer / Seller /
+                          Buyer & Seller / Investor / Renter / Landlord) so
+                          client_type is one vocabulary across both sites and
+                          reports do not split. Labels stay in this site's
+                          friendlier phrasing.
+
+                          "Just looking" is gone: it told us nothing, routed to
+                          the buyer templates anyway, and gave people an easy
+                          way to answer without answering. */}
                       <option value="Buyer">Buying</option>
                       <option value="Seller">Selling</option>
+                      <option value="Buyer & Seller">Buying &amp; selling</option>
+                      <option value="Investor">Investment</option>
                       <option value="Renter">Renting</option>
                       <option value="Landlord">Leasing my property</option>
-                      <option value="Investor">Investing</option>
-                      <option value="Browsing">Just looking</option>
                     </select>
                   </label>
                 </>
