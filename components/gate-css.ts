@@ -27,24 +27,20 @@ const GATE_ONLY = `
 .lmgate-or::before,.lmgate-or::after{content:"";flex:1;height:1px;background:var(--line)}
 .lmgate-google{width:100%;padding:13px 18px;border:1px solid var(--line);border-radius:2px;
   background:#fff;font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink);cursor:pointer;transition:border-color .18s}
+  color:var(--ink);cursor:pointer;transition:border-color .18s;
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
 .lmgate-google:hover{border-color:var(--ink)}
 .lmgate-google:disabled{opacity:.5;cursor:default}
 
-/* Magic-link alternative — shown on the Sign In tab as an explanatory
-   card so returning visitors don't default to guessing a password.
-   Same accent surface as /login's success message. */
-.lmgate-magic-card{margin:14px 0 14px;padding:14px 16px;border-radius:2px;
-  background:#f1fbfd;border:1px solid #bee6ee;color:var(--ink)}
-.lmgate-magic-title{font-family:var(--font-display),Georgia,serif;font-weight:400;
-  font-size:15px;line-height:1.25;margin:0 0 4px;color:var(--ink)}
-.lmgate-magic-title em{font-style:italic;color:var(--accent)}
-.lmgate-magic-lede{font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 10px}
-.lmgate-magic-btn{width:100%;padding:10px 14px;border:none;border-radius:2px;
-  background:var(--accent);color:#fff;font:inherit;font-size:11.5px;letter-spacing:.14em;
-  text-transform:uppercase;cursor:pointer;transition:opacity .18s}
-.lmgate-magic-btn:hover{opacity:.9}
+/* Magic-link sibling to the Google button — same outlined shape so the
+   two read as passwordless-first options above the password fields. */
+.lmgate-magic-btn{width:100%;padding:13px 18px;border:1px solid var(--line);border-radius:2px;
+  background:#fff;font:inherit;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);cursor:pointer;transition:border-color .18s;
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
+.lmgate-magic-btn:hover{border-color:var(--ink)}
 .lmgate-magic-btn:disabled{opacity:.5;cursor:default}
+.lmgate-magic-btn .lmgate-envelope{font-size:15px;line-height:1}
 `;
 
 export const GATE_CSS = AUTH_CSS + GATE_ONLY;
