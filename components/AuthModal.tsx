@@ -59,6 +59,11 @@ export function AuthModal({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  // Defaults to Buyer per Patrick 2026-08-12 — most livemodern.com visitors
+  // are house-hunters, so the safe default is the common case and every
+  // agent still gets a real value on the CRM contact. Selectable if the
+  // visitor is actually a seller, investor, renter, etc.
+  const [userType, setUserType] = useState('Buyer');
   const [smsConsent, setSmsConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -123,6 +128,7 @@ export function AuthModal({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       phone: phone.trim(),
+      userType,
       smsConsent,
       communitySlug,
       communityName,
@@ -251,6 +257,33 @@ export function AuthModal({
               autoComplete="tel"
               placeholder="(561) 228-8420"
             />
+          </label>
+        )}
+
+        {mode === 'signup' && (
+          <label className="auth-field">
+            <span>What best describes you?</span>
+            <select
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                fontSize: 16,
+                background: '#fff',
+                cursor: 'pointer',
+                boxSizing: 'border-box',
+              }}
+            >
+              <option value="Buyer">Buyer</option>
+              <option value="Seller">Seller</option>
+              <option value="Buyer & Seller">Buyer &amp; Seller</option>
+              <option value="Investor">Investor</option>
+              <option value="Renter">Renter</option>
+              <option value="Landlord">Landlord</option>
+            </select>
           </label>
         )}
 
