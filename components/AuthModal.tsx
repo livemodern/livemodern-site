@@ -329,7 +329,6 @@ export function AuthModal({
               onChange={(e) => setPhone(e.target.value)}
               inputMode="tel"
               autoComplete="tel"
-              placeholder="(561) 228-8420"
             />
           </label>
         )}
@@ -393,18 +392,27 @@ export function AuthModal({
           {busy ? 'One moment\u2026' : mode === 'signup' ? 'Create account' : 'Sign in'}
         </button>
 
-        <div className="lmgate-or">
-          <span>or</span>
-        </div>
+        {/* Google OAuth is SIGN-IN ONLY. Supabase's signInWithOAuth
+            auto-creates the user when the email is unknown, so putting
+            this button on the Sign Up tab bypasses our phone-required +
+            user-type + SMS-consent gate and produces incomplete
+            accounts. Sign-in-only narrows the hole. (Patrick 2026-08-12) */}
+        {mode === 'signin' && (
+          <>
+            <div className="lmgate-or">
+              <span>or</span>
+            </div>
 
-        <button
-          type="button"
-          className="lmgate-google"
-          onClick={() => void signInWithGoogle()}
-          disabled={busy}
-        >
-          Continue with Google
-        </button>
+            <button
+              type="button"
+              className="lmgate-google"
+              onClick={() => void signInWithGoogle()}
+              disabled={busy}
+            >
+              Continue with Google
+            </button>
+          </>
+        )}
 
         {mode === 'signin' && (
           <p className="auth-alt">
