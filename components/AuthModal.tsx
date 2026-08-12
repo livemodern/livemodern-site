@@ -68,6 +68,12 @@ export function AuthModal({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  // Set when a signup attempt was intercepted because the email already has
+  // an account. We flip mode to signin AND show a friendly magic-link CTA at
+  // the top of the form so the visitor's first instinct isn't "guess my
+  // password" — the fastest recovery is a one-tap email link. Duplicate
+  // accounts are how leads get fragmented across contacts (Patrick 2026-08-12).
+  const [existingEmailHint, setExistingEmailHint] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -139,7 +145,8 @@ export function AuthModal({
       // signUp steers a known email to sign-in rather than making a ghost account.
       if (error.code === 'exists') {
         setMode('signin');
-        setErr('You already have an account — sign in and we\u2019ll pick up where you left off.');
+        setErr(null);
+        setExistingEmailHint(email.trim());
         return;
       }
       return setErr(error.message);
@@ -155,6 +162,17 @@ export function AuthModal({
     setBusy(false);
     if (error) return setErr(error.message);
     setOk('Check your email — we sent you a sign-in link.');
+  }
+
+  async function handleMagicFromHint() {
+    if (!existingEmailHint) return;
+    setBusy(true);
+    setErr(null);
+    const { error } = await sendMagicLink(existingEmailHint);
+    setBusy(false);
+    if (error) return setErr(error.message);
+    setOk(`Sent — check ${existingEmailHint} for a one-tap sign-in link.`);
+    setExistingEmailHint(null);
   }
 
   const viewed = typeof window !== 'undefined' ? getViewedListings().length : 0;
@@ -213,6 +231,62 @@ export function AuthModal({
             Sign in
           </button>
         </div>
+
+        {existingEmailHint && mode === 'signin' && (
+          <div
+            role="status"
+            style={{
+              margin: '12px 0',
+              padding: '12px 14px',
+              borderRadius: 8,
+              background: '#f0f9ff',
+              border: '1px solid #bae6fd',
+              color: '#0c4a6e',
+              fontSize: 14,
+              lineHeight: 1.45,
+            }}
+          >
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>
+              You already have an account under {existingEmailHint}.
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              Fastest way in — we&rsquo;ll email you a one-tap sign-in link. No password needed.
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleMagicFromHint()}
+              disabled={busy}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#0c4a6e',
+                color: '#fff',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Email me a sign-in link
+            </button>
+            <button
+              type="button"
+              onClick={() => setExistingEmailHint(null)}
+              style={{
+                display: 'block',
+                marginTop: 6,
+                background: 'transparent',
+                border: 'none',
+                color: '#0369a1',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Or type my password below
+            </button>
+          </div>
+        )}
 
         {mode === 'signup' && (
           <div className="auth-row">
