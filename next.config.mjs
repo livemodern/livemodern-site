@@ -17,6 +17,10 @@ const nextConfig = {
       // migration f65e195, 2026-08-13). MiLa short-form stays "Amrit"
       // via buildings.display_name.
       { source: "/amrit", destination: "/amrit-ocean-residences", permanent: true },
+      // Mandarin Oriental disambiguated to Boca Raton (a WPB Mandarin is
+      // coming and both would collide otherwise). Slug renamed via canonical
+      // trigger on 2026-08-13. MiLa short-form stays "Mandarin Oriental".
+      { source: "/mandarin-oriental", destination: "/mandarin-oriental-boca-raton", permanent: true },
 
       // ---------------------------------------------------------------
       // REW livemodern.com URL parity (built from real site_events traffic).
