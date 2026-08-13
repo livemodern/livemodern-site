@@ -13,6 +13,10 @@ const nextConfig = {
       { source: "/fort-lauderdale-equestrian-homes", destination: "/palm-beach-equestrian-homes", permanent: true },
       // Community slug corrected to city-suffixed canonical (was a live indexed URL)
       { source: "/mr-c-residences", destination: "/mr-c-residences-coconut-grove", permanent: true },
+      // Amrit slug expanded to canonical amrit-ocean-residences (mlg-admin
+      // migration f65e195, 2026-08-13). MiLa short-form stays "Amrit"
+      // via buildings.display_name.
+      { source: "/amrit", destination: "/amrit-ocean-residences", permanent: true },
 
       // ---------------------------------------------------------------
       // REW livemodern.com URL parity (built from real site_events traffic).
