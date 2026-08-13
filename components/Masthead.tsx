@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser, firstNameOf } from "@/lib/auth";
+import { useUser, firstNameOf, rememberReturnTo } from "@/lib/auth";
 import Link from "next/link";
 import Logo from "./Logo";
 import BuildingSearch from "./BuildingSearch";
@@ -88,7 +88,15 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
               {resolvedUser.firstName ? `Hi, ${resolvedUser.firstName}` : "My Account"}
             </Link>
           ) : loginBand ? (
-            <Link className="mast-login acct desk-only" href="/login">
+            // rememberReturnTo() before navigating: this link used to be a bare
+            // /login with no ?next=, so signing in from the header — the most
+            // common way anyone signs in while browsing — recorded no
+            // destination and landed the visitor on /account instead of the
+            // listing they were reading. The gated actions (SaveHeart,
+            // SaveSearchButton, SearchExperience) always passed ?next=; the
+            // header never did. Stashing on click keeps this a plain <Link>
+            // and avoids useSearchParams, which would need a Suspense boundary.
+            <Link className="mast-login acct desk-only" href="/login" onClick={() => rememberReturnTo()}>
               Login
             </Link>
           ) : null}
@@ -140,7 +148,13 @@ export default function Masthead({ active, user = null, loginBand }: { active?: 
               {resolvedUser.firstName ? `Hi, ${resolvedUser.firstName} — My Account` : "My Account"}
             </Link>
           ) : (
-            <Link href="/login" onClick={() => setOpen(false)}>
+            <Link
+              href="/login"
+              onClick={() => {
+                rememberReturnTo();
+                setOpen(false);
+              }}
+            >
               Login / Register
             </Link>
           )}

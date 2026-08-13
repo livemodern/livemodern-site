@@ -359,7 +359,13 @@ export async function signIn(email: string, password: string): Promise<{ error?:
 export async function sendMagicLink(email: string): Promise<{ error?: AuthError }> {
   if (!AUTH_CONFIGURED) return { error: { code: "unconfigured", message: "Accounts aren't available yet." } };
   const sb = await getSupabase();
-  const next = peekReturnTo();
+  // rememberReturnTo(), not peekReturnTo(): if nothing was stashed yet, stash
+  // where the visitor is standing RIGHT NOW. peek only read an existing value,
+  // so signing in from a surface that never called rememberReturnTo — the
+  // AuthModal over a listing, the masthead Login link — carried no destination
+  // and dumped the visitor on /account. Safe from /login itself, where the
+  // current path fails safePath() and this falls back to the stashed value.
+  const next = rememberReturnTo();
   const cb = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { error } = await sb.auth.signInWithOtp({
     email,
@@ -372,7 +378,9 @@ export async function sendMagicLink(email: string): Promise<{ error?: AuthError 
 export async function signInWithGoogle(): Promise<{ error?: AuthError }> {
   if (!AUTH_CONFIGURED) return { error: { code: "unconfigured", message: "Accounts aren't available yet." } };
   const sb = await getSupabase();
-  const next = peekReturnTo();
+  // See sendMagicLink — remember, don't peek, so an OAuth round-trip started
+  // from a listing comes back to that listing instead of /account.
+  const next = rememberReturnTo();
   const cb = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
   const { error } = await sb.auth.signInWithOAuth({
     provider: "google",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabase, AUTH_CONFIGURED } from "@/lib/auth";
+import { getSupabase, AUTH_CONFIGURED, takeReturnTo } from "@/lib/auth";
 
 // Magic-link / OTP confirmation via the token_hash flow. Supabase's email
 // template must point here:
@@ -26,7 +26,12 @@ export default function AuthConfirm() {
       const sb = await getSupabase();
       const { error } = await sb.auth.verifyOtp({ token_hash, type });
       if (error) setMsg("That link has expired or was already used. Please request a new one.");
-      else window.location.replace("/account");
+      // Resume whatever the visitor was looking at. This branch used to
+      // hardcode /account, so the token_hash magic-link flow threw the stashed
+      // destination away even when one existed — /auth/callback got this right
+      // and this page didn't. takeReturnTo() clears it so a later sign-in
+      // doesn't bounce somewhere stale.
+      else window.location.replace(takeReturnTo() ?? "/account");
     })();
   }, []);
 
