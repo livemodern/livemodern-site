@@ -73,9 +73,12 @@ export async function milaSearch(input: MilaSearchInput): Promise<MilaSearchResu
     return { count: 0, listings: [], belowFloor: true, floor };
   }
 
+  // arch_needs_review pulled alongside arch_style so we can suppress low-
+  // confidence classifications client-side (see the .map below). Displaying
+  // an unconfirmed arch guess as if it were the truth misleads users.
   const sel =
     "mls_id,street_address,unit_number,city,county,zip,list_price,beds,baths,sqft,image_urls," +
-    "property_subtype,arch_style,community_slug,lifestyle_tags,lifestyle_attributes";
+    "property_subtype,arch_style,arch_needs_review,community_slug,lifestyle_tags,lifestyle_attributes";
 
   // Curated inventory only: tagged listings at/above the floor.
   const params: string[] = ["status=eq.Active", `list_price=gte.${Math.max(input.minPrice ?? 0, floor)}`];
@@ -89,7 +92,14 @@ export async function milaSearch(input: MilaSearchInput): Promise<MilaSearchResu
     const arr = "{" + input.attributes.map((a) => `"${a}"`).join(",") + "}";
     params.push(`lifestyle_attributes=cs.${encodeURIComponent(arr)}`);
   }
-  if (input.archStyle) params.push(`arch_style=eq.${encodeURIComponent(input.archStyle)}`);
+  // When user explicitly filters by an arch style, only match CONFIRMED
+  // classifications (arch_needs_review=false). Otherwise a "British West
+  // Indies" search could pull in provisional vision guesses that a human
+  // hasn't confirmed.
+  if (input.archStyle) {
+    params.push(`arch_style=eq.${encodeURIComponent(input.archStyle)}`);
+    params.push(`arch_needs_review=eq.false`);
+  }
   if (input.county) params.push(`county=eq.${encodeURIComponent(input.county)}`);
   if (input.zip) params.push(`zip=eq.${encodeURIComponent(input.zip)}`);
   else if (input.city) params.push(`city=ilike.${encodeURIComponent("%" + input.city + "%")}`);
@@ -128,7 +138,9 @@ export async function milaSearch(input: MilaSearchInput): Promise<MilaSearchResu
       sqft: r.sqft,
       image_url: Array.isArray(r.image_urls) && r.image_urls.length ? r.image_urls[0] : null,
       property_subtype: r.property_subtype,
-      arch_style: r.arch_style,
+      // Suppress arch_style when the classification is still pending human
+      // review — the row stays visible, just without a possibly-wrong badge.
+      arch_style: r.arch_needs_review === true ? null : r.arch_style,
       community_slug: r.community_slug,
       lifestyle_tags: r.lifestyle_tags ?? null,
       lifestyle_attributes: r.lifestyle_attributes ?? null,

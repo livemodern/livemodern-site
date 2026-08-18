@@ -431,8 +431,10 @@ export async function listingsByLifestyle(
 ): Promise<LifestyleListing[]> {
   if (!SB_KEY) return [];
   const tag = encodeURIComponent(`{"${lifestyle}"}`);
+  // arch_needs_review pulled so we can suppress unconfirmed arch guesses
+  // client-side (rows still returned, arch_style badge just hidden).
   const sel =
-    "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,community_slug,lot_size_acres";
+    "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft,image_urls,property_subtype,arch_style,arch_needs_review,community_slug,lot_size_acres";
   const countyFilter = county ? `&county=eq.${encodeURIComponent(county)}` : "";
   // Query by tag at the lower ($2M) floor, then apply the split floor + type in JS.
   // A tag+county set can exceed PostgREST's 1,000-row cap (e.g. Palm Beach
@@ -469,10 +471,15 @@ export async function listingsByLifestyle(
           (r.list_price ?? 0) >= (minPrice ?? LIFESTYLE_HOME_FLOOR)
         );
       })
-      // Trim the photo array to the single image the card renders. Listings carry
-      // ~49 image URLs each; serializing them all into the client component would
-      // put ~1.1MB of JSON in the page payload for no benefit (~120KB trimmed).
-      .map((r) => ({ ...r, image_urls: (r.image_urls ?? []).slice(0, 1) }));
+      // Trim the photo array to the single image the card renders (~120KB vs
+      // ~1.1MB for the full ~49-URL set). Also suppress arch_style when the
+      // classification is still pending human review — the row stays, just
+      // without the possibly-wrong badge.
+      .map((r) => ({
+        ...r,
+        image_urls: (r.image_urls ?? []).slice(0, 1),
+        arch_style: (r as any).arch_needs_review === true ? null : r.arch_style,
+      }));
   } catch {
     return [];
   }
@@ -721,7 +728,7 @@ export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
 
 const GEO_SELECT =
   "mls_id,street_address,unit_number,city,county,list_price,beds,baths,sqft," +
-  "image_urls,property_subtype,arch_style,community_slug,lot_size_acres," +
+  "image_urls,property_subtype,arch_style,arch_needs_review,community_slug,lot_size_acres," +
   "subdivision_name,lifestyle_attributes,waterfront_features,latitude,longitude";
 
 type GeoRow = LifestyleListing & {
@@ -768,8 +775,12 @@ export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
     const floorYear = new Date().getFullYear() - NEW_CONSTRUCTION_LOOKBACK;
     parts.push(`year_built=gte.${floorYear}`);
   }
-  if (q.archStyles?.length)
+  if (q.archStyles?.length) {
     parts.push(`arch_style=in.(${q.archStyles.map((a) => encodeURIComponent(a)).join(",")})`);
+    // When explicitly filtering by arch style, only match CONFIRMED
+    // classifications — avoids surfacing provisional vision guesses.
+    parts.push(`arch_needs_review=eq.false`);
+  }
   // Walkable: pre-filter to the union of each center's bounding box (cheap,
   // index-friendly); the precise circle gate runs in JS below.
   if (q.centers?.length) {
@@ -823,10 +834,16 @@ export async function rowsByQuery(q: SpokeQuery): Promise<GeoRow[]> {
   });
 }
 
-/** Cards for a geo/criteria spoke — image arrays trimmed like the tag path. */
+/** Cards for a geo/criteria spoke — image arrays trimmed like the tag path.
+ *  arch_style is nulled when the classification is still pending review so
+ *  the card doesn't render a possibly-wrong style badge. */
 export async function listingsByQuery(q: SpokeQuery): Promise<LifestyleListing[]> {
   const rows = await rowsByQuery(q);
-  return rows.map((r) => ({ ...r, image_urls: (r.image_urls ?? []).slice(0, 1) }));
+  return rows.map((r) => ({
+    ...r,
+    image_urls: (r.image_urls ?? []).slice(0, 1),
+    arch_style: (r as any).arch_needs_review === true ? null : r.arch_style,
+  }));
 }
 
 /** Same stats shape as lifestyleStats, computed from rows we already have. */

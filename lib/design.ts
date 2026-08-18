@@ -106,7 +106,7 @@ export async function styleCounts(): Promise<Record<string, number>> {
   for (let i = 0; i < 10; i++) {
     const url =
       `${SB_URL}/rest/v1/properties?arch_style=not.is.null` +
-      `&status=eq.Active&list_price=gte.${HOME_FLOOR}` +
+      `&status=eq.Active&arch_needs_review=eq.false&list_price=gte.${HOME_FLOOR}` +
       `&select=arch_style&limit=1000&offset=${offset}`;
     const res = await fetch(url, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
@@ -130,7 +130,7 @@ export async function homesByStyle(
   const inList = styles.map((s) => `"${s.replace(/"/g, '\\"')}"`).join(",");
   const url =
     `${SB_URL}/rest/v1/properties?arch_style=in.(${encodeURIComponent(inList)})` +
-    `&status=eq.Active&list_price=gte.${HOME_FLOOR}` +
+    `&status=eq.Active&arch_needs_review=eq.false&list_price=gte.${HOME_FLOOR}` +
     `&select=mls_id,street_address,city,county,list_price,beds,baths,sqft,image_urls,arch_style,arch_style_secondary` +
     `&order=list_price.desc&limit=${limit}`;
   const res = await fetch(url, {
@@ -158,7 +158,7 @@ export async function homesByFamily(
     styles.map(async (s) => {
       const url =
         `${SB_URL}/rest/v1/properties?arch_style=eq.${encodeURIComponent(s)}` +
-        `&status=eq.Active&list_price=gte.${HOME_FLOOR}` +
+        `&status=eq.Active&arch_needs_review=eq.false&list_price=gte.${HOME_FLOOR}` +
         `&select=mls_id,street_address,city,county,list_price,beds,baths,sqft,image_urls,arch_style,arch_style_secondary` +
         `&order=list_price.desc&limit=${perStyle}`;
       try {
