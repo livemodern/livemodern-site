@@ -97,14 +97,16 @@ export async function GET(req: NextRequest) {
     query = query.in("status", ["Active", "ComingSoon", "Pending", "ActiveUnderContract", "Closed"]);
   }
 
-  // ── Duplicate suppression (properties_search doesn't expose the flag) ──
+  // ── Duplicate suppression ──
+  // properties_search view exposes dup_suppressed since migration
+  // 2026-06-18-properties-search-add-dup-suppressed.sql — filter directly
+  // instead of the old workaround that pulled the entire suppressed
+  // mls_id list from properties on every search request (Postgres round
+  // trip + silently 1000-row-capped read + unbounded URL-length `.not(in,
+  // ...)`). mlg-site's /api/search made the same switch in commit that
+  // followed the migration; this brings livemodern to parity.
   if (!mls_id_exact) {
-    const { data: suppressed } = await supabase
-      .from("properties")
-      .select("mls_id")
-      .eq("dup_suppressed", true);
-    const ids = (suppressed ?? []).map((r: { mls_id: string }) => r.mls_id).filter(Boolean);
-    if (ids.length > 0) query = query.not("mls_id", "in", `(${ids.join(",")})`);
+    query = query.eq("dup_suppressed", false);
   }
 
   // ── Closed 3-year cutoff (broad searches only) ──
