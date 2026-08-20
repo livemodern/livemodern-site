@@ -30,7 +30,14 @@ import {
   HERO_SIZES,
 } from "@/lib/listings";
 
-export const revalidate = 900;
+// 7-day safety net. Primary invalidation is on-demand: TCP's bmb-delta
+// (and reconcile-active) POSTs mls_ids for the listings that actually
+// changed to /api/revalidate after each sync cycle, so a Withdrawn flip
+// or price change lands on the PDP within one delta window (~15 min)
+// instead of waiting out the ISR clock. This long backstop only matters
+// when a push is missed. Was 900s pre-2026-08-20; that meant every
+// listing page regenerated every 15 minutes even when nothing changed.
+export const revalidate = 604800;
 
 // Only the baked samples are pre-rendered; live MLS ids render on-demand.
 export function generateStaticParams() {
