@@ -12,7 +12,12 @@ import {
   styleCounts,
 } from "@/lib/design";
 
-export const revalidate = 900;
+// 6h (was 15min). Design/architecture classifications rarely change; the
+// arch-enrichment pipeline runs slowly and this page fans out into styleCounts()
+// (10-page pagination) + homesByFamily() (parallel per-style queries) — the
+// most expensive aggregate page in the repo. Real listing changes still land
+// via bmb-delta's targeted push to livemodern's revalidator.
+export const revalidate = 21600;
 
 export function generateStaticParams() {
   return DESIGN_FAMILIES.map((f) => ({ family: f.slug }));

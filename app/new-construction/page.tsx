@@ -6,7 +6,9 @@ import IndexFilter from "@/components/IndexFilter";
 import { getBuildings, COUNTIES, resolveLifecycle, needsBuiltYearLookup } from "@/lib/communities";
 import { buildingBuiltYears } from "@/lib/listings";
 
-export const revalidate = 3600;
+// 6h (was 1h). New-construction lifecycle changes slowly (buildings graduate
+// on year_built arrival — driven by MLS resale hits captured by bmb-delta).
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   title: "New Construction — The Index",

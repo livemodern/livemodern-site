@@ -13,7 +13,11 @@ import {
   type Community,
 } from "@/lib/communities";
 
-export const revalidate = 3600;
+// 6h (was 1h). Homepage assembles from CMS-curated FEATURED slugs +
+// building lifecycle lookups; content changes rarely and TCP delta / bmb-delta
+// push targeted PDP revalidations so listing rows stay fresh via ISR data
+// cache. Revalidate rate here just governs the marketing shell — 6h is fine.
+export const revalidate = 21600;
 
 /** Curated lead of the index — the towers we want first-seen. */
 const FEATURED = [

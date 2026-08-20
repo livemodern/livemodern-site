@@ -38,7 +38,12 @@ import {
   type Listing,
 } from "@/lib/listings";
 
-export const revalidate = 3600;
+// 7 days (was 1h). Community/spoke/hub pages get their live inventory grids
+// via bmb-delta's targeted push to /api/revalidate — a listing that materially
+// changes triggers a `paths: ['/<community_slug>']` revalidation (added
+// 2026-08-20), so this timer is a shell-refresh backstop only. Same 604800
+// pattern as /listing/[mls_id].
+export const revalidate = 604800;
 
 export function generateStaticParams() {
   return [

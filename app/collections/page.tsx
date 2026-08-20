@@ -13,7 +13,8 @@ import {
 } from "@/lib/communities";
 import { DESIGN_FAMILIES, styleCounts } from "@/lib/design";
 
-export const revalidate = 3600;
+// 6h (was 1h). Curated CMS-driven lifestyle hubs; content rarely changes.
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   title: "Collections — LiveModern",

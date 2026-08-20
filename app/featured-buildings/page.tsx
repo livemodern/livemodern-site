@@ -6,7 +6,10 @@ import IndexFilter from "@/components/IndexFilter";
 import { getBuildings, COUNTIES, resolveLifecycle, isFeatured, needsBuiltYearLookup } from "@/lib/communities";
 import { buildingBuiltYears } from "@/lib/listings";
 
-export const revalidate = 3600;
+// 6h (was 1h). Signature-building index; lifecycle changes are slow (year_built
+// arrives on resale sync, which is captured by bmb-delta and pushed through
+// livemodern's revalidator — this timer is a shell-refresh backstop only).
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   title: "The Icons — Signature Residences",
