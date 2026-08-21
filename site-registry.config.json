@@ -1,0 +1,11 @@
+{
+  "ownSlug": "livemodern",
+  "maps": [
+    {
+      "file": "app/account/page.tsx",
+      "const": "SITE_META",
+      "valueField": "origin",
+      "ignoreSlugs": ["livemodern"]
+    }
+  ]
+}
