@@ -30,14 +30,28 @@ import {
   HERO_SIZES,
 } from "@/lib/listings";
 
-// 7-day safety net. Primary invalidation is on-demand: TCP's bmb-delta
-// (and reconcile-active) POSTs mls_ids for the listings that actually
-// changed to /api/revalidate after each sync cycle, so a Withdrawn flip
-// or price change lands on the PDP within one delta window (~15 min)
-// instead of waiting out the ISR clock. This long backstop only matters
-// when a push is missed. Was 900s pre-2026-08-20; that meant every
-// listing page regenerated every 15 minutes even when nothing changed.
-export const revalidate = 604800;
+// Pages cache FOREVER unless explicitly invalidated. Primary (and now
+// only) invalidation is on-demand: TCP's bmb-delta + reconcile-active POST
+// mls_ids for listings that actually changed to /api/revalidate. A
+// Withdrawn flip or price change lands on the PDP within one delta window
+// (~15 min).
+//
+// EVOLUTION (Patrick 2026-08-21) — dropped 604800 → false:
+//   • 2026-08-20: 900 → 604800 (7d) once the push architecture landed,
+//     leaving the timer as a safety net.
+//   • 2026-08-21: 604800 → false. Same reasoning as mlg-site
+//     (`mlg-site/app/listings/[mlsId]/page.tsx`, commit 1207ac1). With
+//     200k+ listings — most Closed and never changing again — any nonzero
+//     timer generated stale-hit regens purely for cache expiration, no
+//     material change. Trusting the push architecture eliminates that.
+//
+// STATUS-CHANGE SAFETY: the same retry-with-response-body-confirmation
+// upgrade on TCP's `pingLivemodernSiteRevalidate()` (revalidate-livemodern.ts)
+// applies here. 3× retry on transient failure, response body confirmed to
+// show `revalidated.listings >= 1`, failure surfaced to `sync_log` as
+// `bmb-delta-revalidate-warn` for spot-check. revalidatePath() is
+// idempotent so retries are safe.
+export const revalidate = false;
 
 // Only the baked samples are pre-rendered; live MLS ids render on-demand.
 export function generateStaticParams() {
