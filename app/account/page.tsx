@@ -66,8 +66,13 @@ type SavedSearch = {
 // to run on the surface that can render it. LiveModern-origin searches run here.
 const SITE_META: Record<string, { label: string; origin: string; searchPath?: string }> = {
   livemodern: { label: "LiveModern", origin: "", searchPath: "/search" },
-  "mlg-site": { label: "modernlivingre.com", origin: "https://modernlivingre.com", searchPath: "/search" },
-  "mlg-search": { label: "our county search", origin: "https://search.mlrecloud.com", searchPath: "/" },
+  // mlg-site: canonical origin uses www so we don't 308 through the apex hop.
+  "mlg-site": { label: "modernlivingre.com", origin: "https://www.modernlivingre.com", searchPath: "/search" },
+  // mlg-search: repointed to modernlivingre.com 2026-08-21 — search.mlrecloud.com
+  // was retired to 503. Historical saved_searches tagged mlg-search still resolve
+  // via the shared property DB; this just directs the "run search" link to the
+  // live main-site surface that can render them.
+  "mlg-search": { label: "modernlivingre.com", origin: "https://www.modernlivingre.com", searchPath: "/search" },
   "one-city-plaza": { label: "onecityplazacondos.com", origin: "https://onecityplazacondos.com" },
   twocityplaza: { label: "twocityplazacondos.com", origin: "https://twocityplazacondos.com" },
   "city-palms": { label: "citypalms.com", origin: "https://citypalms.com" },
