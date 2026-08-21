@@ -649,6 +649,16 @@ export const MODERN_STYLES = [
 
 export const SPOKE_QUERIES: Record<string, SpokeQuery> = {
   // ── Islands (geography) ──
+  // The Town of Palm Beach IS the barrier island, so the city name is the whole
+  // qualifier — no lifestyle tag or substring gate needed. Single-family only:
+  // island condos have their own spoke (palm-beach-condos-for-sale). Without
+  // this entry the slug fell through to the "Island" lifestyle tag scoped to
+  // Palm Beach COUNTY, which pulled West Palm Beach, North Palm Beach, Ocean
+  // Ridge, Singer Island, Gulf Stream, Manalapan and Riviera Beach onto the page.
+  "palm-beach-island-homes-for-sale": {
+    cities: ["Palm Beach"],
+    subtypes: ["SingleFamilyResidence"],
+  },
   "manalapan-homes-for-sale": { cities: ["Manalapan"], minPrice: 2_000_000 },
   "singer-island-real-estate": { zips: ["33404"], minPrice: 1_000_000 },
   "jupiter-island-homes-for-sale": {
