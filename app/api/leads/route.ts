@@ -145,6 +145,45 @@ export async function POST(req: NextRequest) {
         sessionId = jar.get("lm_sid")?.value?.trim() ?? "";
       } catch { /* no request scope */ }
     }
+    // Attribution — the tracker persists the visitor's acquisition touch
+    // (UTM / click IDs / referrer / landing path) in the first-party `lm_attr`
+    // cookie, the same server-readable bridge `lm_sid` uses. Reading it here
+    // stamps every lead form with zero per-form wiring; mlg-admin's routing
+    // carry-over then copies these columns onto the contact.
+    // attribution_campaign carries the Google Ads numeric campaign id
+    // (gad_campaignid) — the join key against marketing_spend.campaign_id.
+    // cookies() is ASYNC on Next 15 — same trap as lm_sid above.
+    const truncS = (v: unknown, n = 255): string | null =>
+      typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null;
+    let attr: Record<string, unknown> = {};
+    try {
+      const jar = await cookies();
+      const rawAttr = jar.get("lm_attr")?.value;
+      if (rawAttr) attr = JSON.parse(rawAttr) as Record<string, unknown>;
+    } catch { /* absent/corrupt cookie — attribution stays null */ }
+    if (body?.attribution && typeof body.attribution === "object") {
+      attr = { ...attr, ...(body.attribution as Record<string, unknown>) };
+    }
+    const ftRaw = truncS(attr.ft ?? attr.first_touch_at, 40);
+    const uaStr = req.headers.get("user-agent") || "";
+    const lpPath = truncS(attr.lp ?? attr.landing_page_path, 1000);
+    const hostHdr = req.headers.get("host");
+    const attributionRow = {
+      attribution_source:   truncS(attr.source),
+      attribution_medium:   truncS(attr.medium),
+      attribution_campaign: truncS(attr.campaign),
+      attribution_content:  truncS(attr.content),
+      attribution_term:     truncS(attr.term),
+      gclid:                truncS(attr.gclid),
+      fbclid:               truncS(attr.fbclid),
+      msclkid:              truncS(attr.msclkid),
+      landing_page_path:    lpPath,
+      referrer_domain:      truncS(attr.ref ?? attr.referrer_domain),
+      first_touch_at:       ftRaw && !Number.isNaN(Date.parse(ftRaw)) ? ftRaw : null,
+      device_type:          /iPad|Tablet|Android(?!.*Mobile)/i.test(uaStr) ? "tablet"
+                            : /Mobi|iPhone|Android/i.test(uaStr) ? "mobile" : "desktop",
+    };
+
     const viewedMlsIds = String(body.viewedMlsIds ?? "")
       .split(",")
       .map((x) => x.trim())
@@ -262,7 +301,10 @@ export async function POST(req: NextRequest) {
       building_interest: communityName,
       source_site: SITE,
       source_type: isRegistration ? "registration" : sourceType || "contact-form",
-      landing_page: body.landingPage || null,
+      ...attributionRow,
+      // Explicit body values win over the cookie-derived path for these two —
+      // some forms send the precise page they were on.
+      landing_page: body.landingPage || (lpPath && hostHdr ? `https://${hostHdr}${lpPath}`.slice(0, 1000) : null),
       referrer: body.referrer || null,
     });
 
