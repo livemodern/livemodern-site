@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackConversion, ConversionLabel } from "@/lib/google-ads-conversions";
 import Link from "next/link";
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
@@ -99,6 +100,7 @@ export default function LoginPage() {
     });
     setBusy(false);
     if (!error) {
+      trackConversion(ConversionLabel.IdxRegistration);
       setOk("You're in. Taking you to your account…");
       return;
     }

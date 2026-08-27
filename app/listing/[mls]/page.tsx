@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TourConversion from "@/components/TourConversion";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import Masthead from "@/components/Masthead";
@@ -443,6 +444,7 @@ export default async function ListingPage({
                 </a>
               </div>
 
+              <TourConversion />
               <form className="a-form" action="/api/leads" method="post" id="tour">
                 <input type="hidden" name="mls_id" value={l.mls_id} />
                 <input type="hidden" name="address" value={fullAddress(l)} />

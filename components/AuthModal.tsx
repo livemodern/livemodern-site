@@ -15,6 +15,7 @@
 // registration is to call, and a lead with no number is close to unworkable.
 
 import { useEffect, useRef, useState } from 'react';
+import { trackConversion, ConversionLabel } from '@/lib/google-ads-conversions';
 import {
   SMS_CONSENT_TEXT,
   signIn,
@@ -141,6 +142,7 @@ export function AuthModal({
       mlsId,
     });
     setBusy(false);
+    if (!error) trackConversion(ConversionLabel.IdxRegistration);
     if (error) {
       // signUp steers a known email to sign-in rather than making a ghost account.
       if (error.code === 'exists') {

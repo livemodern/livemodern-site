@@ -30,6 +30,23 @@ export default function Analytics() {
 
   return (
     <>
+      {/* Google Ads base tag — ALWAYS on (2026-08-27). The LM-* conversion
+          actions in the Ads account (410-526-4170) went dark at the site
+          rebuild; lib/google-ads-conversions.ts fires them again, and this
+          block guarantees gtag exists with no env vars needed. Coexists
+          fine with GTM/GA4 below — gtag config calls are additive. */}
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=AW-1027408161"
+        strategy="afterInteractive"
+      />
+      <Script
+        id="aw-base"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-1027408161');`,
+        }}
+      />
+
       {GTM_ID && (
         <>
           <Script

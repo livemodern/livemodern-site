@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { fire, setTrackerIdentity, trackedSessionId, viewedMlsIds } from "@/lib/site-tracker";
 
+import { trackConversion, ConversionLabel } from "@/lib/google-ads-conversions";
+
 type Props = {
   /** Passed through to the CRM as source_type (e.g. "contact-page", "hub-inquiry"). */
   source?: string;
@@ -91,6 +93,16 @@ export default function LeadForm({
         // record. Everything they look at next now attaches.
         setTrackerIdentity({ user_id: null, email });
         fire("form_submit", { data: { form: source, interest: payload.interest ?? null }, immediate: true });
+        // Google Ads conversion, routed by placement: contact-page forms →
+        // LM Contact Form; agent-context forms → LM Contact Agent Button;
+        // building/community/hub inquiries → LM Listing Inquiry.
+        trackConversion(
+          source.includes("agent")
+            ? ConversionLabel.ContactAgentButton
+            : source.includes("contact")
+              ? ConversionLabel.ContactForm
+              : ConversionLabel.ListingInquiry,
+        );
         setState("sent");
         form.reset();
       } else {
