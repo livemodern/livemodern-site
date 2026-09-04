@@ -33,6 +33,7 @@ type SiteEventType =
   | "scroll"
   | "phone_click"
   | "email_click"
+  | "form_view"
   | "form_start"
   | "form_abandon"
   | "form_submit";
@@ -298,11 +299,50 @@ export function flush(useBeacon = false): void {
   post(batch, useBeacon);
 }
 
+// ---------------------------------------------------------------------------
+// Human gate. Registration-funnel events (form_view / form_start /
+// form_abandon) are held until the session shows a HUMAN signal — pointer
+// movement, touch, scroll, or a key press. Headless scanners load pages and
+// touch nothing: 20 of 21 "registration starts" on /login over two weeks in
+// Aug–Sep 2026 were bots firing 1–27ms after pageview (the mount-effect +
+// autofocus combination made every bot pageview read as a form start). The
+// event is built at call time so occurred_at reflects when the form actually
+// appeared; the gate only delays shipping. No human signal ever (a bot) →
+// the held events are dropped at unload. navigator.webdriver → dropped
+// outright. form_submit is NOT gated — a completed registration is real
+// data, and gating it could lose a conversion racing page unload.
+// ---------------------------------------------------------------------------
+const HUMAN_GATED: ReadonlySet<SiteEventType> = new Set([
+  "form_view",
+  "form_start",
+  "form_abandon",
+]);
+let humanSeen = false;
+let humanPending: Queued[] = [];
+let humanGateInstalled = false;
+
+function installHumanGate(): void {
+  if (humanGateInstalled || typeof window === "undefined") return;
+  humanGateInstalled = true;
+  const signals = ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"] as const;
+  const onSignal = () => {
+    humanSeen = true;
+    for (const sig of signals) window.removeEventListener(sig, onSignal);
+    if (humanPending.length) {
+      queue.push(...humanPending);
+      humanPending = [];
+      if (!timer) timer = setTimeout(() => flush(), FLUSH_MS);
+    }
+  };
+  for (const sig of signals) window.addEventListener(sig, onSignal, { passive: true });
+}
+
 export function fire(
   eventType: SiteEventType,
   opts: { data?: Record<string, unknown>; immediate?: boolean } = {},
 ): void {
   if (typeof window === "undefined") return;
+  installHumanGate();
   // Keep the browsing list in sync off the same call that reports the view, so
   // there's no second thing to remember to wire up on a new page template.
   if (eventType === "listing_view") {
@@ -310,7 +350,10 @@ export function fire(
     if (typeof mls === "string" || typeof mls === "number") rememberViewed(String(mls));
   }
   const attr = currentAttribution();
-  queue.push({
+  const gated = HUMAN_GATED.has(eventType) && !humanSeen;
+  if (gated && (navigator as { webdriver?: boolean }).webdriver) return; // headless: drop
+  const target = gated ? humanPending : queue;
+  target.push({
     event_type: eventType,
     session_id: sessionId(),
     user_id: identity.user_id,
@@ -329,6 +372,7 @@ export function fire(
     occurred_at: new Date().toISOString(),
   });
 
+  if (gated) return; // held until the first human signal
   if (opts.immediate) {
     flush();
     return;

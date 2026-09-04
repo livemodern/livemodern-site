@@ -24,6 +24,7 @@ import {
   sendMagicLink,
 } from '@/lib/auth';
 import { getViewedListings } from '@/lib/view-tracker';
+import { fire } from '@/lib/site-tracker';
 
 type Mode = 'signup' | 'signin';
 
@@ -101,6 +102,49 @@ export function AuthModal({
     return () => window.removeEventListener('keydown', onEsc);
   }, [open, blocking, onClose]);
 
+  // ── Registration funnel ─────────────────────────────────────────────
+  // form_view — the paywall came up (human-gated in the tracker, so bots
+  // that trip the view limit without ever moving a pointer are excluded).
+  // form_start — first field focus. NOTE the modal autofocuses at 40ms;
+  // the human gate is what keeps that from counting headless visitors.
+  // form_abandon — viewed but closed / hidden without a signed-in result.
+  // form_submit — lib/auth.ts signUp fires it on success.
+  const startedRef = useRef(false);
+  const doneRef = useRef(false);
+  const funnelRef = useRef<Record<string, unknown>>({});
+  funnelRef.current = {
+    form: 'registration',
+    mode,
+    blocking,
+    mls_id: mlsId ?? null,
+    community_slug: communitySlug ?? null,
+  };
+  const abandonRef = useRef<() => void>(() => {});
+  abandonRef.current = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    fire('form_abandon', { data: { ...funnelRef.current, started: startedRef.current } });
+  };
+  useEffect(() => {
+    if (!open) return;
+    startedRef.current = false;
+    doneRef.current = false;
+    fire('form_view', { data: funnelRef.current });
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') abandonRef.current();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      abandonRef.current(); // closed or unmounted without signing in
+    };
+  }, [open]);
+  const onFieldFocus = () => {
+    if (startedRef.current || !open) return;
+    startedRef.current = true;
+    fire('form_start', { data: funnelRef.current });
+  };
+
   if (!open) return null;
 
   async function handleSubmit() {
@@ -114,6 +158,7 @@ export function AuthModal({
       const { error } = await signIn(email.trim(), password);
       setBusy(false);
       if (error) return setErr(error.message);
+      doneRef.current = true; // signed in — not an abandon
       onClose?.('signed-in');
       return;
     }
@@ -142,7 +187,10 @@ export function AuthModal({
       mlsId,
     });
     setBusy(false);
-    if (!error) trackConversion(ConversionLabel.IdxRegistration);
+    if (!error) {
+      doneRef.current = true; // registered — signUp fired form_submit
+      trackConversion(ConversionLabel.IdxRegistration);
+    }
     if (error) {
       // signUp steers a known email to sign-in rather than making a ghost account.
       if (error.code === 'exists') {
@@ -163,6 +211,7 @@ export function AuthModal({
     const { error } = await sendMagicLink(email.trim());
     setBusy(false);
     if (error) return setErr(error.message);
+    doneRef.current = true; // magic link sent — not an abandon
     setOk('Check your email — we sent you a sign-in link.');
   }
 
@@ -173,6 +222,7 @@ export function AuthModal({
     const { error } = await sendMagicLink(existingEmailHint);
     setBusy(false);
     if (error) return setErr(error.message);
+    doneRef.current = true; // magic link sent — not an abandon
     setOk(`Sent — check ${existingEmailHint} for a one-tap sign-in link.`);
     setExistingEmailHint(null);
   }
@@ -187,7 +237,7 @@ export function AuthModal({
       aria-labelledby="lmgate-title"
       onClick={blocking ? undefined : () => onClose?.('dismissed')}
     >
-      <div className="lmgate-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="lmgate-panel" onClick={(e) => e.stopPropagation()} onFocusCapture={onFieldFocus}>
         <p className="lmgate-eyebrow">LiveModern</p>
         <h2 id="lmgate-title" className="lmgate-title">
           {mode === 'signup' ? (

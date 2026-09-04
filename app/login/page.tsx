@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { trackConversion, ConversionLabel } from "@/lib/google-ads-conversions";
 import Link from "next/link";
 import Masthead from "@/components/Masthead";
@@ -71,9 +71,44 @@ export default function LoginPage() {
     if (!loading && user) window.location.replace(takeReturnTo() ?? "/account");
   }, [loading, user]);
 
+  // ── Registration funnel ─────────────────────────────────────────────
+  // form_view  — the form came up for this mode. Human-gated in the
+  //              tracker, which is what makes it meaningful: the old
+  //              mount-fired form_start counted every headless scanner
+  //              that loaded /login (20 of 21 "starts" Aug–Sep 2026).
+  // form_start — the visitor actually focused a field.
+  // form_abandon — viewed but left / hid the tab without signing up or in.
+  // Bail rate = form_view sessions without a form_submit (which
+  // lib/auth.ts signUp fires on success).
+  const startedRef = useRef(false);
+  const doneRef = useRef(false);
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   useEffect(() => {
-    fire("form_start", { data: { form: "account", mode } });
+    fire("form_view", { data: { form: "account", mode } });
   }, [mode]);
+  useEffect(() => {
+    const abandon = () => {
+      if (doneRef.current) return;
+      doneRef.current = true;
+      fire("form_abandon", {
+        data: { form: "account", mode: modeRef.current, started: startedRef.current },
+      });
+    };
+    const onHide = () => {
+      if (document.visibilityState === "hidden") abandon();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      abandon(); // SPA navigation away from /login
+    };
+  }, []);
+  const onFieldFocus = () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    fire("form_start", { data: { form: "account", mode: modeRef.current } });
+  };
 
   async function onSignUp() {
     setErr(null);
@@ -100,6 +135,7 @@ export default function LoginPage() {
     });
     setBusy(false);
     if (!error) {
+      doneRef.current = true; // registered — not an abandon
       trackConversion(ConversionLabel.IdxRegistration);
       setOk("You're in. Taking you to your account…");
       return;
@@ -120,6 +156,7 @@ export default function LoginPage() {
     const { error } = await signIn(email.trim(), password);
     setBusy(false);
     if (error) setErr(error.message);
+    else doneRef.current = true; // signed in — not an abandon
   }
 
   async function onMagicLink() {
@@ -130,7 +167,10 @@ export default function LoginPage() {
     const { error } = await sendMagicLink(email.trim());
     setBusy(false);
     if (error) setErr(error.message);
-    else setOk("Check your email — we sent you a sign-in link.");
+    else {
+      doneRef.current = true; // leaving to check email is not an abandon
+      setOk("Check your email — we sent you a sign-in link.");
+    }
   }
 
   return (
@@ -138,7 +178,7 @@ export default function LoginPage() {
       <style dangerouslySetInnerHTML={{ __html: AUTH_CSS }} />
       <Masthead />
       <div className="wrap">
-        <div className="auth-shell">
+        <div className="auth-shell" onFocusCapture={onFieldFocus}>
           <p className="eyebrow">Account</p>
           <h1 className="serif">
             {mode === "signup" ? (

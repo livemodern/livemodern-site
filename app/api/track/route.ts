@@ -33,6 +33,7 @@ const ALLOWED_EVENT_TYPES = new Set([
   "scroll",
   "phone_click",
   "email_click",
+  "form_view",
   "form_start",
   "form_abandon",
   "form_submit",
