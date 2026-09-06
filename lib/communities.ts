@@ -235,8 +235,17 @@ export function countyCounts(): Record<string, number> {
 const CF = "https://images.livemodern.com/cdn-cgi/image";
 
 /** Transformed image URL at a given width. Returns "" for a falsy input. */
+const VW_ = [640, 828, 1200, 1920];
+const snapVW_ = (w: number): number => VW_.find((v) => w <= v) ?? 1920;
+const R2_ = /^https:\/\/(images\.(?:livemodern|mlrecloud)\.com)\/(?!cdn-cgi\/|img\/)(.+)$/;
+// R2-hosted sources go to the img-variants Worker (/img/{w}/{key}): persisted
+// webp from R2 (free) instead of /cdn-cgi/image, which bills $0.50/1k unique
+// originals PER MONTH ($800+ Jul+Aug 2026 fleet-wide).
 export function cf(url: string, w: number, q = 78): string {
-  return url ? `${CF}/width=${w},quality=${q},format=auto/${url}` : "";
+  if (!url) return "";
+  const m = url.match(R2_);
+  if (m) return `https://${m[1]}/img/${snapVW_(w)}/${m[2]}`;
+  return `${CF}/width=${w},quality=${q},format=auto/${url}`;
 }
 
 /** srcset string across the given widths, for responsive <img>. */

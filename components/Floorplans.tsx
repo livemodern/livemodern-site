@@ -8,8 +8,15 @@ import { recordPlanView, hasSeenPlan } from "@/lib/floorplan-tracker";
 import { AuthModal } from "@/components/AuthModal";
 
 const CF = "https://images.livemodern.com/cdn-cgi/image";
-const cf = (u: string, w: number, q = 82) =>
-  u ? `${CF}/width=${w},quality=${q},format=auto/${u}` : "";
+const VW_ = [640, 828, 1200, 1920];
+const snapVW_ = (w: number): number => VW_.find((v) => w <= v) ?? 1920;
+const R2_ = /^https:\/\/(images\.(?:livemodern|mlrecloud)\.com)\/(?!cdn-cgi\/|img\/)(.+)$/;
+const cf = (u: string, w: number, q = 82) => {
+  if (!u) return "";
+  const m = u.match(R2_);
+  if (m) return `https://${m[1]}/img/${snapVW_(w)}/${m[2]}`; // static variant, no /cdn-cgi billing
+  return `${CF}/width=${w},quality=${q},format=auto/${u}`;
+};
 const cfSet = (u: string, ws: number[], q = 82) =>
   u ? ws.map((w) => `${cf(u, w, q)} ${w}w`).join(", ") : "";
 

@@ -4,8 +4,17 @@ import sample from "@/data/sample-listings.json";
 const MLS_CF = "https://images.mlrecloud.com/cdn-cgi/image";
 
 /** Transform an MLS photo URL at a given width. */
+const VW_ = [640, 828, 1200, 1920];
+const snapVW_ = (w: number): number => VW_.find((v) => w <= v) ?? 1920;
+const R2_ = /^https:\/\/(images\.(?:livemodern|mlrecloud)\.com)\/(?!cdn-cgi\/|img\/)(.+)$/;
+// R2-hosted sources go to the img-variants Worker (/img/{w}/{key}): persisted
+// webp from R2 (free) instead of /cdn-cgi/image, which bills $0.50/1k unique
+// originals PER MONTH ($800+ Jul+Aug 2026 fleet-wide).
 export function mls(url: string, w: number, q = 80): string {
-  return url ? `${MLS_CF}/width=${w},quality=${q},format=auto/${url}` : "";
+  if (!url) return "";
+  const m = url.match(R2_);
+  if (m) return `https://${m[1]}/img/${snapVW_(w)}/${m[2]}`;
+  return `${MLS_CF}/width=${w},quality=${q},format=auto/${url}`;
 }
 export function mlsSrcSet(url: string, widths: number[], q = 80): string {
   return url ? widths.map((w) => `${mls(url, w, q)} ${w}w`).join(", ") : "";
